@@ -14,34 +14,98 @@ window.Roll3D = (function () {
   let draggableSprites = [];
 
   /**
-   * TẠO ĐƯỜNG DÓNG NÉT ĐỨT (LEADER LINE) KHI CHÚ THÍCH BỊ KÉO XA VỊ TRÍ GỐC
+   * MÀU SẮC MŨI TÊN CHỈ DẪN KỸ THUẬT THEO NỀN STUDIO:
+   * - Nền đen (dark): Màu xanh ngọc sáng (#38bdf8) cực kỳ nổi bật trên nền tối.
+   * - Nền trắng (light): Màu đen than kỹ thuật (#0f172a) sắc nét rõ ràng trên nền trắng.
    */
-  function attachDragLeaderLine(group, sprite, anchorPos, colorNum) {
-    const lineMat = new THREE.LineDashedMaterial({
-      color: colorNum,
-      linewidth: 1.5,
-      dashSize: 2.0,
-      gapSize: 1.5,
-      depthTest: false,
-      depthWrite: false,
-      transparent: true,
-      opacity: 0.75
-    });
-    const lineGeo = new THREE.BufferGeometry().setFromPoints([anchorPos.clone(), sprite.position.clone()]);
-    const line = new THREE.Line(lineGeo, lineMat);
-    line.computeLineDistances();
-    line.renderOrder = 998;
-    const dist = sprite.position.distanceTo(anchorPos);
-    line.visible = dist > 5.0;
-    group.add(line);
+  function getCalloutColor() {
+    const isDark = (window.AppState && window.AppState.studioBg === 'dark');
+    return isDark ? 0x38bdf8 : 0x0f172a;
+  }
 
-    sprite.userData.leaderLine = line;
-    sprite.userData.updateLeader = function (newPos) {
-      lineGeo.setFromPoints([anchorPos.clone(), newPos.clone()]);
-      line.computeLineDistances();
-      const d = newPos.distanceTo(anchorPos);
-      line.visible = d > 5.0;
-    };
+  function getCalloutHex() {
+    const isDark = (window.AppState && window.AppState.studioBg === 'dark');
+    return isDark ? '#38bdf8' : '#0f172a';
+  }
+
+  /**
+   * TẠO MŨI TÊN CHỈ DẪN KỸ THUẬT (CALLOUT LEADER WITH ARROWHEAD)
+   * Khi ghi chú bị kéo xa khỏi vị trí mặc định (> 3.5mm), tự động xuất hiện mũi tên
+   * chỉ thẳng vào vị trí đo kỹ thuật tương ứng (giống 100% kiểu chú thích Răng cưa xé).
+   * - Nền trắng (light): Mũi tên màu đen kỹ thuật sắc nét (#0f172a).
+   * - Nền đen (dark): Mũi tên màu xanh ngọc sáng rực rỡ nổi bật (#38bdf8).
+   */
+  function attachDragLeaderCallout(group, sprite, anchorPos, defaultPos, alwaysVisible = false) {
+    const calloutGroup = new THREE.Group();
+    calloutGroup.renderOrder = 999;
+    group.add(calloutGroup);
+
+    const userScale = (window.AppState && window.AppState.dimTextScale) ? window.AppState.dimTextScale : 1.35;
+    const curColorNum = getCalloutColor();
+
+    const shelfMat = new THREE.LineBasicMaterial({
+      color: curColorNum,
+      linewidth: 2.2,
+      depthTest: false,
+      depthWrite: false
+    });
+
+    const shelfGeo = new THREE.BufferGeometry();
+    const shelfLine = new THREE.Line(shelfGeo, shelfMat);
+    shelfLine.renderOrder = 999;
+    calloutGroup.add(shelfLine);
+
+    let arrow = null;
+
+    function updateCallout(pos) {
+      const activeColor = getCalloutColor();
+      shelfMat.color.setHex(activeColor);
+
+      const distFromDefault = defaultPos ? pos.distanceTo(defaultPos) : pos.distanceTo(anchorPos);
+      if (!alwaysVisible && distFromDefault < 3.5) {
+        calloutGroup.visible = false;
+        return;
+      }
+      calloutGroup.visible = true;
+
+      const isRight = (pos.x >= anchorPos.x);
+      const shelfLen = 4.0 * userScale;
+      const shelfOffset = 11.5 * userScale;
+      const shelfX = isRight ? (pos.x - shelfOffset) : (pos.x + shelfOffset);
+      const kneeX = isRight ? (shelfX - shelfLen) : (shelfX + shelfLen);
+      const kneeY = pos.y;
+      const kneeZ = pos.z;
+
+      const pKnee = new THREE.Vector3(kneeX, kneeY, kneeZ);
+      const pShelf = new THREE.Vector3(shelfX, kneeY, kneeZ);
+      shelfGeo.setFromPoints([pKnee, pShelf]);
+
+      const dir = new THREE.Vector3().subVectors(anchorPos, pKnee);
+      const dist = dir.length();
+
+      if (arrow) {
+        calloutGroup.remove(arrow);
+        if (arrow.line && arrow.line.geometry) arrow.line.geometry.dispose();
+        if (arrow.cone && arrow.cone.geometry) arrow.cone.geometry.dispose();
+      }
+
+      if (dist > 1.0) {
+        dir.normalize();
+        const headLen = Math.min(6.0 * userScale, Math.max(3.2 * userScale, dist * 0.35));
+        const headWidth = Math.min(4.0 * userScale, headLen * 0.68);
+        arrow = new THREE.ArrowHelper(dir, pKnee, dist, activeColor, headLen, headWidth);
+        if (arrow.line) { arrow.line.material.depthTest = false; arrow.line.material.depthWrite = false; }
+        if (arrow.cone) { arrow.cone.material.depthTest = false; arrow.cone.material.depthWrite = false; }
+        arrow.renderOrder = 999;
+        calloutGroup.add(arrow);
+      }
+    }
+
+    updateCallout(sprite.position);
+
+    sprite.userData.calloutGroup = calloutGroup;
+    sprite.userData.updateLeader = updateCallout;
+    sprite.userData.onDrag = updateCallout;
   }
 
   function init(sceneRef) {
@@ -927,97 +991,32 @@ window.Roll3D = (function () {
     dimensionsGroup.add(group);
 
     const userScale = (window.AppState && window.AppState.dimTextScale) ? window.AppState.dimTextScale : 1.35;
-    const colorHex = '#0f172a'; // Đen than kỹ thuật sắc nét
-    const colorNum = 0x0f172a;
-
-    // Điểm mũi tên cắm vào đường răng cưa xé (ngay mép phải con tem trên dải rủ)
     const tipX = Math.min(webW / 2 - 0.5, labelRight + 0.5);
     const pTip = new THREE.Vector3(tipX, perfY, z);
 
-    // Điểm gấp khúc (Knee) mặc định chếch sang phải và hạ nhẹ 5mm
     const defaultKneeX = webW / 2 + 1.5 * userScale;
     const defaultKneeY = perfY - 5.0 * userScale;
     const shelfLen = 3.5 * userScale;
     const defaultShelfX = defaultKneeX + shelfLen;
     const defaultSpritePos = new THREE.Vector3(defaultShelfX + 13 * userScale, defaultKneeY, z + 0.2);
 
-    const lineMat = new THREE.LineBasicMaterial({
-      color: colorNum,
-      linewidth: 2.2,
-      depthTest: false,
-      depthWrite: false
-    });
-
-    const shelfGeo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(defaultKneeX, defaultKneeY, z),
-      new THREE.Vector3(defaultShelfX, defaultKneeY, z)
-    ]);
-    const shelfLine = new THREE.Line(shelfGeo, lineMat);
-    shelfLine.renderOrder = 999;
-    group.add(shelfLine);
-
-    // Mũi tên từ Knee chỉ vào Tip
-    let arrow = null;
-    function createArrow(fromPos, toPos) {
-      const dir = new THREE.Vector3().subVectors(toPos, fromPos);
-      const dist = dir.length();
-      if (dist < 0.5) return null;
-      dir.normalize();
-      const arrowHeadLen = Math.min(4.5 * userScale, dist * 0.45);
-      const arrowHeadWidth = Math.min(3.2 * userScale, dist * 0.32);
-      const a = new THREE.ArrowHelper(dir, fromPos, dist, colorNum, arrowHeadLen, arrowHeadWidth);
-      if (a.line) { a.line.material.depthTest = false; a.line.material.depthWrite = false; }
-      if (a.cone) { a.cone.material.depthTest = false; a.cone.material.depthWrite = false; }
-      a.renderOrder = 999;
-      return a;
-    }
-
-    arrow = createArrow(new THREE.Vector3(defaultKneeX, defaultKneeY, z), pTip);
-    if (arrow) group.add(arrow);
-
     const sprite = createCrispTextSprite('Răng cưa xé', '#0f172a', true, '#ffffff');
     sprite.position.copy(defaultSpritePos);
-
-    function updateCalloutGeometry(pos) {
-      let kneeX, kneeY, shelfX;
-      if (pos.x >= pTip.x) {
-        shelfX = pos.x - 11 * userScale;
-        kneeX = shelfX - shelfLen;
-        kneeY = pos.y;
-      } else {
-        shelfX = pos.x + 11 * userScale;
-        kneeX = shelfX + shelfLen;
-        kneeY = pos.y;
-      }
-      const pKneeNew = new THREE.Vector3(kneeX, kneeY, z);
-      const pShelfNew = new THREE.Vector3(shelfX, kneeY, z);
-      shelfGeo.setFromPoints([pKneeNew, pShelfNew]);
-
-      if (arrow) {
-        group.remove(arrow);
-        if (arrow.line && arrow.line.geometry) arrow.line.geometry.dispose();
-        if (arrow.cone && arrow.cone.geometry) arrow.cone.geometry.dispose();
-      }
-      arrow = createArrow(pKneeNew, pTip);
-      if (arrow) group.add(arrow);
-    }
 
     const S = window.AppState;
     if (S && S.dimOffsets && S.dimOffsets.perforation) {
       const off = S.dimOffsets.perforation;
       sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
-      updateCalloutGeometry(sprite.position);
     }
 
     sprite.userData = {
       isDimAnnotation: true,
       dimKey: 'perforation',
       defaultPos: defaultSpritePos.clone(),
-      anchorPos: defaultSpritePos.clone(),
-      onDrag: function (newPos) {
-        updateCalloutGeometry(newPos);
-      }
+      anchorPos: pTip.clone()
     };
+
+    attachDragLeaderCallout(group, sprite, pTip, defaultSpritePos, true);
 
     group.add(sprite);
     draggableSprites.push(sprite);
@@ -1097,14 +1096,13 @@ window.Roll3D = (function () {
     }
 
     const anchorPos = new THREE.Vector3(x, midY, z);
-    attachDragLeaderLine(group, sprite, anchorPos, colorNum);
-
     sprite.userData = {
       isDimAnnotation: true,
       dimKey: 'gapY',
       defaultPos: defaultPos.clone(),
       anchorPos: anchorPos.clone()
     };
+    attachDragLeaderCallout(group, sprite, anchorPos, defaultPos, false);
 
     group.add(sprite);
     draggableSprites.push(sprite);
@@ -1182,15 +1180,14 @@ window.Roll3D = (function () {
       sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
     }
 
-    const anchorPos = new THREE.Vector3(xLeft, y, z);
-    attachDragLeaderLine(group, sprite, anchorPos, colorNum);
-
+    const anchorPos = new THREE.Vector3((xLeft + xRight) / 2, y, z);
     sprite.userData = {
       isDimAnnotation: true,
       dimKey: 'margin',
       defaultPos: defaultPos.clone(),
       anchorPos: anchorPos.clone()
     };
+    attachDragLeaderCallout(group, sprite, anchorPos, defaultPos, false);
 
     group.add(sprite);
     draggableSprites.push(sprite);
@@ -1294,14 +1291,13 @@ window.Roll3D = (function () {
     }
 
     const anchorPos = new THREE.Vector3(faceX, centerY, 0);
-    attachDragLeaderLine(group, sprite, anchorPos, colorNum);
-
     sprite.userData = {
       isDimAnnotation: true,
       dimKey: 'core',
       defaultPos: defaultPos.clone(),
       anchorPos: anchorPos.clone()
     };
+    attachDragLeaderCallout(group, sprite, anchorPos, defaultPos, false);
 
     group.add(sprite);
     draggableSprites.push(sprite);
@@ -1367,14 +1363,13 @@ window.Roll3D = (function () {
       }
 
       const anchorPos = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
-      attachDragLeaderLine(group, sprite, anchorPos, colorNum);
-
       sprite.userData = {
         isDimAnnotation: true,
         dimKey: dimKey,
         defaultPos: defaultPos.clone(),
         anchorPos: anchorPos.clone()
       };
+      attachDragLeaderCallout(group, sprite, anchorPos, defaultPos, false);
       draggableSprites.push(sprite);
     }
 

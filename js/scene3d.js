@@ -247,6 +247,7 @@ window.Scene3D = (function () {
   }
 
   function setStudioBackground(theme) {
+    if (window.AppState) window.AppState.studioBg = theme;
     if (theme === 'dark') {
       scene.background = new THREE.Color(0x0a0f1d);
       if (ambientLight) ambientLight.intensity = 0.95;
@@ -255,6 +256,10 @@ window.Scene3D = (function () {
       scene.background = new THREE.Color(0xffffff);
       if (ambientLight) ambientLight.intensity = 1.4;
       if (dirLight) dirLight.intensity = 0.8;
+    }
+    // Cập nhật lại màu sắc mũi tên chú thích tức thì theo nền
+    if (window.Roll3D && typeof window.Roll3D.updateDimensions === 'function') {
+      window.Roll3D.updateDimensions();
     }
   }
 
