@@ -45,7 +45,8 @@ window.AppState = {
     gapY: true,   // Bước nhảy 2 hàng (mm)
     gapX: true,   // Cách nhau trên hàng (mm)
     margin: true, // Lề biên 2 bên (mm)
-    core: true    // Kích thước lõi cuộn
+    core: true,   // Kích thước lõi cuộn
+    perforation: true // Ghi chú Răng cưa xé
   },
 
   // Trạng thái hiển thị Bảng thông số đặt hàng trên 3D (HUD Spec Card)

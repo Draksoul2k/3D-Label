@@ -870,6 +870,72 @@ window.Roll3D = (function () {
         '#6366f1'
       );
     }
+
+    // =========================================================
+    // 7. GHI CHÚ RĂNG CƯA XÉ (MŨI TÊN CHỈ VÀO ĐƯỜNG RĂNG CƯA)
+    // =========================================================
+    if (S.hasPerforation && toggles.perforation !== false) {
+      const row0BottomY = targetLabelCenterY - S.labelHeight / 2;
+      const perfY = row0BottomY - S.gapY / 2;
+      drawPerforationCallout(webW, perfY, flapZ + 2.5, labelRight);
+    }
+  }
+
+  /**
+   * VẼ GHI CHÚ RĂNG CƯA XÉ (MŨI TÊN CHỈ VÀO ĐƯỜNG RĂNG CƯA & BADGE)
+   */
+  function drawPerforationCallout(webW, perfY, z, labelRight) {
+    const group = new THREE.Group();
+    group.renderOrder = 999;
+    dimensionsGroup.add(group);
+
+    const userScale = (window.AppState && window.AppState.dimTextScale) ? window.AppState.dimTextScale : 1.35;
+    const colorHex = '#0f172a'; // Đen than kỹ thuật sắc nét
+    const colorNum = 0x0f172a;
+
+    // Điểm mũi tên cắm vào đường răng cưa xé (ngay mép phải con tem trên dải rủ)
+    const tipX = Math.min(webW / 2 - 0.5, labelRight + 0.5);
+    const pTip = new THREE.Vector3(tipX, perfY, z);
+
+    // Điểm gấp khúc (Knee) chếch sang phải và hạ nhẹ 5mm
+    const kneeX = webW / 2 + 1.5 * userScale;
+    const kneeY = perfY - 5.0 * userScale;
+    const pKnee = new THREE.Vector3(kneeX, kneeY, z);
+
+    // Điểm kết thúc thanh gạch ngang (Shelf)
+    const shelfLen = 3.5 * userScale;
+    const pShelf = new THREE.Vector3(kneeX + shelfLen, kneeY, z);
+
+    const lineMat = new THREE.LineBasicMaterial({
+      color: colorNum,
+      linewidth: 2.2,
+      depthTest: false,
+      depthWrite: false
+    });
+
+    // 1. Thanh gạch chân ngang (Shelf line)
+    const shelfGeo = new THREE.BufferGeometry().setFromPoints([pKnee, pShelf]);
+    const shelfLine = new THREE.Line(shelfGeo, lineMat);
+    shelfLine.renderOrder = 999;
+    group.add(shelfLine);
+
+    // 2. Mũi tên từ pKnee chỉ thẳng vào pTip trên đường răng cưa
+    const dir = new THREE.Vector3().subVectors(pTip, pKnee);
+    const dist = dir.length();
+    dir.normalize();
+
+    const arrowHeadLen = Math.min(4.5 * userScale, dist * 0.45);
+    const arrowHeadWidth = Math.min(3.2 * userScale, dist * 0.32);
+    const arrow = new THREE.ArrowHelper(dir, pKnee, dist, colorNum, arrowHeadLen, arrowHeadWidth);
+    if (arrow.line) { arrow.line.material.depthTest = false; arrow.line.material.depthWrite = false; }
+    if (arrow.cone) { arrow.cone.material.depthTest = false; arrow.cone.material.depthWrite = false; }
+    arrow.renderOrder = 999;
+    group.add(arrow);
+
+    // 3. Sprite chữ "Răng cưa xé" gọn gàng, liền mạch ngay sau thanh gạch ngang
+    const sprite = createCrispTextSprite('Răng cưa xé', '#0f172a', true, '#ffffff');
+    sprite.position.set(pShelf.x + 13 * userScale, kneeY, z + 0.2);
+    group.add(sprite);
   }
 
   /**
@@ -1164,9 +1230,14 @@ window.Roll3D = (function () {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const fontSize = 54;
+    let fontSize = isSmall ? 44 : (text.length > 8 ? 46 : 54);
     ctx.font = `bold ${fontSize}px "Plus Jakarta Sans", "JetBrains Mono", sans-serif`;
-    const textWidth = ctx.measureText(text).width;
+    let textWidth = ctx.measureText(text).width;
+    if (textWidth > canvas.width - 70) {
+      fontSize = Math.floor(fontSize * (canvas.width - 70) / textWidth);
+      ctx.font = `bold ${fontSize}px "Plus Jakarta Sans", "JetBrains Mono", sans-serif`;
+      textWidth = ctx.measureText(text).width;
+    }
 
     // Vẽ nền badge viền mềm để không bị đường kẻ hay bề mặt 3D cắt xuyên qua
     const padX = 30;
