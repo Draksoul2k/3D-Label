@@ -902,14 +902,14 @@ window.Roll3D = (function () {
     // 2. MŨI TÊN ĐO CHIỀU CAO TEM (^ v 38mm / 30mm / 40mm)
     // =========================================================
     if (toggles.height !== false) {
-      draw2HeadArrow(
-        new THREE.Vector3(labelRight + 8, labelTop, flapZ + 2.5),
-        new THREE.Vector3(labelRight + 8, labelBottom, flapZ + 2.5),
+      drawLabelHeightDimension(
+        labelRight,
+        labelLeft,
+        labelTop,
+        labelBottom,
+        flapZ + 2.5,
         `${S.labelHeight}mm`,
-        '#1d4ed8',
-        'right',
-        false,
-        'height'
+        '#1d4ed8'
       );
     }
 
@@ -980,6 +980,148 @@ window.Roll3D = (function () {
       const perfY = row0BottomY - S.gapY / 2;
       drawPerforationCallout(webW, perfY, flapZ + 2.5, labelRight);
     }
+  }
+
+  /**
+   * VẼ THƯỚC ĐO CHIỀU CAO CON TEM (GẮN LIỀN TRỰC QUAN TRÊN CON TEM HOẶC DÓNG CỮ CAD)
+   */
+  function drawLabelHeightDimension(labelRight, labelLeft, labelTop, labelBottom, z, text, colorHex) {
+    const group = new THREE.Group();
+    group.renderOrder = 999;
+    dimensionsGroup.add(group);
+
+    const S = window.AppState || {};
+    const heightMode = S.heightDimPos || 'inside'; // 'inside': ngay trên con tem (trực quan), 'outside': ngoài mép có 2 đường dóng ngang CAD
+    const colorNum = parseInt(colorHex.replace('#', '0x'), 16) || 0x1d4ed8;
+    const lineMat = new THREE.LineBasicMaterial({ color: colorNum, linewidth: 2, depthTest: false, depthWrite: false });
+    const userScale = S.dimTextScale || 1.35;
+    const midY = (labelTop + labelBottom) / 2;
+    const labelHeight = Math.abs(labelTop - labelBottom);
+    const labelWidth = Math.abs(labelRight - labelLeft);
+
+    let arrowX;
+    let anchorPos;
+    let defaultSpritePos;
+
+    if (heightMode === 'inside') {
+      // MẶC ĐỊNH: ĐO TRỰC QUAN NGAY BÊN TRONG CON TEM (DỌC THEO MÉP PHẢI)
+      // Mũi tên nằm gọn trong con tem, tương tự như mũi tên chiều rộng nằm ngang trên con tem
+      const inset = Math.min(5.0, Math.max(3.0, labelWidth * 0.12));
+      arrowX = labelRight - inset;
+      anchorPos = new THREE.Vector3(arrowX, midY, z);
+
+      // 1. Hai vạch cữ ngang kỹ thuật (ticks) chặn khít mép trên và mép dưới con tem
+      const tickW = 3.5;
+      const topTickGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(arrowX - tickW / 2, labelTop, z),
+        new THREE.Vector3(arrowX + tickW / 2, labelTop, z)
+      ]);
+      const botTickGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(arrowX - tickW / 2, labelBottom, z),
+        new THREE.Vector3(arrowX + tickW / 2, labelBottom, z)
+      ]);
+      const topTick = new THREE.Line(topTickGeo, lineMat);
+      const botTick = new THREE.Line(botTickGeo, lineMat);
+      topTick.renderOrder = 999;
+      botTick.renderOrder = 999;
+      group.add(topTick);
+      group.add(botTick);
+
+      // 2. Đường kẻ dọc nối 2 vạch
+      const lineGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(arrowX, labelTop, z),
+        new THREE.Vector3(arrowX, labelBottom, z)
+      ]);
+      const line = new THREE.Line(lineGeo, lineMat);
+      line.renderOrder = 999;
+      group.add(line);
+
+      // 3. Hai đầu mũi tên 2 chiều chạm khít mép trên và mép dưới con tem
+      if (labelHeight > 5) {
+        const arrowLen = Math.min(4.5, labelHeight * 0.22);
+        const arrowW = Math.min(3.0, arrowLen * 0.7);
+        const aTop = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(arrowX, labelTop - arrowLen, z), arrowLen, colorNum, arrowLen, arrowW);
+        const aBot = new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(arrowX, labelBottom + arrowLen, z), arrowLen, colorNum, arrowLen, arrowW);
+        [aTop, aBot].forEach(a => {
+          if (a.line) { a.line.material.depthTest = false; a.line.material.depthWrite = false; }
+          if (a.cone) { a.cone.material.depthTest = false; a.cone.material.depthWrite = false; }
+          a.renderOrder = 999;
+          group.add(a);
+        });
+      }
+
+      // Vị trí mặc định: đặt bên ngoài mép phải tem để không che mặt tem, có leader callout chỉ thẳng vào mũi tên trên tem
+      defaultSpritePos = new THREE.Vector3(labelRight + 12 * userScale, midY, z + 0.2);
+
+    } else {
+      // BẢN VẼ KỸ THUẬT CAD: MŨI TÊN Ở NGOÀI KÈM 2 ĐƯỜNG DÓNG NGANG TỪ CON TEM SANG
+      arrowX = labelRight + 5.0;
+      anchorPos = new THREE.Vector3(arrowX, midY, z);
+
+      // 1. Hai đường dóng ngang (Extension Lines) chạy từ mép tem sang mũi tên
+      const extMat = new THREE.LineBasicMaterial({ color: colorNum, linewidth: 1.5, depthTest: false, depthWrite: false });
+      const topExtGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(labelRight - 1.5, labelTop, z),
+        new THREE.Vector3(arrowX + 2.5, labelTop, z)
+      ]);
+      const botExtGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(labelRight - 1.5, labelBottom, z),
+        new THREE.Vector3(arrowX + 2.5, labelBottom, z)
+      ]);
+      const topExt = new THREE.Line(topExtGeo, extMat);
+      const botExt = new THREE.Line(botExtGeo, extMat);
+      topExt.renderOrder = 999;
+      botExt.renderOrder = 999;
+      group.add(topExt);
+      group.add(botExt);
+
+      // 2. Đường kẻ dọc kích thước
+      const lineGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(arrowX, labelTop, z),
+        new THREE.Vector3(arrowX, labelBottom, z)
+      ]);
+      const line = new THREE.Line(lineGeo, lineMat);
+      line.renderOrder = 999;
+      group.add(line);
+
+      // 3. Hai đầu mũi tên chỉ vào 2 đường dóng ngang
+      if (labelHeight > 5) {
+        const arrowLen = Math.min(4.5, labelHeight * 0.22);
+        const arrowW = Math.min(3.0, arrowLen * 0.7);
+        const aTop = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(arrowX, labelTop - arrowLen, z), arrowLen, colorNum, arrowLen, arrowW);
+        const aBot = new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(arrowX, labelBottom + arrowLen, z), arrowLen, colorNum, arrowLen, arrowW);
+        [aTop, aBot].forEach(a => {
+          if (a.line) { a.line.material.depthTest = false; a.line.material.depthWrite = false; }
+          if (a.cone) { a.cone.material.depthTest = false; a.cone.material.depthWrite = false; }
+          a.renderOrder = 999;
+          group.add(a);
+        });
+      }
+
+      defaultSpritePos = new THREE.Vector3(arrowX + 11 * userScale, midY, z + 0.2);
+    }
+
+    // 4. Sprite chữ hiển thị kích thước chiều cao ("30mm")
+    const sprite = createCrispTextSprite(text, colorHex, false, '#ffffff');
+    sprite.position.copy(defaultSpritePos);
+
+    if (S && S.dimOffsets && S.dimOffsets.height) {
+      const off = S.dimOffsets.height;
+      sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
+    }
+
+    sprite.userData = {
+      isDimAnnotation: true,
+      dimKey: 'height',
+      defaultPos: defaultSpritePos.clone(),
+      anchorPos: anchorPos.clone()
+    };
+
+    // Khi ở chế độ 'inside', có mũi tên leader luôn chỉ vào thước đo trên tem để người dùng nhìn là thấy ngay mối liên kết
+    attachDragLeaderCallout(group, sprite, anchorPos, defaultSpritePos, (heightMode === 'inside'));
+
+    group.add(sprite);
+    draggableSprites.push(sprite);
   }
 
   /**

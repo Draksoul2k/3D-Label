@@ -48,6 +48,7 @@ window.AppState = {
     core: true,   // Kích thước lõi cuộn
     perforation: true // Ghi chú Răng cưa xé
   },
+  heightDimPos: 'inside', // 'inside' (trên con tem, dễ nhìn trực quan), 'outside' (ngoài mép có dóng cữ CAD)
   dimOffsets: {}, // Lưu vị trí dịch chuyển thủ công của các chú thích thước đo 3D
 
   // Trạng thái hiển thị Bảng thông số đặt hàng trên 3D (HUD Spec Card)
@@ -1725,6 +1726,41 @@ function initEventListeners() {
     const btnDropdown = document.getElementById('btn-dims-dropdown-toggle');
     if (btnDims) btnDims.classList.toggle('active', S.show3DDimensions);
     if (btnDropdown) btnDropdown.classList.toggle('active', S.show3DDimensions);
+
+    syncHeightDimPosUI();
+  }
+
+  function syncHeightDimPosUI() {
+    const btnInside = document.getElementById('btn-dim-height-inside');
+    const btnOutside = document.getElementById('btn-dim-height-outside');
+    if (!btnInside || !btnOutside) return;
+    const isInside = (S.heightDimPos !== 'outside');
+    if (isInside) {
+      btnInside.className = 'px-2 py-0.5 text-[10px] font-bold rounded-l border border-blue-500 bg-blue-600 text-white transition';
+      btnOutside.className = 'px-2 py-0.5 text-[10px] rounded-r border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
+    } else {
+      btnInside.className = 'px-2 py-0.5 text-[10px] rounded-l border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
+      btnOutside.className = 'px-2 py-0.5 text-[10px] font-bold rounded-r border border-blue-500 bg-blue-600 text-white transition';
+    }
+  }
+
+  const btnHeightInside = document.getElementById('btn-dim-height-inside');
+  const btnHeightOutside = document.getElementById('btn-dim-height-outside');
+  if (btnHeightInside) {
+    btnHeightInside.addEventListener('click', (e) => {
+      e.stopPropagation();
+      S.heightDimPos = 'inside';
+      syncHeightDimPosUI();
+      if (window.Roll3D) window.Roll3D.updateDimensions();
+    });
+  }
+  if (btnHeightOutside) {
+    btnHeightOutside.addEventListener('click', (e) => {
+      e.stopPropagation();
+      S.heightDimPos = 'outside';
+      syncHeightDimPosUI();
+      if (window.Roll3D) window.Roll3D.updateDimensions();
+    });
   }
 
   // Lắng nghe click các nút mắt ở thanh sidebar bên trái
