@@ -1,0 +1,2146 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Roll Label & Maket Studio | Thiết Kế & Mô Phỏng Cuộn Tem 3D Trực Quan</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 6 -->
+  <!-- Google Fonts for Packaging & Label Design -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Bebas+Neue&family=Dancing+Script:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Montserrat:wght@500;600;700;800&family=Oswald:wght@500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- Three.js & Controls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  
+  <!-- Barcode & QR Code generators -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="js/bwip-js-min.js"></script>
+  
+  <!-- HTML2Canvas for export (Local for 100% offline reliability) -->
+  <script src="js/html2canvas.min.js"></script>
+
+  <script>
+    window.addEventListener('error', function(e) {
+      console.error('LỖI JAVASCRIPT:', e);
+      const b = document.getElementById('debug-err-banner');
+      if (b) {
+        b.innerHTML = '⚠️ <b>Lỗi hiển thị:</b> ' + e.message + ' <i>(' + (e.filename ? e.filename.split('/').pop() : '') + ':' + e.lineno + ')</i>';
+        b.style.display = 'block';
+      }
+    });
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 flex flex-col h-screen overflow-hidden">
+  <div id="debug-err-banner" style="display:none; background:#dc2626; color:#ffffff; padding:8px 16px; font-size:12px; font-family:monospace; z-index:999999; text-align:center; position:fixed; top:0; left:0; right:0;"></div>
+
+  <!-- TOP NAVBAR -->
+  <!-- TOP NAVBAR WITH SEGMENTED TABS & ACTIONS -->
+  <header class="h-14 bg-slate-900/95 backdrop-blur border-b border-slate-800 flex items-center justify-between px-2.5 sm:px-4 z-30 shrink-0 select-none">
+    <!-- LEFT: BRANDING -->
+    <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
+      <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/25">
+        <i class="fa-solid fa-scroll text-sm sm:text-base"></i>
+      </div>
+      <div>
+        <h1 class="font-bold text-xs sm:text-sm lg:text-base tracking-tight text-white flex items-center gap-1 leading-none">
+          3D ROLL STUDIO
+          <span class="text-[8px] sm:text-[9px] uppercase font-bold px-1 sm:px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">PRO</span>
+        </h1>
+        <p class="hidden sm:block text-[10px] sm:text-[11px] text-slate-400 leading-tight mt-0.5">Mô phỏng cuộn tem & Maket kỹ thuật</p>
+      </div>
+    </div>
+
+    <!-- CENTER: SEGMENTED NAVIGATION TABS (DESKTOP) -->
+    <nav class="hidden md:flex items-center bg-slate-950/90 p-1 rounded-xl border border-slate-800 shadow-inner shrink-0" id="main-nav-tabs">
+      <button class="main-tab-btn active px-3.5 py-1.5 text-xs lg:text-sm font-semibold" data-view="view-3d">
+        <i class="fa-solid fa-cube text-blue-400"></i>
+        <span>1. Mô Phỏng 3D</span>
+      </button>
+      <button class="main-tab-btn px-3.5 py-1.5 text-xs lg:text-sm font-semibold" data-view="view-designer" id="main-tab-designer-btn">
+        <i class="fa-solid fa-pen-ruler text-amber-400"></i>
+        <span>2. Thiết Kế Tem 2D</span>
+      </button>
+      <button class="main-tab-btn px-3.5 py-1.5 text-xs lg:text-sm font-semibold" data-view="view-blueprint">
+        <i class="fa-solid fa-compass-drafting text-cyan-400"></i>
+        <span>3. Bản Vẽ Kỹ Thuật</span>
+      </button>
+      <button class="main-tab-btn px-3.5 py-1.5 text-xs lg:text-sm font-semibold" data-view="view-proof">
+        <i class="fa-solid fa-file-invoice text-emerald-400"></i>
+        <span>4. Phiếu Duyệt</span>
+      </button>
+    </nav>
+
+    <!-- RIGHT: PRESET SELECTOR & EXPORT ACTIONS -->
+    <div class="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
+      <div class="flex items-center space-x-1 sm:space-x-1.5 bg-slate-800/80 px-2 sm:px-2.5 py-1 rounded-lg border border-slate-700/80 shadow-sm">
+        <span class="text-xs text-slate-300 font-semibold flex items-center gap-1 whitespace-nowrap">
+          <i class="fa-solid fa-bookmark text-blue-400 text-[11px]"></i>
+          <span class="hidden xl:inline text-[11px]">Mẫu sẵn:</span>
+        </span>
+        <select id="preset-selector" class="bg-slate-900 text-[11px] sm:text-xs text-slate-100 border border-slate-700 rounded focus:ring-1 focus:ring-blue-500 py-0.5 sm:py-1 px-1.5 sm:px-2 cursor-pointer font-medium max-w-[110px] sm:max-w-[170px] lg:max-w-[230px] truncate" style="background-color: #0f172a; color: #f8fafc;">
+          <optgroup id="optgroup-custom-presets" label="⭐ Mẫu Đã Lưu Của Tôi" class="hidden" style="background-color: #1e293b; color: #fbbf24; font-weight: bold;"></optgroup>
+          <optgroup label="🏪 Tem Siêu Thị & Mã Vạch Bán Lẻ" style="background-color: #1e293b; color: #60a5fa; font-weight: bold;">
+            <option value="retail_50x30_1up" selected style="background-color: #0f172a; color: #ffffff;">50 x 30 mm (1 tem/hàng - Mặc định)</option>
+            <option value="retail_50x30_2up" style="background-color: #0f172a; color: #ffffff;">50 x 30 mm (2 tem/hàng)</option>
+            <option value="supermarket_35x22_3up" style="background-color: #0f172a; color: #ffffff;">35 x 22 mm (3 tem/hàng)</option>
+            <option value="barcode_35x22_2up" style="background-color: #0f172a; color: #ffffff;">35 x 22 mm (2 tem/hàng)</option>
+            <option value="jewelry_25x15_4up" style="background-color: #0f172a; color: #ffffff;">25 x 15 mm (4 tem/hàng)</option>
+            <option value="pharma_40x30_2up" style="background-color: #0f172a; color: #ffffff;">40 x 30 mm (2 tem/hàng)</option>
+          </optgroup>
+          <optgroup label="🚚 Tem Vận Đơn TMĐT & Thùng Hàng" style="background-color: #1e293b; color: #34d399; font-weight: bold;">
+            <option value="shipping_100x150_1up" style="background-color: #0f172a; color: #ffffff;">100 x 150 mm (1 tem/hàng - A6)</option>
+            <option value="shipping_100x100_1up" style="background-color: #0f172a; color: #ffffff;">100 x 100 mm (1 tem/hàng)</option>
+            <option value="carton_100x75_1up" style="background-color: #0f172a; color: #ffffff;">100 x 75 mm (1 tem/hàng)</option>
+            <option value="product_80x50_1up" style="background-color: #0f172a; color: #ffffff;">80 x 50 mm (1 tem/hàng)</option>
+          </optgroup>
+          <optgroup label="🧋 Tem Trà Sữa & Đồ Uống Takeaway" style="background-color: #1e293b; color: #fbbf24; font-weight: bold;">
+            <option value="bubble_tea_50x30_1up" style="background-color: #0f172a; color: #ffffff;">50 x 30 mm (1 tem/hàng)</option>
+            <option value="cup_50x40_1up" style="background-color: #0f172a; color: #ffffff;">50 x 40 mm (1 tem/hàng)</option>
+          </optgroup>
+          <optgroup label="📐 Bản Vẽ Kỹ Thuật & Tem Tròn Niêm Phong" style="background-color: #1e293b; color: #c084fc; font-weight: bold;">
+            <option value="technical_25x38_4up" style="background-color: #0f172a; color: #ffffff;">25 x 38 mm (4 tem/hàng, Lõi 30mm)</option>
+            <option value="round_seal_40_2up" style="background-color: #0f172a; color: #ffffff;">Ø 40 mm (2 tem/hàng)</option>
+            <option value="round_seal_50_1up" style="background-color: #0f172a; color: #ffffff;">Ø 50 mm (1 tem/hàng)</option>
+          </optgroup>
+        </select>
+        <button id="btn-save-custom-preset" class="hidden sm:flex bg-blue-600 hover:bg-blue-500 text-white text-xs px-2 sm:px-2.5 py-1 rounded items-center gap-1 font-medium transition shadow-sm" title="Lưu thông số hiện tại thành mẫu mới">
+          <i class="fa-solid fa-floppy-disk text-blue-200"></i>
+          <span class="hidden md:inline">Lưu Mẫu</span>
+        </button>
+      </div>
+
+      <button id="btn-snap-3d" class="flex bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-xs px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg text-slate-200 items-center gap-1 sm:gap-1.5 font-medium transition shadow-sm" title="Xuất ảnh tùy chọn kích thước (600x600, 800x800, Tùy chỉnh...)">
+        <i class="fa-solid fa-camera text-emerald-400"></i>
+        <span class="hidden md:inline">Xuất Ảnh</span>
+      </button>
+
+      <button id="btn-open-proof" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs px-2.5 sm:px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 font-semibold transition shadow-md shadow-blue-600/30 shrink-0">
+        <i class="fa-solid fa-file-signature"></i>
+        <span class="hidden sm:inline">Xuất Phiếu Duyệt</span>
+        <span class="sm:hidden text-[11px]">Xuất Phiếu</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN 3-PANEL WORKSPACE -->
+  <div class="flex-1 flex overflow-hidden pb-14 md:pb-0 relative">
+
+    <!-- BACKDROP FOR MOBILE ASIDE -->
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-40 hidden md:hidden transition-opacity"></div>
+
+    <!-- LEFT PANEL: PARAMETERS & COLORS (340px) -->
+    <aside id="sidebar-params" class="w-[88vw] max-w-[360px] md:w-80 lg:w-[350px] bg-slate-900 border-r border-slate-800 flex flex-col overflow-y-auto shrink-0 select-none fixed inset-y-0 left-0 z-50 transform -translate-x-full transition-transform duration-300 md:static md:translate-x-0 md:z-10 shadow-2xl md:shadow-none" style="background-color: #0f172a !important;">
+      
+      <!-- MOBILE HEADER BAR IN SIDEBAR -->
+      <div class="md:hidden flex items-center justify-between px-4 py-3 bg-slate-950 border-b border-slate-800 sticky top-0 z-20 shrink-0">
+        <span class="font-bold text-xs uppercase tracking-wider text-white flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-blue-400"></i> Thông Số Cuộn & Tem
+        </span>
+        <button type="button" id="btn-close-sidebar-mobile" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-md shadow-blue-600/30 active:scale-95 transition">
+          <i class="fa-solid fa-check"></i> Xong (Xem 3D)
+        </button>
+      </div>
+
+      <div class="p-3.5 space-y-4">
+
+        <!-- THANH CÔNG CỤ NHANH MỤC 1: LƯU MẪU TEM & RESET TEM TRẮNG -->
+        <div class="flex items-center justify-between bg-slate-800/80 px-3 py-2 rounded-xl border border-slate-700/80 shadow-sm gap-2">
+          <button id="btn-sidebar-reset-blank" class="flex-1 bg-rose-950/60 hover:bg-rose-900 text-rose-200 border border-rose-700/60 hover:border-rose-500 text-xs px-2.5 py-1.5 rounded-lg flex items-center justify-center gap-1.5 font-bold transition shadow-sm" title="Xóa toàn bộ thiết kế & khung, đưa về tem trắng tinh">
+            <i class="fa-solid fa-rotate-left text-rose-400"></i>
+            <span>Xóa Trắng</span>
+          </button>
+          <button id="btn-sidebar-save-preset" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-semibold transition shadow-md shadow-blue-600/30 shrink-0" title="Lưu thông số hiện tại thành mẫu sẵn để dùng lại">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Lưu Mẫu</span>
+          </button>
+        </div>
+
+        <!-- SECTION 1: CHẤT LIỆU DECAL -->
+        <div class="bg-slate-800/60 rounded-xl p-3 border border-slate-700/60 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-layer-group"></i> 1. Chất Liệu Decal
+            </span>
+            <span id="badge-material-selected" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">Giấy thường</span>
+          </div>
+          <div class="grid grid-cols-2 gap-1.5" id="material-selector">
+            <button type="button" class="material-btn active text-left p-2 rounded-lg border border-emerald-500 bg-emerald-950/40 text-white transition hover:border-emerald-400 flex flex-col cursor-pointer" data-material="paper_normal">
+              <span class="font-bold text-[11px] text-emerald-300 flex items-center gap-1"><i class="fa-solid fa-scroll text-[10px]"></i> Giấy thường</span>
+              <span class="text-[9px] text-slate-400">(Xé rách được)</span>
+            </button>
+            <button type="button" class="material-btn text-left p-2 rounded-lg border border-slate-700 bg-slate-900/60 text-slate-300 transition hover:border-slate-500 flex flex-col cursor-pointer" data-material="paper_thermal">
+              <span class="font-bold text-[11px] text-amber-300 flex items-center gap-1"><i class="fa-solid fa-fire text-[10px]"></i> Giấy nhiệt</span>
+              <span class="text-[9px] text-slate-400">(Xé rách được)</span>
+            </button>
+            <button type="button" class="material-btn text-left p-2 rounded-lg border border-slate-700 bg-slate-900/60 text-slate-300 transition hover:border-slate-500 flex flex-col cursor-pointer" data-material="pvc">
+              <span class="font-bold text-[11px] text-cyan-300 flex items-center gap-1"><i class="fa-solid fa-shield-halved text-[10px]"></i> PVC</span>
+              <span class="text-[9px] text-slate-400">(Xé không rách)</span>
+            </button>
+            <button type="button" class="material-btn text-left p-2 rounded-lg border border-slate-700 bg-slate-900/60 text-slate-300 transition hover:border-slate-500 flex flex-col cursor-pointer" data-material="silver">
+              <span class="font-bold text-[11px] text-slate-200 flex items-center gap-1"><i class="fa-solid fa-certificate text-[10px] text-slate-400"></i> Xi bạc</span>
+              <span class="text-[9px] text-slate-400">(Ánh kim sang trọng)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SECTION 2: KÍCH THƯỚC CON TEM (W x H) -->
+        <div class="bg-slate-800/60 rounded-xl p-3 border border-slate-700/60 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-ruler-combined"></i> 2. Kích Thước Con Tem
+            </span>
+            <span id="badge-label-dims" class="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">50 x 30 mm</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="text-[11px] text-slate-300 font-medium block mb-1">Chiều ngang (W mm)</label>
+              <input type="number" id="input-label-w" value="50" min="10" max="300" step="1" class="font-mono font-semibold" placeholder="Ngang">
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-300 font-medium block mb-1">Chiều cao (H mm)</label>
+              <input type="number" id="input-label-h" value="30" min="10" max="300" step="1" class="font-mono font-semibold" placeholder="Cao">
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: QUY CÁCH (BO GÓC & SỐ TEM/HÀNG) -->
+        <div class="bg-slate-800/60 rounded-xl p-3 border border-slate-700/60 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-shapes"></i> 3. Quy Cách Con Tem
+            </span>
+            <span id="badge-spec-summary" class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800">Bo góc R2 - 1 tem/hàng</span>
+          </div>
+
+          <!-- Bo góc: Góc vuông, R1, R2, R3, Khác -->
+          <div>
+            <label class="text-[11px] text-slate-400 block mb-1">Bo góc viền (Radius R):</label>
+            <div class="grid grid-cols-5 gap-1 text-[11px]" id="corner-preset-selector">
+              <button type="button" class="corner-preset-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 text-center font-medium" data-r="0">Vuông</button>
+              <button type="button" class="corner-preset-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 text-center font-medium" data-r="1">R1</button>
+              <button type="button" class="corner-preset-btn active py-1.5 rounded bg-blue-600 text-white font-bold border border-blue-500 text-center" data-r="2">R2</button>
+              <button type="button" class="corner-preset-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 text-center font-medium" data-r="3">R3</button>
+              <button type="button" id="btn-corner-custom" class="corner-preset-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 text-center font-medium" data-r="custom">Khác</button>
+            </div>
+
+            <!-- Thanh trượt khi cần chỉnh chi tiết -->
+            <div id="corner-custom-wrapper" class="hidden mt-2 pt-2 border-t border-slate-800">
+              <div class="flex justify-between items-center text-[11px] text-slate-400 mb-1">
+                <span>Bán kính bo góc (R mm)</span>
+                <span id="val-radius" class="font-mono text-blue-400 font-semibold">2 mm</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="range" id="input-radius" min="0" max="25" step="0.5" value="2" class="w-full">
+                <input type="number" id="input-radius-num" min="0" max="25" step="0.5" value="2" class="w-16 font-mono text-xs">
+              </div>
+            </div>
+          </div>
+
+          <!-- Số con tem trên 1 hàng (Ups) -->
+          <div>
+            <label class="text-[11px] text-slate-400 block mb-1">Số tem trên 1 hàng (Ups):</label>
+            <div class="grid grid-cols-4 gap-1.5" id="ups-selector">
+              <button type="button" class="ups-btn active py-1.5 rounded bg-blue-600 text-white border border-blue-500 text-xs font-bold" data-ups="1">1 Tem</button>
+              <button type="button" class="ups-btn py-1.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold hover:bg-slate-700" data-ups="2">2 Tem</button>
+              <button type="button" class="ups-btn py-1.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold hover:bg-slate-700" data-ups="3">3 Tem</button>
+              <button type="button" class="ups-btn py-1.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold hover:bg-slate-700" data-ups="4">4 Tem</button>
+            </div>
+          </div>
+
+          <!-- Khoảng cách bế & răng cưa -->
+          <div class="grid grid-cols-2 gap-2 text-[11px] pt-1">
+            <div>
+              <label class="text-amber-300 font-medium block mb-1">Bước nhảy 2 hàng (Gap Y)</label>
+              <input type="number" id="input-gap-y" value="3" min="0" max="20" step="0.5" class="font-mono border-amber-500/40 text-xs py-1">
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-1">Cách trên hàng (Gap X)</label>
+              <input type="number" id="input-gap-x" value="0" min="0" max="20" step="0.5" class="font-mono text-xs py-1">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-[11px]">
+            <div>
+              <label class="text-slate-400 block mb-1">Lề biên 2 bên (Margin)</label>
+              <input type="number" id="input-margin-x" value="2" min="0" max="15" step="0.5" class="font-mono text-xs py-1">
+            </div>
+            <div class="flex items-end pb-1">
+              <label class="flex items-center space-x-1.5 cursor-pointer">
+                <input type="checkbox" id="check-perforation" checked class="rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0">
+                <span class="text-[11px] text-slate-300">Đường răng cưa</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 4: CHIỀU DÀI CUỘN & SỐ TEM ƯỚC TÍNH (HAI CHIỀU THÔNG MINH) -->
+        <div class="bg-slate-800/60 rounded-xl p-3 border border-slate-700/60 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-tape"></i> 4. Chiều Dài & Số Tem Cuộn
+            </span>
+            <span class="text-[9px] text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/60 font-semibold">Đặt theo mét hoặc theo tem</span>
+          </div>
+
+          <!-- Nút chọn nhanh chiều dài -->
+          <div>
+            <label class="text-[11px] text-slate-400 block mb-1">Chọn nhanh chiều dài:</label>
+            <div class="grid grid-cols-3 gap-1.5 text-xs" id="length-preset-selector">
+              <button type="button" class="length-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-semibold text-center" data-m="30">30m / cuộn</button>
+              <button type="button" class="length-btn active py-1.5 rounded bg-amber-600 text-white font-bold border border-amber-500 text-center" data-m="50">50m / cuộn</button>
+              <button type="button" class="length-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-semibold text-center" data-m="100">100m / cuộn</button>
+            </div>
+          </div>
+
+          <!-- Nhập tay 2 chiều: số mét HOẶC số tem/cuộn -->
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="text-[11px] text-slate-300 font-medium block mb-1">Chiều dài cuộn (m)</label>
+              <input type="number" id="input-roll-length" value="50" min="5" max="500" step="5" class="font-mono font-bold text-amber-400">
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-300 font-medium block mb-1">Số tem / cuộn (tem)</label>
+              <input type="number" id="input-label-count" value="1515" min="50" max="100000" step="50" class="font-mono font-bold text-cyan-300">
+            </div>
+          </div>
+
+          <!-- Hộp hiển thị số tem ước tính nổi bật -->
+          <div class="bg-slate-900/90 rounded-lg p-2.5 border border-amber-500/30 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs shrink-0">
+                <i class="fa-solid fa-calculator"></i>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 block">Số tem ước tính:</span>
+                <span id="badge-label-count-est" class="text-xs font-bold text-emerald-400 font-mono">khoảng 1.515 tem / cuộn</span>
+              </div>
+            </div>
+            <span id="badge-od-est" class="text-[10px] font-mono text-slate-400 shrink-0">OD: ~98mm</span>
+          </div>
+        </div>
+
+        <!-- SECTION 5: LÕI CUỘN (CORE) -->
+        <div class="bg-slate-800/60 rounded-xl p-3 border border-slate-700/60 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-circle-notch"></i> 5. Lõi Cuộn (Core)
+            </span>
+            <span id="badge-core-size" class="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800">1 inch (25.4mm)</span>
+          </div>
+
+          <div class="grid grid-cols-4 gap-1 text-[11px]" id="core-selector">
+            <button type="button" class="core-btn active py-1.5 rounded bg-amber-600 text-white font-bold border border-amber-500 text-center" data-core="25.4" data-name="1 inch">1 inch (25mm)</button>
+            <button type="button" class="core-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 text-center font-medium" data-core="76.2" data-name="3 inch">3 inch (76mm)</button>
+            <button type="button" class="core-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 text-center font-medium" data-core="30" data-name="30mm">30mm</button>
+            <button type="button" id="btn-core-custom" class="core-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 text-center font-medium" data-core="custom" data-name="Tự nhập">Tự nhập</button>
+          </div>
+
+          <!-- Ô TỰ NHẬP KÍCH THƯỚC LÕI -->
+          <div id="custom-core-wrapper" class="mt-2 hidden">
+            <div class="flex items-center gap-2 bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-amber-500/50">
+              <label for="input-custom-core" class="text-[11px] text-amber-300 font-medium whitespace-nowrap"><i class="fa-solid fa-pen-to-square"></i> Lõi tùy chỉnh:</label>
+              <input type="number" id="input-custom-core" value="40" min="10" max="250" step="1" class="w-full text-center font-mono font-bold text-amber-400 py-1 bg-slate-800 rounded border border-slate-600 focus:border-amber-400 focus:outline-none text-xs">
+              <span class="text-xs text-slate-400 font-mono font-bold">mm</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 6: MÀU NỀN CON TEM -->
+        <div class="bg-slate-800/60 rounded-xl p-3 border border-slate-700/60 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-pink-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-palette"></i> 6. Màu Nền Con Tem
+            </span>
+            <span id="badge-color-preview" class="w-4 h-4 rounded-full border border-white/40 inline-block shadow-sm" style="background-color: #FFFFFF;"></span>
+          </div>
+
+          <!-- 4 nút chọn nhanh theo yêu cầu: trắng - xanh - đỏ - in phôi sẵn -->
+          <div class="grid grid-cols-4 gap-1 text-[11px]" id="color-preset-selector">
+            <button type="button" class="color-mode-btn active py-1.5 px-1 rounded bg-white text-slate-900 font-bold border border-white text-center shadow-sm cursor-pointer" data-mode="white" data-hex="#FFFFFF">
+              ⚪ Trắng
+            </button>
+            <button type="button" class="color-mode-btn py-1.5 px-1 rounded bg-blue-600 text-white font-bold border border-blue-500 text-center shadow-sm cursor-pointer" data-mode="blue" data-hex="#2563EB">
+              🔵 Xanh
+            </button>
+            <button type="button" class="color-mode-btn py-1.5 px-1 rounded bg-red-600 text-white font-bold border border-red-500 text-center shadow-sm cursor-pointer" data-mode="red" data-hex="#DC2626">
+              🔴 Đỏ
+            </button>
+            <button type="button" class="color-mode-btn py-1.5 px-1 rounded bg-slate-800 text-amber-300 font-bold border border-amber-500/60 text-center shadow-sm hover:bg-slate-700 cursor-pointer" data-mode="preprint">
+              📋 Phôi sẵn
+            </button>
+          </div>
+
+          <!-- Chọn mã màu HEX tự do -->
+          <div class="flex items-center gap-2 pt-1">
+            <input type="color" id="picker-label-color" value="#FFFFFF" class="w-9 h-8 p-0 rounded border border-slate-600 bg-transparent cursor-pointer">
+            <div class="relative flex-1">
+              <span class="absolute left-2.5 top-1.5 text-xs text-slate-500 font-mono">#</span>
+              <input type="text" id="input-hex-color" value="FFFFFF" maxlength="6" class="pl-6 font-mono uppercase font-bold text-xs" placeholder="Mã HEX">
+            </div>
+            <!-- Màu đế giấy ẩn gọn -->
+            <input type="hidden" id="select-liner-color" value="#FFFFFF">
+            <input type="hidden" id="select-material-finish" value="matte">
+          </div>
+        </div>
+
+        <!-- SECTION 7: THỜI GIAN SẢN XUẤT (SX) -->
+        <div class="bg-slate-800/60 rounded-xl p-3 border border-slate-700/60 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-teal-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-clock-rotate-left"></i> 7. Thời Gian Sản Xuất
+            </span>
+            <span id="badge-lead-time" class="text-[11px] font-bold px-2 py-0.5 rounded bg-teal-950 text-teal-300 border border-teal-800">3 ngày</span>
+          </div>
+
+          <!-- Nút chọn nhanh và ô nhập tay số ngày -->
+          <div class="flex items-center gap-1.5">
+            <div class="grid grid-cols-3 gap-1 flex-1 text-xs" id="leadtime-preset-selector">
+              <button type="button" class="leadtime-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center" data-days="1">1 ngày (Gấp)</button>
+              <button type="button" class="leadtime-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center" data-days="2">2 ngày</button>
+              <button type="button" class="leadtime-btn active py-1.5 rounded bg-teal-600 text-white font-bold border border-teal-500 text-center" data-days="3">3 ngày (Chuẩn)</button>
+            </div>
+            <div class="w-24 shrink-0 flex items-center bg-slate-900 rounded-lg border border-slate-700 px-2 py-1">
+              <input type="number" id="input-lead-time" value="3" min="1" max="60" step="1" class="w-full text-center font-mono font-bold text-teal-300 bg-transparent border-0 focus:outline-none text-xs">
+              <span class="text-[10px] text-slate-400 whitespace-nowrap ml-1">ngày</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- CENTER PANEL: MULTI-VIEW WORKSPACE (FLEX-1) -->
+    <main class="flex-1 relative flex flex-col bg-slate-950 overflow-hidden">
+
+      <!-- ========================================================= -->
+      <!-- VIEW 1: 3D INTERACTIVE VIEWPORT                           -->
+      <!-- ========================================================= -->
+      <div id="view-3d" class="main-view flex-1 w-full h-full relative">
+        <div id="viewport-3d" class="w-full h-full relative">
+          <canvas id="three-canvas"></canvas>
+
+          <!-- FLOATING TOP CONTROLS (VIEW MODES & CAMERA & THƯỚC ĐO) -->
+          <div class="absolute top-2 left-2 right-2 z-30 flex items-center justify-between gap-1 pointer-events-none">
+            <!-- Left scrollable camera buttons -->
+            <div class="flex items-center space-x-1.5 overflow-x-auto max-w-[calc(100vw-120px)] sm:max-w-none scrollbar-none pointer-events-auto py-0.5">
+              <div class="bg-slate-900/90 backdrop-blur border border-slate-700/80 rounded-lg p-0.5 sm:p-1 flex items-center space-x-1 shadow-lg shrink-0">
+                <button id="btn-view-front" class="viewport-overlay-btn text-[11px] sm:text-xs px-2 sm:px-2.5 py-1" title="Góc nhìn chính diện"><i class="fa-solid fa-arrows-to-dot"></i> <span class="hidden sm:inline">Mặt trước</span><span class="sm:hidden">Trước</span></button>
+                <button id="btn-view-iso" class="viewport-overlay-btn active text-[11px] sm:text-xs px-2 sm:px-2.5 py-1" title="Góc nghiêng phối cảnh 45 độ"><i class="fa-solid fa-cube"></i> <span class="hidden sm:inline">Phối cảnh 3D</span><span class="sm:hidden">3D</span></button>
+                <button id="btn-view-side" class="viewport-overlay-btn text-[11px] sm:text-xs px-2 sm:px-2.5 py-1" title="Góc nhìn ngang cạnh cuộn (xem rõ đường kính lõi và cuộn)"><i class="fa-solid fa-circle-dot text-amber-400"></i> <span class="hidden sm:inline">Nhìn cạnh</span><span class="sm:hidden">Cạnh</span></button>
+                <button id="btn-view-top" class="viewport-overlay-btn text-[11px] sm:text-xs px-2 sm:px-2.5 py-1" title="Góc nhìn từ trên xuống"><i class="fa-solid fa-arrow-down"></i> <span class="hidden sm:inline">Từ trên</span><span class="sm:hidden">Trên</span></button>
+                <button id="btn-view-flap" class="viewport-overlay-btn text-[11px] sm:text-xs px-2 sm:px-2.5 py-1" title="Cận cảnh dải tem đang kéo bung"><i class="fa-solid fa-magnifying-glass-plus"></i> <span class="hidden sm:inline">Cận cảnh tem</span><span class="sm:hidden">Bung tem</span></button>
+              </div>
+
+              <button id="btn-toggle-spin" class="viewport-overlay-btn shrink-0 text-[11px] sm:text-xs px-2 sm:px-2.5 py-1" title="Tự động xoay 360 độ">
+                <i class="fa-solid fa-rotate"></i>
+                <span class="hidden sm:inline">Tự xoay</span>
+              </button>
+            </div>
+
+            <!-- Right controls: Xóa Trắng & Thước đo & Đổi nền -->
+            <div class="flex items-center space-x-1.5 shrink-0 pointer-events-auto">
+              <!-- NÚT XÓA TRẮNG TRỰC TIẾP TRÊN TAB 1 -->
+              <button id="btn-top-reset-blank" class="viewport-overlay-btn bg-rose-950/80 hover:bg-rose-900 text-rose-300 hover:text-white border border-rose-600/70 hover:border-rose-500 text-[11px] sm:text-xs px-2 sm:px-2.5 py-1 font-bold shadow-md shadow-rose-950/50 transition flex items-center gap-1" title="Xóa toàn bộ thiết kế, đưa về cuộn tem trắng tinh">
+                <i class="fa-solid fa-rotate-left text-rose-400"></i>
+                <span>Xóa Trắng</span>
+              </button>
+
+              <!-- THƯỚC ĐO 3D & MENU TÙY CHỌN TỪNG KHOẢNG CÁCH -->
+              <div class="relative inline-block text-left" id="dims-menu-container">
+                <div class="inline-flex rounded-lg shadow-sm">
+                  <button id="btn-toggle-dims" class="viewport-overlay-btn active rounded-r-none border-r border-slate-700 text-[11px] sm:text-xs px-2 sm:px-2.5 py-1" title="Bật/Tắt tất cả thước đo 3D">
+                    <i class="fa-solid fa-ruler-combined text-blue-400"></i>
+                    <span class="hidden sm:inline">Thước đo 3D</span>
+                  </button>
+                  <!-- Cụm nút chỉnh kích thước chữ số đo 3D trực tiếp (2mm, 50mm, 30mm, lõi...) -->
+                  <div class="inline-flex items-center bg-slate-900 border-y border-r border-slate-700 px-1 py-0.5" title="Chỉnh cỡ số đo 3D (2mm, 50mm, 30mm...) to/nhỏ tùy ý">
+                    <button type="button" id="btn-top-dim-zoom-out" class="text-slate-400 hover:text-white px-1 py-0.5 text-xs font-bold transition hover:bg-slate-800 rounded">A-</button>
+                    <span id="label-top-dim-scale" class="font-mono text-[10px] text-amber-400 font-bold px-1">135%</span>
+                    <button type="button" id="btn-top-dim-zoom-in" class="text-slate-400 hover:text-white px-1 py-0.5 text-xs font-bold transition hover:bg-slate-800 rounded">A+</button>
+                  </div>
+                  <button id="btn-dims-dropdown-toggle" class="viewport-overlay-btn active rounded-l-none px-1.5 sm:px-2 text-slate-300 hover:text-white py-1" title="Tùy chọn hiển thị từng khoảng cách">
+                    <i class="fa-solid fa-sliders text-[10px] sm:text-[11px]"></i>
+                    <i class="fa-solid fa-chevron-down text-[8px] sm:text-[9px] ml-0.5 opacity-70"></i>
+                  </button>
+                </div>
+
+                <!-- DROPDOWN POPOVER -->
+                <!-- DROPDOWN POPOVER NÂNG CẤP CHUẨN THEO ẢNH YÊU CẦU: TÙY BIẾN BẬT / TẮT TỪNG MỤC -->
+                <div id="dims-dropdown-menu" class="hidden absolute right-0 top-full mt-2 w-[340px] max-w-[92vw] bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-3.5 z-50 text-xs select-none max-h-[85vh] overflow-y-auto" style="background-color: #0f172a !important; box-shadow: 0 20px 30px -5px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.08) !important;">
+                  <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-800">
+                    <span class="font-bold text-white flex items-center gap-1.5 text-[12.5px]">
+                      <i class="fa-solid fa-sliders text-blue-400"></i> Tùy Biến Bật / Tắt Nội Dung
+                    </span>
+                    <div class="flex items-center gap-1 text-[10px]">
+                      <button type="button" id="btn-dims-all-on" class="px-2 py-0.5 rounded bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 font-medium transition cursor-pointer">Bật hết</button>
+                      <button type="button" id="btn-dims-all-off" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition cursor-pointer">Tắt hết</button>
+                    </div>
+                  </div>
+
+                  <!-- PHẦN 1: BẢNG THÔNG SỐ SẢN PHẨM & ĐẶT HÀNG -->
+                  <div class="space-y-1 mb-3">
+                    <div class="flex items-center justify-between text-[11px] font-bold text-sky-400 pb-1 border-b border-slate-800/80">
+                      <span class="flex items-center gap-1"><i class="fa-solid fa-clipboard-list text-sky-400"></i> BẢNG THÔNG SỐ ĐẶT HÀNG:</span>
+                      <label class="flex items-center gap-1 text-[10px] cursor-pointer text-slate-300 font-medium">
+                        <span>Hiện bảng</span>
+                        <input type="checkbox" id="check-master-spec-card" checked class="rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0 cursor-pointer">
+                      </label>
+                    </div>
+
+                    <!-- ĐIỀU CHỈNH CỠ BẢNG THÔNG SỐ ĐẶT HÀNG -->
+                    <div class="bg-slate-950/90 p-2.5 rounded-lg border border-slate-800 space-y-1.5 my-1.5" style="background-color: #131c2e !important;">
+                      <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-sky-300 font-bold flex items-center gap-1.5">
+                          <i class="fa-solid fa-text-height text-sky-400"></i> Cỡ chữ bảng thông số:
+                        </span>
+                        <span id="label-hud-card-scale" class="font-mono text-sky-400 font-bold text-xs">100%</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-[10px] text-slate-400 font-bold">A-</span>
+                        <input type="range" id="input-hud-card-scale" min="80" max="170" step="5" value="100" class="w-full cursor-pointer accent-sky-500">
+                        <span class="text-xs text-slate-300 font-bold">A+</span>
+                      </div>
+                      <div class="grid grid-cols-4 gap-1 text-[10px] pt-0.5">
+                        <button type="button" class="btn-card-scale-preset py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-center" data-scale="80">80%</button>
+                        <button type="button" class="btn-card-scale-preset py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-center" data-scale="90">90%</button>
+                        <button type="button" class="btn-card-scale-preset active py-0.5 rounded bg-blue-600 text-white font-bold border border-blue-500 text-center" data-scale="100">100%</button>
+                        <button type="button" class="btn-card-scale-preset py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-center" data-scale="120">120%</button>
+                      </div>
+                    </div>
+
+                    <!-- 1. Chất liệu -->
+                    <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer transition">
+                      <span class="flex items-center gap-2 text-slate-200 font-medium">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span>
+                        <span>Chất liệu</span>
+                      </span>
+                      <input type="checkbox" data-spec="material" class="spec-checkbox rounded bg-slate-800 border-slate-600 text-emerald-600 focus:ring-0 cursor-pointer" checked>
+                    </label>
+
+                    <!-- 2. Kích thước -->
+                    <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer transition">
+                      <span class="flex items-center gap-2 text-slate-200 font-medium">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50"></span>
+                        <span>Kích thước (ngang x cao)</span>
+                      </span>
+                      <input type="checkbox" data-spec="dimensions" class="spec-checkbox rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0 cursor-pointer" checked>
+                    </label>
+
+                    <!-- 3. Quy cách -->
+                    <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer transition">
+                      <span class="flex items-center gap-2 text-slate-200 font-medium">
+                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-sm shadow-indigo-500/50"></span>
+                        <span>Quy cách (Góc / Số hàng)</span>
+                      </span>
+                      <input type="checkbox" data-spec="spec" class="spec-checkbox rounded bg-slate-800 border-slate-600 text-indigo-600 focus:ring-0 cursor-pointer" checked>
+                    </label>
+
+                    <!-- 4. Số tem ước tính & Chiều dài -->
+                    <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer transition">
+                      <span class="flex items-center gap-2 text-slate-200 font-medium">
+                        <span class="w-2.5 h-2.5 rounded-full bg-cyan-500 shadow-sm shadow-cyan-500/50"></span>
+                        <span>Số tem ước tính & Chiều dài</span>
+                      </span>
+                      <input type="checkbox" data-spec="count" class="spec-checkbox rounded bg-slate-800 border-slate-600 text-cyan-600 focus:ring-0 cursor-pointer" checked>
+                    </label>
+
+                    <!-- 5. Lõi cuộn -->
+                    <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer transition">
+                      <span class="flex items-center gap-2 text-slate-200 font-medium">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50"></span>
+                        <span>Lõi cuộn</span>
+                      </span>
+                      <input type="checkbox" data-spec="core" class="spec-checkbox rounded bg-slate-800 border-slate-600 text-amber-600 focus:ring-0 cursor-pointer" checked>
+                    </label>
+
+                    <!-- 6. Màu nền -->
+                    <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer transition">
+                      <span class="flex items-center gap-2 text-slate-200 font-medium">
+                        <span class="w-2.5 h-2.5 rounded-full bg-pink-500 shadow-sm shadow-pink-500/50"></span>
+                        <span>Màu nền con tem</span>
+                      </span>
+                      <input type="checkbox" data-spec="color" class="spec-checkbox rounded bg-slate-800 border-slate-600 text-pink-600 focus:ring-0 cursor-pointer" checked>
+                    </label>
+
+                    <!-- 7. Thời gian SX -->
+                    <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer transition">
+                      <span class="flex items-center gap-2 text-slate-200 font-medium">
+                        <span class="w-2.5 h-2.5 rounded-full bg-teal-500 shadow-sm shadow-teal-500/50"></span>
+                        <span>Thời gian SX</span>
+                      </span>
+                      <input type="checkbox" data-spec="leadTime" class="spec-checkbox rounded bg-slate-800 border-slate-600 text-teal-600 focus:ring-0 cursor-pointer" checked>
+                    </label>
+                  </div>
+
+                  <!-- PHẦN 2: ĐƯỜNG KÍCH THƯỚC ĐO TRÊN 3D -->
+                  <div class="space-y-1 pt-2 border-t border-slate-800">
+                    <span class="block text-[11px] font-bold text-amber-300 pb-1 flex items-center gap-1">
+                      <i class="fa-solid fa-ruler-combined text-amber-400"></i> ĐƯỜNG THƯỚC ĐO 3D:
+                    </span>
+
+                    <!-- ĐIỀU CHỈNH CỠ CHỮ SỐ ĐO 3D -->
+                    <div class="bg-slate-950/90 p-2.5 rounded-lg border border-slate-800 space-y-1.5 my-1.5" style="background-color: #131c2e !important;">
+                      <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-amber-300 font-bold flex items-center gap-1.5">
+                          <i class="fa-solid fa-up-right-and-down-left-from-center text-amber-400"></i> Cỡ số đo 3D (W, H, Gap, Lõi):
+                        </span>
+                        <span id="label-dim-text-scale" class="font-mono text-amber-400 font-bold text-xs">135%</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-[10px] text-slate-400 font-bold">Nhỏ</span>
+                        <input type="range" id="input-dim-text-scale" min="70" max="230" step="5" value="135" class="w-full cursor-pointer accent-amber-500">
+                        <span class="text-xs text-slate-300 font-bold">To</span>
+                      </div>
+                      <div class="grid grid-cols-4 gap-1 text-[10px] pt-0.5">
+                        <button type="button" class="btn-dim-scale-preset py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-center" data-scale="85">85%</button>
+                        <button type="button" class="btn-dim-scale-preset py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-center" data-scale="110">110%</button>
+                        <button type="button" class="btn-dim-scale-preset active py-0.5 rounded bg-amber-600 text-white font-bold border border-amber-500 text-center" data-scale="135">135%</button>
+                        <button type="button" class="btn-dim-scale-preset py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-center" data-scale="180">180%</button>
+                      </div>
+                    </div>
+
+                    <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer transition">
+                      <span class="flex items-center gap-2 text-slate-200 font-medium">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                        <span>Chiều rộng tem (W)</span>
+                      </span>
+                      <input type="checkbox" data-dim="width" class="dim-checkbox rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0 cursor-pointer" checked>
+                    </label>
+
+                    <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer transition">
+                      <span class="flex items-center gap-2 text-slate-200 font-medium">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                        <span>Chiều cao tem (H)</span>
+                      </span>
+                      <input type="checkbox" data-dim="height" class="dim-checkbox rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0 cursor-pointer" checked>
+                    </label>
+
+                    <label class="flex items-center justify-between p-1.5 rounded-lg bg-amber-950/40 border border-amber-800/60 hover:bg-amber-950/60 cursor-pointer transition">
+                      <span class="flex items-center gap-2 text-amber-200 font-semibold">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                        <span>Bước nhảy 2 hàng (Gap Y)</span>
+                      </span>
+                      <input type="checkbox" data-dim="gapY" class="dim-checkbox rounded bg-slate-800 border-amber-600 text-amber-500 focus:ring-0 cursor-pointer" checked>
+                    </label>
+
+                    <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer transition">
+                      <span class="flex items-center gap-2 text-slate-200 font-medium">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                        <span>Cách trên hàng (Gap X)</span>
+                      </span>
+                      <input type="checkbox" data-dim="gapX" class="dim-checkbox rounded bg-slate-800 border-slate-600 text-emerald-600 focus:ring-0 cursor-pointer" checked>
+                    </label>
+
+                    <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer transition">
+                      <span class="flex items-center gap-2 text-slate-200 font-medium">
+                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                        <span>Lề biên 2 bên (Margin)</span>
+                      </span>
+                      <input type="checkbox" data-dim="margin" class="dim-checkbox rounded bg-slate-800 border-slate-600 text-indigo-600 focus:ring-0 cursor-pointer" checked>
+                    </label>
+
+                    <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer transition">
+                      <span class="flex items-center gap-2 text-slate-200 font-medium">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-700"></span>
+                        <span>Kích thước lõi cuộn (Core)</span>
+                      </span>
+                      <input type="checkbox" data-dim="core" class="dim-checkbox rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0 cursor-pointer" checked>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <button id="btn-toggle-bg" class="viewport-overlay-btn text-[11px] sm:text-xs px-2 sm:px-2.5 py-1" title="Đổi màu nền Studio">
+                <i class="fa-solid fa-circle-half-stroke"></i>
+                <span class="hidden sm:inline">Nền Studio</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- FLOATING MOBILE BUTTON: CHỈNH THÔNG SỐ CUỘN -->
+          <button type="button" id="btn-open-sidebar-mobile" class="md:hidden fixed z-30 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 text-white font-bold text-xs px-4 py-2.5 rounded-full shadow-2xl border border-blue-400/40 flex items-center gap-2 active:scale-95 transition" style="bottom: 4.5rem; right: 1rem;">
+            <i class="fa-solid fa-sliders text-amber-300 text-sm"></i>
+            <span>Chỉnh Thông Số</span>
+          </button>
+
+          <!-- FLOATING BOTTOM HINT -->
+          <div class="absolute bottom-3 left-3 z-10 pointer-events-none">
+            <div class="bg-slate-900/85 backdrop-blur border border-slate-800 text-slate-400 text-[10px] sm:text-[11px] px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg flex items-center gap-2">
+              <i class="fa-regular fa-hand-pointer text-blue-400"></i>
+              <span class="hidden md:inline">Chuột trái: <b>Xoay 360°</b> | Chuột phải: <b>Di chuyển</b> | Lăn chuột: <b>Thu phóng</b></span>
+              <span class="md:hidden">1 ngón: <b>Xoay 360°</b> | 2 ngón: <b>Thu phóng / Dịch</b></span>
+            </div>
+          </div>
+
+          <!-- FLOATING BOTTOM-RIGHT TECH SPECS & ORDER SUMMARY CARD (TO RÕ RÀNG & CÓ THỂ CHỈNH KÍCH THƯỚC) -->
+          <div id="hud-spec-card" class="absolute bottom-3 right-3 z-20 pointer-events-auto select-none transition-all duration-300 max-w-[330px] w-full hidden md:block" style="font-size: 12.5px;">
+            <div class="bg-slate-900/95 backdrop-blur-md border border-slate-700/90 text-slate-200 rounded-2xl shadow-2xl p-3 sm:p-3.5 space-y-2 font-sans">
+              <!-- Header (Nhấn giữ để kéo di chuyển vị trí) -->
+              <div id="hud-card-header" class="flex items-center justify-between pb-2 border-b border-slate-800 cursor-grab active:cursor-grabbing select-none" title="Nhấn giữ và kéo để di chuyển bảng thông số đến bất cứ đâu trên màn hình">
+                <span class="hud-title font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5 pointer-events-none">
+                  <i class="fa-solid fa-grip-vertical text-slate-500 hover:text-blue-400 mr-0.5" title="Kéo di chuyển"></i>
+                  <i class="fa-solid fa-clipboard-list"></i> Thông Số Đặt Hàng
+                </span>
+                <div class="flex items-center gap-1.5" onclick="event.stopPropagation();">
+                  <!-- Nút tăng / giảm kích thước chữ của bảng -->
+                  <div class="flex items-center bg-slate-950/80 rounded-lg border border-slate-700/80 px-1 py-0.5" title="Chỉnh cỡ chữ bảng thông số to/nhỏ tùy ý">
+                    <button type="button" id="btn-card-zoom-out" class="text-slate-400 hover:text-white px-1.5 py-0.5 text-xs font-bold transition hover:bg-slate-800 rounded">A-</button>
+                    <span id="hud-card-scale-badge" class="font-mono text-[10px] text-blue-300 font-bold px-1">100%</span>
+                    <button type="button" id="btn-card-zoom-in" class="text-slate-400 hover:text-white px-1.5 py-0.5 text-xs font-bold transition hover:bg-slate-800 rounded">A+</button>
+                  </div>
+                  <button type="button" id="btn-toggle-hud-card" class="text-slate-400 hover:text-white px-1.5 py-0.5 rounded transition cursor-pointer hover:bg-slate-800" title="Thu gọn / Mở rộng">
+                    <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" id="hud-card-chevron"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Body rows -->
+              <div id="hud-card-body" class="space-y-1.5">
+                <!-- Chất liệu -->
+                <div id="spec-row-material" class="flex items-center justify-between gap-3 py-1">
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-layer-group text-emerald-400"></i> Chất liệu:</span>
+                  <span id="hud-val-material" class="hud-value font-bold text-emerald-300 text-right truncate">Giấy thường (xé rách được)</span>
+                </div>
+
+                <!-- Kích thước -->
+                <div id="spec-row-dimensions" class="flex items-center justify-between gap-3 py-1">
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-ruler-combined text-blue-400"></i> Kích thước:</span>
+                  <span id="hud-val-dimensions" class="hud-value font-mono font-bold text-white text-right">50 x 30 mm (ngang x cao)</span>
+                </div>
+
+                <!-- Quy cách -->
+                <div id="spec-row-spec" class="flex items-center justify-between gap-3 py-1">
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-shapes text-indigo-400"></i> Quy cách:</span>
+                  <span id="hud-val-spec" class="hud-value font-bold text-indigo-300 text-right truncate">Bo góc R2 - 1 tem/hàng</span>
+                </div>
+
+                <!-- Số tem ước tính -->
+                <div id="spec-row-count" class="flex items-center justify-between gap-3 py-1">
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-calculator text-cyan-400"></i> Số tem / cuộn:</span>
+                  <span id="hud-val-count" class="hud-value font-mono font-bold text-cyan-300 text-right">khoảng 1.515 tem (50m)</span>
+                </div>
+
+                <!-- Lõi cuộn -->
+                <div id="spec-row-core" class="flex items-center justify-between gap-3 py-1">
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-circle-notch text-amber-400"></i> Lõi cuộn:</span>
+                  <span id="hud-val-core" class="hud-value font-bold text-amber-300 text-right">1 inch (25.4mm)</span>
+                </div>
+
+                <!-- Màu nền -->
+                <div id="spec-row-color" class="flex items-center justify-between gap-3 py-1">
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-palette text-pink-400"></i> Màu nền:</span>
+                  <div class="flex items-center gap-1.5 justify-end">
+                    <span id="hud-color-dot" class="w-3.5 h-3.5 rounded-full border border-white/40 inline-block bg-white shrink-0 shadow-sm"></span>
+                    <span id="hud-val-color" class="hud-value font-bold text-pink-300">Trắng</span>
+                  </div>
+                </div>
+
+                <!-- Thời gian SX -->
+                <div id="spec-row-leadtime" class="flex items-center justify-between gap-3 py-1">
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-clock-rotate-left text-teal-400"></i> Thời gian SX:</span>
+                  <span id="hud-val-leadtime" class="hud-value font-bold text-teal-300 text-right">3 ngày</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================= -->
+      <!-- ========================================================= -->
+      <!-- VIEW 2: DEDICATED BARTENDER LABEL DESIGN STUDIO           -->
+      <!-- ========================================================= -->
+      <div id="view-designer" class="main-view hidden flex-1 w-full h-full flex flex-col bg-slate-950 overflow-hidden select-none">
+        
+        <!-- BARTENDER TOP FORMATTING RIBBON -->
+        <div class="min-h-[48px] bg-slate-900 border-b border-slate-800 px-2 sm:px-3 py-1 flex items-center justify-between gap-2 shrink-0 z-20 overflow-x-auto scrollbar-none">
+          
+          <!-- LEFT GROUP: ACTIONS & ALIGNMENT -->
+          <div class="flex items-center gap-1.5 overflow-x-auto py-1 shrink-0">
+            <!-- History / Actions -->
+            <div class="flex items-center bg-slate-950/70 p-1 rounded-lg border border-slate-800 space-x-1 shrink-0">
+              <button type="button" id="btn-bartender-undo" class="ribbon-btn" title="Hoàn tác (Ctrl+Z)">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span class="hidden xl:inline text-[11px]">Undo</span>
+              </button>
+              <button type="button" id="btn-bartender-redo" class="ribbon-btn" title="Làm lại (Ctrl+Y)">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span class="hidden xl:inline text-[11px]">Redo</span>
+              </button>
+              <button type="button" id="btn-duplicate-element" class="btn-action-duplicate-element ribbon-btn" title="Nhân bản mục đang chọn (Ctrl+D)">
+                <i class="fa-solid fa-copy text-amber-400"></i>
+                <span class="hidden xl:inline text-[11px]">Nhân Bản</span>
+              </button>
+              <button type="button" id="btn-delete-element" class="ribbon-btn hover:text-red-400 hover:border-red-600/40" title="Xóa mục đang chọn (Delete)">
+                <i class="fa-solid fa-trash-can text-red-400"></i>
+                <span class="hidden xl:inline text-[11px]">Xóa</span>
+              </button>
+            </div>
+
+            <span class="w-px h-5 bg-slate-800 mx-0.5"></span>
+
+            <!-- BỘ CHỌN LOẠI MÃ VẠCH TRỰC QUAN (CÓ HÌNH ẢNH MẪU CHUẨN BARTENDER) -->
+            <div class="flex items-center bg-slate-950/70 p-1 rounded-lg border border-slate-800 space-x-1 shrink-0" id="ribbon-barcode-picker-group">
+              <button type="button" id="btn-open-visual-barcode-modal" class="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 rounded bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-600/60 text-cyan-300 transition text-xs font-semibold shadow-sm" title="Bấm để xem hình ảnh mẫu và đổi loại mã vạch chuẩn BarTender">
+                <div id="ribbon-barcode-mini-preview" class="w-7 sm:w-8 h-5 bg-white rounded flex items-center justify-center p-0.5 shadow-sm overflow-hidden shrink-0">
+                  <svg viewBox="0 0 40 20" class="w-full h-full"><rect width="40" height="20" fill="#fff"/><g fill="#000"><rect x="3" y="2" width="1.5" height="16"/><rect x="6" y="2" width="3" height="16"/><rect x="11" y="2" width="1.5" height="16"/><rect x="14" y="2" width="2" height="16"/><rect x="18" y="2" width="3.5" height="16"/><rect x="23" y="2" width="1.5" height="16"/><rect x="26" y="2" width="3" height="16"/><rect x="31" y="2" width="2" height="16"/><rect x="35" y="2" width="1.5" height="16"/></g></svg>
+                </div>
+                <div class="flex flex-col text-left leading-tight">
+                  <span class="text-[8px] sm:text-[9px] text-cyan-400 font-mono font-bold uppercase tracking-wider flex items-center gap-1">
+                    <i class="fa-solid fa-barcode text-[8px]"></i> <span id="ribbon-barcode-cat-badge">MÃ VẠCH</span>
+                  </span>
+                  <span id="ribbon-barcode-current-name" class="font-bold text-white text-[11px] truncate max-w-[110px] sm:max-w-[170px]">Code 128</span>
+                </div>
+                <span class="px-1.5 py-0.5 rounded bg-cyan-800/80 text-[9px] sm:text-[10px] text-cyan-200 border border-cyan-600/40 font-mono font-bold flex items-center gap-1 ml-0.5">
+                  <span class="hidden sm:inline">Xem Mẫu</span>
+                  <i class="fa-solid fa-chevron-down text-[8px]"></i>
+                </span>
+              </button>
+            </div>
+
+            <span class="w-px h-5 bg-slate-800 mx-0.5"></span>
+
+            <!-- Text Formatting (BarTender Style) -->
+            <div class="flex items-center bg-slate-950/70 p-1 rounded-lg border border-slate-800 space-x-1 sm:space-x-1.5 shrink-0" id="ribbon-text-group">
+              <select id="ribbon-font-family" class="bg-slate-900 text-xs text-slate-200 border border-slate-700 rounded px-1.5 sm:px-2 py-1 max-w-[120px] sm:max-w-[150px]" title="Phông chữ BarTender">
+                <optgroup label="── Tiêu Chuẩn & Phổ Thông ──">
+                  <option value="'Plus Jakarta Sans', sans-serif">Jakarta Sans</option>
+                  <option value="'Be Vietnam Pro', sans-serif">Be Vietnam Pro (Chuẩn TV)</option>
+                  <option value="'Inter', sans-serif">Inter</option>
+                  <option value="'Roboto', sans-serif">Roboto</option>
+                  <option value="Arial, sans-serif">Arial</option>
+                  <option value="Tahoma, sans-serif">Tahoma</option>
+                </optgroup>
+                <optgroup label="── Nhãn Hàng & Thương Hiệu ──">
+                  <option value="'Montserrat', sans-serif">Montserrat</option>
+                  <option value="'Poppins', sans-serif">Poppins</option>
+                </optgroup>
+                <optgroup label="── In Hoa / Bảng Giá / Tiêu Đề ──">
+                  <option value="'Oswald', sans-serif">Oswald (Giá tiền)</option>
+                  <option value="'Bebas Neue', sans-serif">Bebas Neue</option>
+                  <option value="'Anton', sans-serif">Anton (Tem đậm)</option>
+                  <option value="Impact, sans-serif">Impact</option>
+                </optgroup>
+                <optgroup label="── Mã Số / Số Lô / Monospace ──">
+                  <option value="'JetBrains Mono', monospace">JetBrains Mono (Mã số)</option>
+                  <option value="'Courier New', monospace">Courier New</option>
+                  <option value="Consolas, monospace">Consolas</option>
+                </optgroup>
+                <optgroup label="── Sang Trọng (Rượu, Mỹ Phẩm) ──">
+                  <option value="'Playfair Display', serif">Playfair Display (Cao cấp)</option>
+                  <option value="'Times New Roman', serif">Times New Roman</option>
+                  <option value="Georgia, serif">Georgia</option>
+                </optgroup>
+                <optgroup label="── Viết Tay / Handmade / Cafe ──">
+                  <option value="'Dancing Script', cursive">Dancing Script</option>
+                </optgroup>
+              </select>
+
+              <div class="flex items-center gap-0.5 sm:gap-1">
+                <button type="button" id="btn-font-dec" class="w-5 sm:w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center justify-center font-bold text-xs">-</button>
+                <input type="number" id="edit-element-size" value="44" min="8" max="200" step="2" class="w-12 sm:w-14 text-center text-xs font-mono font-bold bg-slate-900 border border-slate-700 rounded py-0.5 text-white" title="Cỡ chữ">
+                <button type="button" id="btn-font-inc" class="w-5 sm:w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center justify-center font-bold text-xs">+</button>
+              </div>
+
+              <button type="button" id="btn-toggle-bold" class="w-6 sm:w-7 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-black text-xs border border-slate-700 flex items-center justify-center" title="In đậm (Bold)">B</button>
+              <button type="button" id="btn-toggle-italic" class="w-6 sm:w-7 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 italic font-serif text-xs border border-slate-700 flex items-center justify-center" title="Nghiêng (Italic)">I</button>
+            </div>
+          </div>
+
+          <!-- RIGHT GROUP: EXPORT & RETURN TO 3D -->
+          <div class="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+            <button type="button" id="btn-reset-blank-label" class="bg-rose-950/70 hover:bg-rose-900 border border-rose-700/60 hover:border-rose-600 text-rose-200 text-xs px-2 sm:px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-semibold transition" title="Xóa toàn bộ thiết kế & khung, đưa về tem trắng tinh">
+              <i class="fa-solid fa-rotate-left text-rose-400"></i>
+              <span class="hidden sm:inline text-xs">Xóa Trắng</span>
+            </button>
+
+            <button type="button" id="btn-download-designer-png" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs px-2 sm:px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-medium transition" title="Tải file ảnh nhãn PNG">
+              <i class="fa-solid fa-download text-blue-400"></i>
+              <span class="hidden sm:inline text-xs">Tải Ảnh PNG</span>
+            </button>
+
+            <button type="button" id="btn-designer-finish-to-3d" class="bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 hover:from-emerald-500 hover:to-blue-500 text-white font-bold text-xs px-2.5 sm:px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 sm:gap-2 shadow-lg shadow-emerald-900/30 transition transform active:scale-95 shrink-0">
+              <i class="fa-solid fa-cube text-amber-300 text-xs sm:text-sm"></i>
+              <span class="hidden sm:inline">👉 Hoàn Tất & Xem Trên Cuộn 3D</span>
+              <span class="sm:hidden">👉 Xem Cuộn 3D</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- MOBILE SUB-NAV FOR DESIGNER PANE SWITCHING -->
+        <div id="designer-mobile-nav" class="md:hidden flex items-center justify-around bg-slate-950 border-b border-slate-800 px-2 py-1.5 shrink-0 z-20">
+          <button type="button" class="designer-mobile-nav-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-400 hover:text-white flex items-center gap-1.5 transition" data-pane="toolbox">
+            <i class="fa-solid fa-shapes text-blue-400"></i>
+            <span>+ Đối Tượng</span>
+          </button>
+          <button type="button" class="designer-mobile-nav-btn active px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white flex items-center gap-1.5 shadow-sm transition" data-pane="canvas">
+            <i class="fa-regular fa-image text-amber-300"></i>
+            <span>Vùng Vẽ Tem</span>
+          </button>
+          <button type="button" class="designer-mobile-nav-btn px-2.5 py-1 rounded-lg text-xs font-bold text-slate-400 hover:text-white flex items-center gap-1.5 transition" data-pane="inspector">
+            <i class="fa-solid fa-sliders text-indigo-400"></i>
+            <span>Thuộc Tính</span>
+          </button>
+        </div>
+
+        <!-- MAIN 3-PANE WORKSPACE: LEFT OBJECTS | CENTER CANVAS | RIGHT INSPECTOR -->
+        <div class="flex-1 flex overflow-hidden relative">
+          
+          <!-- PANE 1: BARTENDER OBJECT TOOLBOX & QUICK FIELDS (LEFT - 250px) -->
+          <div id="bartender-toolbox-panel" class="w-full md:w-64 bg-slate-900/95 border-r border-slate-800 flex-col overflow-y-auto shrink-0 p-3 space-y-4 hidden md:flex">
+            
+            <!-- OBJECT CREATION TOOLS -->
+            <div>
+              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+                <i class="fa-solid fa-shapes text-blue-400"></i> Đối tượng BarTender
+              </div>
+              <div class="grid grid-cols-2 gap-1.5">
+                <button type="button" class="btn-action-add-text tool-item-btn" title="Thêm nhãn chữ đơn hoặc nhiều dòng">
+                  <i class="fa-solid fa-font text-blue-400 text-sm"></i>
+                  <span>+ Văn Bản</span>
+                </button>
+                <button type="button" class="btn-action-add-barcode tool-item-btn" title="Thêm mã vạch 1D Code 128 chuẩn">
+                  <i class="fa-solid fa-barcode text-cyan-400 text-sm"></i>
+                  <span>+ Mã Vạch</span>
+                </button>
+                <button type="button" class="btn-action-add-qrcode tool-item-btn" title="Thêm mã vuông QR Code 2D">
+                  <i class="fa-solid fa-qrcode text-purple-400 text-sm"></i>
+                  <span>+ Mã QR</span>
+                </button>
+                <button type="button" class="btn-action-add-box tool-item-btn" title="Thêm khung ô trống viền đậm 3.5px để in đè lần 2 hoặc viết tay">
+                  <i class="fa-regular fa-square text-amber-400 text-sm"></i>
+                  <span>+ Khung Ô [ ]</span>
+                </button>
+                <button type="button" class="btn-action-add-line tool-item-btn" title="Thêm đường kẻ ngang ngăn cách">
+                  <i class="fa-solid fa-minus text-slate-300 text-sm"></i>
+                  <span>+ Đường Kẻ</span>
+                </button>
+                <label class="tool-item-btn cursor-pointer" title="Chèn ảnh Logo công ty hoặc tem">
+                  <i class="fa-solid fa-image text-emerald-400 text-sm"></i>
+                  <span>+ Tải Logo</span>
+                  <input type="file" id="input-upload-logo-designer" accept="image/*" class="hidden">
+                </label>
+              </div>
+            </div>
+
+            <!-- QUICK DATA FIELDS (CHIPS) -->
+            <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 space-y-2">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-bolt text-amber-400"></i> Thêm nhanh ô in sẵn
+              </div>
+              <p class="text-[10px] text-slate-400 leading-tight">Tự động sinh cặp Chữ Nhãn + Khung Ô Trống đặt ngay ngắn:</p>
+              <div class="flex flex-col gap-1.5">
+                <button type="button" class="btn-quick-field quick-field-pill" data-label="Tên hàng" data-box="true">
+                  <span class="text-white font-semibold">Tên hàng:</span>
+                  <span class="text-[10px] text-amber-400 font-mono">[ Ô trống ]</span>
+                </button>
+                <button type="button" class="btn-quick-field quick-field-pill" data-label="Mã hàng" data-box="true">
+                  <span class="text-white font-semibold">Mã hàng:</span>
+                  <span class="text-[10px] text-amber-400 font-mono">[ Ô trống ]</span>
+                </button>
+                <button type="button" class="btn-quick-field quick-field-pill" data-label="Giá tiền" data-box="true">
+                  <span class="text-white font-semibold">Giá tiền:</span>
+                  <span class="text-[10px] text-amber-400 font-mono">[ Ô trống ]</span>
+                </button>
+                <button type="button" class="btn-quick-field quick-field-pill" data-label="NSX / HSD" data-box="true">
+                  <span class="text-white font-semibold">NSX / HSD:</span>
+                  <span class="text-[10px] text-amber-400 font-mono">[ Ô trống ]</span>
+                </button>
+                <button type="button" class="btn-quick-field quick-field-pill" data-label="Quy cách" data-box="true">
+                  <span class="text-white font-semibold">Quy cách:</span>
+                  <span class="text-[10px] text-amber-400 font-mono">[ Ô trống ]</span>
+                </button>
+                <button type="button" class="btn-quick-field quick-field-pill" data-label="Xuất xứ" data-box="true">
+                  <span class="text-white font-semibold">Xuất xứ:</span>
+                  <span class="text-[10px] text-amber-400 font-mono">[ Ô trống ]</span>
+                </button>
+                <button type="button" class="btn-quick-field quick-field-pill" data-label="Số lô" data-box="true">
+                  <span class="text-white font-semibold">Số lô:</span>
+                  <span class="text-[10px] text-amber-400 font-mono">[ Ô trống ]</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- PACKAGING & LOGISTICS ICONS (ICON NGÀNH IN & VẬN CHUYỂN) -->
+            <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                  <i class="fa-solid fa-boxes-packing text-emerald-400"></i> Icon Ngành In & Bao Bì
+                </div>
+                <span class="text-[9px] bg-emerald-950/80 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-800 font-mono">1-Click</span>
+              </div>
+              <p class="text-[10px] text-slate-400 leading-tight">Biểu tượng tiêu chuẩn ISO bao bì, vận chuyển & bảo quản:</p>
+              
+              <div class="grid grid-cols-4 gap-1.5" id="packaging-icons-grid">
+                <button type="button" class="btn-add-packaging-icon packaging-icon-chip" data-icon="fragile" data-name="Hàng dễ vỡ" title="Hàng dễ vỡ (Fragile)">
+                  <span class="text-base">🍷</span>
+                  <span class="text-[9px] text-slate-300 font-medium">Dễ vỡ</span>
+                </button>
+                <button type="button" class="btn-add-packaging-icon packaging-icon-chip" data-icon="keep_dry" data-name="Tránh nước" title="Tránh nước / Giữ khô (Keep dry)">
+                  <span class="text-base">☔</span>
+                  <span class="text-[9px] text-slate-300 font-medium">Tránh nước</span>
+                </button>
+                <button type="button" class="btn-add-packaging-icon packaging-icon-chip" data-icon="this_way_up" data-name="Hướng này lên" title="Hướng này lên (This way up)">
+                  <span class="text-sm font-bold text-amber-400">⬆️⬆️</span>
+                  <span class="text-[9px] text-slate-300 font-medium">Hướng lên</span>
+                </button>
+                <button type="button" class="btn-add-packaging-icon packaging-icon-chip" data-icon="recycle" data-name="Tái chế" title="Tái chế bảo vệ môi trường (Recycle)">
+                  <span class="text-base">♻️</span>
+                  <span class="text-[9px] text-slate-300 font-medium">Tái chế</span>
+                </button>
+                <button type="button" class="btn-add-packaging-icon packaging-icon-chip" data-icon="tidyman" data-name="Bỏ rác đúng nơi" title="Bỏ rác đúng nơi (Tidyman)">
+                  <span class="text-base">🚯</span>
+                  <span class="text-[9px] text-slate-300 font-medium">Bỏ rác</span>
+                </button>
+                <button type="button" class="btn-add-packaging-icon packaging-icon-chip" data-icon="keep_away_sun" data-name="Tránh ánh nắng" title="Tránh ánh nắng (Keep away from sunlight)">
+                  <span class="text-base">☀️</span>
+                  <span class="text-[9px] text-slate-300 font-medium">Tránh nắng</span>
+                </button>
+                <button type="button" class="btn-add-packaging-icon packaging-icon-chip" data-icon="food_safe" data-name="An toàn thực phẩm" title="An toàn thực phẩm (Food safe)">
+                  <span class="text-base">🍽️</span>
+                  <span class="text-[9px] text-slate-300 font-medium">Thực phẩm</span>
+                </button>
+                <button type="button" class="btn-add-packaging-icon packaging-icon-chip" data-icon="ce_mark" data-name="Chứng nhận CE" title="Chứng nhận CE (CE Mark)">
+                  <span class="text-xs font-black font-mono text-cyan-400">CE</span>
+                  <span class="text-[9px] text-slate-300 font-medium">Chuẩn CE</span>
+                </button>
+                <button type="button" class="btn-add-packaging-icon packaging-icon-chip" data-icon="rohs" data-name="Chuẩn RoHS" title="Tiêu chuẩn RoHS (RoHS Compliant)">
+                  <span class="text-[11px] font-black font-mono text-emerald-400">RoHS</span>
+                  <span class="text-[9px] text-slate-300 font-medium">RoHS</span>
+                </button>
+                <button type="button" class="btn-add-packaging-icon packaging-icon-chip" data-icon="temperature" data-name="Giới hạn nhiệt độ" title="Giới hạn nhiệt độ (Temperature limit)">
+                  <span class="text-base">🌡️</span>
+                  <span class="text-[9px] text-slate-300 font-medium">Nhiệt độ</span>
+                </button>
+                <button type="button" class="btn-add-packaging-icon packaging-icon-chip" data-icon="no_hook" data-name="Tránh móc cẩu" title="Tránh dùng móc kéo (Do not hook)">
+                  <span class="text-base">🪝</span>
+                  <span class="text-[9px] text-slate-300 font-medium">Tránh móc</span>
+                </button>
+                <button type="button" class="btn-add-packaging-icon packaging-icon-chip" data-icon="no_stack" data-name="Không xếp chồng" title="Không xếp chồng (Do not stack)">
+                  <span class="text-base">📦</span>
+                  <span class="text-[9px] text-slate-300 font-medium">K.chồng</span>
+                </button>
+              </div>
+
+              <!-- BUTTON MỞ THƯ VIỆN TOÀN BỘ 60+ ICON BARTENDER -->
+              <button type="button" id="btn-open-bartender-symbols" class="w-full mt-2 py-2 px-2.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-md shadow-emerald-950/40 transition-all border border-emerald-500/30">
+                <i class="fa-solid fa-shapes text-emerald-200"></i>
+                <span>Thư Viện 60+ Icon BarTender</span>
+                <span class="text-[9px] bg-black/30 px-1 py-0.2 rounded text-emerald-200 font-mono">Đủ bộ</span>
+              </button>
+            </div>
+
+            <!-- PRO TIPS (BARTENDER SHORTCUTS) -->
+            <div class="bg-slate-950/40 p-2.5 rounded-lg border border-slate-800/60 text-[11px] text-slate-400 space-y-1">
+              <div class="font-semibold text-slate-300 flex items-center gap-1">
+                <i class="fa-regular fa-keyboard text-blue-400"></i> Phím tắt BarTender:
+              </div>
+              <ul class="list-disc list-inside text-[10px] space-y-0.5 text-slate-400">
+                <li><b>Kéo 8 góc nút</b> để co dãn</li>
+                <li><b>Phím mũi tên</b>: dịch 1mm</li>
+                <li><b>Shift + Mũi tên</b>: dịch 5mm</li>
+                <li><b>Delete</b>: xóa mục chọn</li>
+                <li><b>Ctrl+Z / Ctrl+Y</b>: hoàn tác</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- PANE 2: CENTER CANVAS WORKSPACE WITH RULERS -->
+          <div id="designer-canvas-wrapper" class="flex-1 flex flex-col items-center justify-center p-2 sm:p-4 relative overflow-hidden bg-slate-950">
+            
+            <!-- Canvas Header Bar with Real Dimensions -->
+            <div class="mb-2 bg-slate-900/90 border border-slate-700/80 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs text-slate-300 font-mono flex items-center gap-1.5 sm:gap-3 shadow-lg z-10 max-w-[95vw] overflow-x-auto scrollbar-none">
+              <span class="flex items-center gap-1 sm:gap-1.5 text-emerald-400 font-bold shrink-0">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Khổ tem:</span>
+              </span>
+              <span id="designer-canvas-dim-badge" class="text-white font-bold px-1.5 sm:px-2 py-0.5 rounded bg-blue-900/60 border border-blue-700/60 shrink-0">50 x 38 mm</span>
+              <span class="text-slate-500 hidden sm:inline">|</span>
+              <span id="designer-live-coords" class="text-slate-300 text-[10px] sm:text-[11px] truncate hidden sm:inline">Bấm vào đối tượng để kéo thả & co dãn 8 nút</span>
+            </div>
+
+            <!-- Canvas Container -->
+            <div id="label-canvas-container" class="max-w-full max-h-[calc(100vh-210px)] flex items-center justify-center relative p-1 sm:p-2 overflow-auto">
+              <canvas id="label-designer-canvas" class="rounded shadow-2xl transition"></canvas>
+            </div>
+          </div>
+
+          <!-- PANE 3: BARTENDER PROPERTY INSPECTOR (RIGHT - 280px) -->
+          <div id="bartender-inspector-panel" class="w-full md:w-72 bg-slate-900/95 border-l border-slate-800 flex-col overflow-y-auto shrink-0 p-3.5 space-y-4 hidden md:flex">
+            
+            <!-- INSPECTOR HEADER -->
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+              <span class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-sliders"></i> Thuộc Tính Đối Tượng
+              </span>
+              <span id="inspector-element-type-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">Chưa chọn</span>
+            </div>
+
+            <!-- SECTION 1: VỊ TRÍ & KÍCH THƯỚC MILIMET (BARTENDER ACCURACY) -->
+            <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 space-y-2.5">
+              <div class="text-[11px] font-bold text-slate-300 flex items-center justify-between">
+                <span>Vị trí & Kích thước (mm)</span>
+                <span class="text-[10px] text-blue-400 font-mono">Đơn vị: mm</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-[10px] text-slate-400 block mb-0.5">Tọa độ X (mm)</label>
+                  <input type="number" id="inspector-pos-x" step="0.5" class="inspector-input font-mono">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-400 block mb-0.5">Tọa độ Y (mm)</label>
+                  <input type="number" id="inspector-pos-y" step="0.5" class="inspector-input font-mono">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-400 block mb-0.5">Rộng W (mm)</label>
+                  <input type="number" id="inspector-size-w" step="0.5" min="1" class="inspector-input font-mono">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-400 block mb-0.5">Cao H (mm)</label>
+                  <input type="number" id="inspector-size-h" step="0.5" min="1" class="inspector-input font-mono">
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION ALIGNMENT: CĂN CHỈNH & GIÓNG HÀNG (CHUẨN BARTENDER) -->
+            <div id="inspector-group-alignment" class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
+                  <i class="fa-solid fa-align-left text-blue-400"></i> Căn Chỉnh Đối Tượng
+                </span>
+                <span id="inspector-selection-count-badge" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">1 mục chọn</span>
+              </div>
+
+              <!-- HÀNG 1: CĂN THẲNG HÀNG GIỮA CÁC ĐỐI TƯỢNG (GIỮ SHIFT CHỌN 2 ĐỐI TƯỢNG) -->
+              <div>
+                <div class="text-[10px] text-slate-400 mb-1 flex items-center justify-between">
+                  <span>Gióng thẳng hàng với nhau:</span>
+                  <span class="text-[9px] text-amber-400/90 font-medium">Giữ Shift click chọn 2 mục</span>
+                </div>
+                <div class="grid grid-cols-4 gap-1">
+                  <button type="button" id="btn-align-left-edges" class="align-tool-btn" title="Căn thẳng mép trái giữa 2 đối tượng">
+                    <i class="fa-solid fa-arrow-left-to-line text-cyan-400 text-xs"></i>
+                    <span class="text-[9px]">Lề Trái</span>
+                  </button>
+                  <button type="button" id="btn-align-center-h" class="align-tool-btn" title="Căn thẳng trục giữa tâm dọc">
+                    <i class="fa-solid fa-arrows-left-right text-blue-400 text-xs"></i>
+                    <span class="text-[9px]">Tâm Giữa</span>
+                  </button>
+                  <button type="button" id="btn-align-right-edges" class="align-tool-btn" title="Căn thẳng mép phải giữa 2 đối tượng">
+                    <i class="fa-solid fa-arrow-right-to-line text-cyan-400 text-xs"></i>
+                    <span class="text-[9px]">Lề Phải</span>
+                  </button>
+                  <button type="button" id="btn-make-same-width" class="align-tool-btn" title="Chỉnh cùng chiều rộng với đối tượng kia">
+                    <i class="fa-solid fa-arrows-left-right-to-line text-amber-400 text-xs"></i>
+                    <span class="text-[9px]">Cùng Rộng</span>
+                  </button>
+                </div>
+                <div class="grid grid-cols-4 gap-1 mt-1">
+                  <button type="button" id="btn-align-top-edges" class="align-tool-btn" title="Căn thẳng mép trên đỉnh">
+                    <i class="fa-solid fa-arrow-up-to-line text-cyan-400 text-xs"></i>
+                    <span class="text-[9px]">Mép Trên</span>
+                  </button>
+                  <button type="button" id="btn-align-center-v" class="align-tool-btn" title="Căn thẳng trục giữa tâm ngang">
+                    <i class="fa-solid fa-arrows-up-down text-blue-400 text-xs"></i>
+                    <span class="text-[9px]">Tâm Dọc</span>
+                  </button>
+                  <button type="button" id="btn-align-bottom-edges" class="align-tool-btn" title="Căn thẳng mép dưới đáy">
+                    <i class="fa-solid fa-arrow-down-to-line text-cyan-400 text-xs"></i>
+                    <span class="text-[9px]">Mép Dưới</span>
+                  </button>
+                  <button type="button" id="btn-make-same-height" class="align-tool-btn" title="Chỉnh cùng chiều cao">
+                    <i class="fa-solid fa-arrows-up-down-left-right text-amber-400 text-xs"></i>
+                    <span class="text-[9px]">Cùng Cao</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- HÀNG 2: CĂN THEO KHỔ CON TEM -->
+              <div class="pt-1.5 border-t border-slate-800/80">
+                <div class="text-[10px] text-slate-400 mb-1">Căn theo khổ con tem:</div>
+                <div class="grid grid-cols-3 gap-1">
+                  <button type="button" id="btn-align-label-left" class="align-tool-btn" title="Căn sát mép lề trái con tem">
+                    <i class="fa-solid fa-align-left text-slate-300 text-xs"></i>
+                    <span class="text-[9px]">Trái Tem</span>
+                  </button>
+                  <button type="button" id="btn-align-label-center" class="align-tool-btn active-highlight" title="Căn chính giữa trung tâm con tem">
+                    <i class="fa-solid fa-arrows-to-dot text-amber-400 text-xs"></i>
+                    <span class="text-[9px]">Giữa Tem</span>
+                  </button>
+                  <button type="button" id="btn-align-label-right" class="align-tool-btn" title="Căn sát mép lề phải con tem">
+                    <i class="fa-solid fa-align-right text-slate-300 text-xs"></i>
+                    <span class="text-[9px]">Phải Tem</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 2: NỘI DUNG DỮ LIỆU (DATA CONTENT) -->
+            <div id="inspector-group-content" class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 space-y-2">
+              <label class="text-[11px] font-bold text-slate-300 block" id="inspector-content-label">Nội dung văn bản</label>
+              <textarea id="edit-element-text" rows="2" class="inspector-input text-xs resize-none" placeholder="Nhập nội dung hiển thị trên tem..."></textarea>
+            </div>
+
+            <!-- SECTION 3: ĐỊNH DẠNG TEXT (CHỈ HIỆN KHI CHỌN TEXT) -->
+            <div id="inspector-group-text-styling" class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 space-y-2.5">
+              <div class="text-[11px] font-bold text-slate-300">Định dạng chữ (Typography)</div>
+              
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-0.5">Phông chữ</label>
+                <select id="inspector-font-family" class="inspector-input text-xs">
+                  <optgroup label="── Tiêu Chuẩn & Phổ Thông ──">
+                    <option value="'Plus Jakarta Sans', sans-serif">Plus Jakarta Sans (Mặc định)</option>
+                    <option value="'Be Vietnam Pro', sans-serif">Be Vietnam Pro (Chuẩn TV)</option>
+                    <option value="'Inter', sans-serif">Inter (Hiện đại)</option>
+                    <option value="'Roboto', sans-serif">Roboto (Quốc tế)</option>
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="Tahoma, sans-serif">Tahoma</option>
+                  </optgroup>
+                  <optgroup label="── Nhãn Hàng & Thương Hiệu ──">
+                    <option value="'Montserrat', sans-serif">Montserrat (Thương hiệu)</option>
+                    <option value="'Poppins', sans-serif">Poppins (Trẻ trung)</option>
+                  </optgroup>
+                  <optgroup label="── In Hoa / Bảng Giá / Tiêu Đề ──">
+                    <option value="'Oswald', sans-serif">Oswald (Giá tiền / Nổi bật)</option>
+                    <option value="'Bebas Neue', sans-serif">Bebas Neue (In hoa mạnh mẽ)</option>
+                    <option value="'Anton', sans-serif">Anton (Tem công nghiệp đậm)</option>
+                    <option value="Impact, sans-serif">Impact</option>
+                  </optgroup>
+                  <optgroup label="── Mã Số / Số Lô / Monospace ──">
+                    <option value="'JetBrains Mono', monospace">JetBrains Mono (Mã số rõ nét)</option>
+                    <option value="'Courier New', monospace">Courier New</option>
+                    <option value="Consolas, monospace">Consolas</option>
+                  </optgroup>
+                  <optgroup label="── Sang Trọng (Rượu, Mỹ Phẩm) ──">
+                    <option value="'Playfair Display', serif">Playfair Display (Cao cấp)</option>
+                    <option value="'Times New Roman', serif">Times New Roman</option>
+                    <option value="Georgia, serif">Georgia</option>
+                  </optgroup>
+                  <optgroup label="── Viết Tay / Handmade / Cafe ──">
+                    <option value="'Dancing Script', cursive">Dancing Script (Nghệ thuật)</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-[10px] text-slate-400 block mb-0.5">Cỡ chữ (px)</label>
+                  <input type="number" id="inspector-font-size" value="44" min="8" max="200" step="2" class="inspector-input font-mono">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-400 block mb-0.5">Căn lề chữ</label>
+                  <div class="flex items-center bg-slate-900 border border-slate-700 rounded p-0.5 space-x-1">
+                    <button type="button" id="btn-insp-align-left" class="flex-1 py-1 text-xs rounded hover:bg-slate-800 flex items-center justify-center text-slate-300 font-bold transition" title="Căn lề trái">
+                      <i class="fa-solid fa-align-left text-xs"></i>
+                    </button>
+                    <button type="button" id="btn-insp-align-center" class="flex-1 py-1 text-xs rounded hover:bg-slate-800 flex items-center justify-center text-slate-300 font-bold transition" title="Căn chính giữa">
+                      <i class="fa-solid fa-align-center text-xs"></i>
+                    </button>
+                    <button type="button" id="btn-insp-align-right" class="flex-1 py-1 text-xs rounded hover:bg-slate-800 flex items-center justify-center text-slate-300 font-bold transition" title="Căn lề phải">
+                      <i class="fa-solid fa-align-right text-xs"></i>
+                    </button>
+                  </div>
+                  <select id="edit-element-align" class="hidden">
+                    <option value="left">Trái</option>
+                    <option value="center" selected>Giữa</option>
+                    <option value="right">Phải</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-0.5">Màu chữ</label>
+                <div class="flex items-center gap-2">
+                  <input type="color" id="inspector-text-color" value="#0f172a" class="w-8 h-7 p-0 rounded border border-slate-700 bg-transparent cursor-pointer">
+                  <input type="text" id="inspector-text-color-hex" value="#0F172A" class="inspector-input uppercase font-mono text-xs">
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 4: ĐỊNH DẠNG KHUNG Ô TRỐNG [ ] & ĐƯỜNG KẺ (CHỈ HIỆN KHI CHỌN BOX/LINE) -->
+            <div id="inspector-group-box-styling" class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 space-y-2.5 hidden">
+              <div class="text-[11px] font-bold text-slate-300">Định dạng khung ô</div>
+              
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-[10px] text-slate-400 block mb-0.5">Độ dày viền (px)</label>
+                  <input type="number" id="inspector-border-width" value="3.5" min="1" max="10" step="0.5" class="inspector-input font-mono font-bold">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-400 block mb-0.5">Bo góc (Radius)</label>
+                  <input type="number" id="inspector-border-radius" value="4" min="0" max="20" step="1" class="inspector-input font-mono">
+                </div>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-0.5">Màu viền khung</label>
+                <div class="flex items-center gap-2">
+                  <input type="color" id="inspector-border-color" value="#0f172a" class="w-8 h-7 p-0 rounded border border-slate-700 bg-transparent cursor-pointer">
+                  <input type="text" id="inspector-border-color-hex" value="#0F172A" class="inspector-input uppercase font-mono text-xs">
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 5: ĐỊNH DẠNG MÃ VẠCH 1D (CHỈ HIỆN KHI CHỌN BARCODE 1D) -->
+            <div id="inspector-group-barcode-styling" class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 space-y-2.5 hidden">
+              <div class="text-[11px] font-bold text-cyan-400 flex items-center justify-between">
+                <span>Thuộc tính Mã Vạch 1D</span>
+                <i class="fa-solid fa-barcode"></i>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-0.5">
+                  <label class="text-[10px] text-slate-400">Loại mã vạch (1D Symbology)</label>
+                  <button type="button" id="inspector-btn-open-visual-barcodes" class="text-[9px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-semibold underline decoration-dotted" title="Xem hình ảnh mẫu các loại mã vạch chuẩn BarTender">
+                    <i class="fa-solid fa-eye text-[9px]"></i> Xem Mẫu
+                  </button>
+                </div>
+                <select id="inspector-barcode-format" class="inspector-input text-xs font-semibold text-cyan-300">
+                  <optgroup label="Chuẩn Phổ Biến & Logistics">
+                    <option value="code128">Code 128 (Đa năng: Số, Chữ & Ký tự)</option>
+                    <option value="gs1-128">GS1-128 / EAN-128 (Logistics & Vận chuyển)</option>
+                  </optgroup>
+                  <optgroup label="Bán Lẻ & Siêu Thị">
+                    <option value="ean13">EAN-13 (Siêu thị VN & Quốc tế - 13 số)</option>
+                    <option value="ean8">EAN-8 (Bao bì nhỏ gọn - 8 số)</option>
+                    <option value="upca">UPC-A (Xuất khẩu Bắc Mỹ - 12 số)</option>
+                    <option value="upce">UPC-E (UPC rút gọn - 6 số)</option>
+                    <option value="databaromni">GS1 DataBar Omnidirectional (Cân rau củ siêu thị)</option>
+                  </optgroup>
+                  <optgroup label="Công Nghiệp & Thùng Carton">
+                    <option value="code39">Code 39 (Công nghiệp, Y tế, Phụ tùng)</option>
+                    <option value="code93">Code 93 (Mật độ cao hơn Code 39)</option>
+                    <option value="itf14">ITF-14 (Thùng carton vận chuyển - 14 số)</option>
+                    <option value="interleaved2of5">Interleaved 2 of 5 (I2of5 - Thùng hàng)</option>
+                  </optgroup>
+                  <optgroup label="Chuyên Dụng & Dược Phẩm">
+                    <option value="pharmacode">Pharmacode (Mã vạch Dược phẩm / Vỏ thuốc)</option>
+                    <option value="codabar">Codabar / NW-7 (Chuyển phát & Thư viện)</option>
+                    <option value="msi">MSI Plessey (Quản lý giá kệ kho hàng)</option>
+                    <option value="telepen">Telepen (Công nghiệp thư viện)</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <div class="flex items-center justify-between pt-1">
+                <label class="text-[10px] text-slate-300 font-medium flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" id="inspector-barcode-show-text" checked class="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-0">
+                  <span>Hiện chữ số dưới mã vạch</span>
+                </label>
+              </div>
+
+              <!-- CÀI ĐẶT CHỮ SỐ MÃ VẠCH (CHUẨN BARTENDER HUMAN-READABLE) -->
+              <div id="inspector-barcode-text-settings" class="bg-slate-900/90 p-2.5 rounded-xl border border-cyan-900/40 space-y-2.5 shadow-sm">
+                <div class="flex items-center justify-between text-[11px] font-semibold text-cyan-300 border-b border-slate-800 pb-1">
+                  <span class="flex items-center gap-1.5"><i class="fa-solid fa-arrows-up-down text-cyan-400 text-[10px]"></i> Khoảng Cách & Chữ Số</span>
+                  <span class="text-[9px] text-emerald-400 font-normal bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800/40">Vector 1:1 không méo</span>
+                </div>
+
+                <!-- 1. KHOẢNG CÁCH SỐ TỚI MÃ VẠCH (XA / GẦN VẠCH) -->
+                <div>
+                  <div class="flex justify-between items-center text-[10px] text-slate-300 mb-1">
+                    <span class="flex items-center gap-1">
+                      <i class="fa-solid fa-arrows-up-down text-cyan-400 text-[9px]"></i>
+                      <span>Khoảng cách số tới vạch:</span>
+                    </span>
+                    <span id="val-barcode-text-dist" class="font-mono text-cyan-300 font-bold bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-800/60 text-[10px]">1.5 mm</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <input type="range" id="inspector-barcode-text-dist" min="-5" max="15" step="0.5" value="1.5" class="w-full cursor-pointer accent-cyan-500">
+                    <input type="number" id="inspector-barcode-text-dist-num" min="-5" max="15" step="0.5" value="1.5" class="w-14 inspector-input font-mono text-xs text-center font-bold text-cyan-300">
+                  </div>
+                  <div class="flex justify-between text-[9px] text-slate-500 mt-0.5 px-0.5">
+                    <span>Sát vạch (-5mm)</span>
+                    <span class="text-slate-400">Chuẩn (1.5mm)</span>
+                    <span>Cách xa (+15mm)</span>
+                  </div>
+                </div>
+
+                <!-- 2. DỊCH CHUYỂN NGANG (TRÁI / PHẢI) -->
+                <div>
+                  <div class="flex justify-between items-center text-[10px] text-slate-300 mb-1">
+                    <span class="flex items-center gap-1">
+                      <i class="fa-solid fa-arrows-left-right text-cyan-400 text-[9px]"></i>
+                      <span>Dịch chuyển ngang (X Offset):</span>
+                    </span>
+                    <span id="val-barcode-text-xoffset" class="font-mono text-cyan-300 font-bold bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-800/60 text-[10px]">0 mm</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <input type="range" id="inspector-barcode-text-xoffset" min="-20" max="20" step="0.5" value="0" class="w-full cursor-pointer accent-cyan-500">
+                    <input type="number" id="inspector-barcode-text-xoffset-num" min="-20" max="20" step="0.5" value="0" class="w-14 inspector-input font-mono text-xs text-center font-bold text-cyan-300">
+                  </div>
+                </div>
+
+                <!-- 3. CỠ CHỮ SỐ & FONT CHỮ -->
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="text-[10px] text-slate-400 block mb-0.5">Cỡ chữ số (pt)</label>
+                    <input type="number" id="inspector-barcode-text-size" min="6" max="36" step="1" placeholder="Tự động" class="inspector-input font-mono text-xs">
+                  </div>
+                  <div>
+                    <label class="text-[10px] text-slate-400 block mb-0.5">Kiểu font số</label>
+                    <select id="inspector-barcode-font-family" class="inspector-input text-[10px] font-mono">
+                      <option value="'OCR-B', 'Consolas', monospace">OCR-B (Chuẩn BarTender)</option>
+                      <option value="'Consolas', 'Courier New', monospace">Consolas (Số cách đều)</option>
+                      <option value="'Plus Jakarta Sans', sans-serif">Sans-serif</option>
+                      <option value="'Arial', sans-serif">Arial</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- 4. CĂN LỀ & ĐẬM NHẠT -->
+                <div class="flex items-center justify-between pt-0.5">
+                  <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                    <button type="button" id="btn-barcode-align-left" class="barcode-align-btn px-2 py-1 rounded text-slate-400 hover:text-white text-[10px] transition" title="Căn lề trái"><i class="fa-solid fa-align-left"></i></button>
+                    <button type="button" id="btn-barcode-align-center" class="barcode-align-btn px-2 py-1 rounded bg-blue-600 text-white text-[10px] transition" title="Căn lề giữa"><i class="fa-solid fa-align-center"></i></button>
+                    <button type="button" id="btn-barcode-align-right" class="barcode-align-btn px-2 py-1 rounded text-slate-400 hover:text-white text-[10px] transition" title="Căn lề phải"><i class="fa-solid fa-align-right"></i></button>
+                  </div>
+                  <button type="button" id="btn-barcode-text-bold" class="px-2.5 py-1 rounded bg-blue-600 text-white font-bold text-xs border border-blue-500 transition" title="Bật/Tắt chữ số in đậm">
+                    <i class="fa-solid fa-bold"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-0.5">Màu nét vạch</label>
+                <div class="flex items-center gap-2">
+                  <input type="color" id="inspector-barcode-color" value="#000000" class="w-8 h-7 p-0 rounded border border-slate-700 bg-transparent cursor-pointer">
+                  <input type="text" id="inspector-barcode-color-hex" value="#000000" class="inspector-input uppercase font-mono text-xs">
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 5B: ĐỊNH DẠNG MÃ 2D / MA TRẬN / QR CODE -->
+            <div id="inspector-group-qrcode-styling" class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 space-y-2.5 hidden">
+              <div class="text-[11px] font-bold text-purple-400 flex items-center justify-between">
+                <span>Thuộc tính Mã 2D / QR Code</span>
+                <i class="fa-solid fa-qrcode"></i>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-0.5">
+                  <label class="text-[10px] text-slate-400">Loại mã 2D (Matrix / 2D Symbology)</label>
+                  <button type="button" class="btn-trigger-visual-modal-qr text-[9px] text-purple-400 hover:text-purple-300 flex items-center gap-1 font-semibold underline decoration-dotted" title="Xem hình ảnh mẫu các loại mã 2D chuẩn BarTender">
+                    <i class="fa-solid fa-eye text-[9px]"></i> Xem Mẫu
+                  </button>
+                </div>
+                <select id="inspector-qrcode-format" class="inspector-input text-xs font-semibold text-purple-300">
+                  <optgroup label="Mã QR (QR Codes)">
+                    <option value="qrcode">QR Code Tiêu chuẩn (ISO/IEC 18004)</option>
+                    <option value="microqrcode">Micro QR Code (Siêu nhỏ: Vi mạch, Trang sức)</option>
+                    <option value="gs1qrcode">GS1 QR Code (Chuỗi cung ứng toàn cầu)</option>
+                  </optgroup>
+                  <optgroup label="Data Matrix (Chuẩn BarTender phổ biến)">
+                    <option value="datamatrix">Data Matrix (ECC 200 - Bo mạch, Điện tử, Dược)</option>
+                    <option value="gs1datamatrix">GS1 DataMatrix (Chuẩn UDI Thiết bị y tế)</option>
+                  </optgroup>
+                  <optgroup label="Mã 2D Xếp Lớp & Vận Đơn (Stacked)">
+                    <option value="pdf417">PDF417 (Vận đơn DHL/FedEx, Vé máy bay, Căn cước)</option>
+                    <option value="micropdf417">MicroPDF417 (Mật độ cao)</option>
+                  </optgroup>
+                  <optgroup label="Mã 2D Chuyên Dụng Khác">
+                    <option value="azteccode">Aztec Code (Vé tàu hỏa, Hàng không IATA)</option>
+                    <option value="maxicode">MaxiCode (Mắt bò lục giác UPS Express)</option>
+                    <option value="dotcode">DotCode (In phun tốc độ cao - Dược phẩm & Thuốc lá)</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-0.5">Màu mã 2D</label>
+                <div class="flex items-center gap-2">
+                  <input type="color" id="inspector-qrcode-color" value="#000000" class="w-8 h-7 p-0 rounded border border-slate-700 bg-transparent cursor-pointer">
+                  <input type="text" id="inspector-qrcode-color-hex" value="#000000" class="inspector-input uppercase font-mono text-xs">
+                </div>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-0.5">Màu nền</label>
+                <div class="flex items-center gap-2">
+                  <select id="inspector-qrcode-bg-type" class="inspector-input text-xs w-28">
+                    <option value="transparent">Trong suốt</option>
+                    <option value="white" selected>Nền trắng</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 6: ĐỊNH DẠNG ICON BAO BÌ (CHỈ HIỆN KHI CHỌN ICON) -->
+            <div id="inspector-group-icon-styling" class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 space-y-2.5 hidden">
+              <div class="text-[11px] font-bold text-emerald-400 flex items-center justify-between">
+                <span>Thuộc tính Biểu Tượng</span>
+                <i class="fa-solid fa-boxes-packing"></i>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-0.5">Tên biểu tượng</label>
+                <input type="text" id="inspector-icon-name" readonly class="inspector-input text-xs bg-slate-900/60 text-emerald-300 font-semibold">
+              </div>
+
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-0.5">Màu biểu tượng</label>
+                <div class="flex items-center gap-2">
+                  <input type="color" id="inspector-icon-color" value="#0f172a" class="w-8 h-7 p-0 rounded border border-slate-700 bg-transparent cursor-pointer">
+                  <input type="text" id="inspector-icon-color-hex" value="#0F172A" class="inspector-input uppercase font-mono text-xs">
+                </div>
+              </div>
+
+              <button type="button" id="inspector-btn-change-icon" class="w-full mt-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-emerald-300 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 border border-slate-700 transition">
+                <i class="fa-solid fa-shapes"></i>
+                <span>Đổi sang biểu tượng khác...</span>
+              </button>
+            </div>
+
+            <!-- SECTION 7: THAO TÁC ĐỐI TƯỢNG (ACTIONS) -->
+            <div class="space-y-2 pt-2 border-t border-slate-800">
+              <button type="button" id="inspector-btn-center" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition">
+                <i class="fa-solid fa-arrows-to-dot text-blue-400"></i>
+                <span>Căn chính giữa con tem</span>
+              </button>
+              <button type="button" id="inspector-btn-duplicate" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition">
+                <i class="fa-solid fa-copy text-amber-400"></i>
+                <span>Nhân bản đối tượng</span>
+              </button>
+              <button type="button" id="btn-designer-delete" class="w-full bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-800/60 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>Xóa đối tượng này (Delete)</span>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ========================================================= -->
+      <!-- VIEW 3: TECHNICAL BLUEPRINT 2D                            -->
+      <!-- ========================================================= -->
+      <div id="view-blueprint" class="main-view hidden flex-1 w-full h-full flex flex-col bg-slate-950 overflow-auto p-4 space-y-3">
+        <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl p-3 shrink-0">
+          <div>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">Bản Vẽ Kỹ Thuật Tỷ Lệ Chuẩn (2D)</h3>
+            <p class="text-[11px] text-slate-400">Hiển thị đường bế demi, bước nhảy hàng, khoảng cách tem & hướng cuộn</p>
+          </div>
+          <button id="btn-download-blueprint-main" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1.5 rounded-lg text-blue-400 border border-slate-700 font-medium flex items-center gap-1.5">
+            <i class="fa-solid fa-download"></i> Tải Ảnh Bản Vẽ 2D
+          </button>
+        </div>
+
+        <div class="flex-1 bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex items-center justify-center overflow-auto min-h-[420px]">
+          <canvas id="blueprint-canvas" class="max-w-full rounded shadow-xl"></canvas>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs space-y-1.5 text-slate-300 shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="w-4 h-0.5 bg-red-500 inline-block"></span>
+            <span>Đường nét liền đỏ: <b>Đường bế demi (Die-cut line)</b></span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-4 h-0.5 border-t border-dashed border-cyan-400 inline-block"></span>
+            <span>Đường nét đứt xanh: <b>Đường răng cưa xé (Perforation line)</b></span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-4 h-2 border border-amber-400 inline-block"></span>
+            <span>Mũi tên xanh: <b>Hướng ra tem (Winding direction)</b></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================= -->
+      <!-- VIEW 4: PROOF EXPORT PREVIEW                              -->
+      <!-- ========================================================= -->
+      <div id="view-proof" class="main-view hidden flex-1 w-full h-full flex flex-col bg-slate-950 overflow-auto p-4 space-y-4">
+        <div class="max-w-3xl mx-auto w-full bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
+            <i class="fa-solid fa-file-contract text-emerald-400"></i>
+            Thông Tin Phiếu Duyệt Mẫu In Ấn (Proof Sheet)
+          </h3>
+          <p class="text-xs text-slate-400">Điền thông tin xưởng in và khách hàng để tự động kết xuất phiếu maket A4 chính thức gửi ký duyệt.</p>
+
+          <div class="space-y-3 text-xs">
+            <div>
+              <label class="text-slate-300 block mb-1 font-semibold">Tên công ty / Xưởng in:</label>
+              <input type="text" id="proof-company-name-view" value="CÔNG TY TNHH IN ẤN & TEM NHÃN VIỆT NAM" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-slate-300 block mb-1 font-semibold">Tên khách hàng / Đơn vị:</label>
+                <input type="text" id="proof-client-name-view" value="Công Ty Cổ Phần Thực Phẩm An Gia" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+              </div>
+              <div>
+                <label class="text-slate-300 block mb-1 font-semibold">Mã đơn hàng / Job ID:</label>
+                <input type="text" id="proof-job-id-view" value="JOB-2026-8899" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-slate-300 block mb-1 font-semibold">Ngày lập phiếu:</label>
+                <input type="text" id="proof-date-view" value="07/09/2026" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+              </div>
+              <div>
+                <label class="text-slate-300 block mb-1 font-semibold">Người thiết kế / Kỹ thuật:</label>
+                <input type="text" id="proof-designer-name-view" value="Kỹ thuật viên In ấn" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+              </div>
+            </div>
+          </div>
+
+          <button id="btn-generate-proof-sheet-view" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm py-3 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition">
+            <i class="fa-solid fa-eye text-base"></i>
+            <span>Mở & Xuất Phiếu Duyệt Mẫu Maket A4</span>
+          </button>
+        </div>
+      </div>
+
+    </main>
+
+
+
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: HIỂN THỊ PHIẾU DUYỆT MẪU MAKET IN ẤN               -->
+  <!-- ========================================================= -->
+  <div id="proof-modal">
+    <div class="max-w-4xl mx-auto my-4 bg-slate-900 text-white rounded-xl shadow-2xl overflow-hidden border border-slate-700 flex flex-col max-h-[95vh]">
+      
+      <!-- Modal Top Bar -->
+      <div class="h-12 bg-slate-800 px-4 flex items-center justify-between border-b border-slate-700 shrink-0">
+        <h2 class="text-sm font-bold flex items-center gap-2">
+          <i class="fa-solid fa-file-lines text-blue-400"></i>
+          <span>PHIẾU DUYỆT MAKET & QUY CÁCH SẢN XUẤT CUỘN TEM</span>
+        </h2>
+        <div class="flex items-center space-x-2">
+          <button id="btn-print-proof" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-semibold">
+            <i class="fa-solid fa-print"></i> In / Tải PDF
+          </button>
+          <button id="btn-download-proof-img" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-semibold">
+            <i class="fa-solid fa-image"></i> Tải Ảnh PNG
+          </button>
+          <button id="btn-close-proof" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs w-8 h-8 rounded-lg flex items-center justify-center">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Printable Area (White background sheet for authentic proof sheet) -->
+      <div class="flex-1 overflow-y-auto p-4 bg-slate-950">
+        <div id="proof-sheet-printable" class="bg-white text-slate-900 p-8 rounded-lg shadow-xl font-sans max-w-3xl mx-auto space-y-6">
+          
+          <!-- Proof Header -->
+          <div class="flex items-start justify-between border-b-2 border-slate-800 pb-4">
+            <div>
+              <h1 id="out-proof-company" class="text-xl font-black tracking-tight text-slate-900">CÔNG TY TNHH IN ẤN & TEM NHÃN VIỆT NAM</h1>
+              <p class="text-xs text-slate-600">Chuyên sản xuất tem nhãn decal cuộn, tem barcode, tem niêm phong</p>
+            </div>
+            <div class="text-right">
+              <span class="inline-block px-3 py-1 bg-red-600 text-white font-black text-xs uppercase rounded">BẢN MAKET DUYỆT IN</span>
+              <p id="out-proof-job" class="text-xs font-mono font-bold text-slate-700 mt-1">MÃ ĐƠN: JOB-2026-8899</p>
+              <p id="out-proof-date" class="text-xs text-slate-500">Ngày lập: 07/09/2026</p>
+            </div>
+          </div>
+
+          <!-- Customer Info Box -->
+          <div class="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded border border-slate-200 text-xs">
+            <div>
+              <span class="text-slate-500 font-medium">Khách hàng / Đơn vị:</span>
+              <p id="out-proof-client" class="font-bold text-slate-900 text-sm">Công Ty Cổ Phần Thực Phẩm An Gia</p>
+            </div>
+            <div>
+              <span class="text-slate-500 font-medium">Quy cách sản phẩm:</span>
+              <p id="out-proof-summary" class="font-bold text-slate-900 text-sm">Tem cuộn 50x30mm, 2 tem/hàng, lõi 1 inch</p>
+            </div>
+          </div>
+
+          <!-- 2 Visual Columns: 3D Render & 2D Blueprint -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="border border-slate-200 rounded p-2 text-center bg-slate-50">
+              <span class="text-[11px] font-bold text-slate-700 block mb-1">HÌNH ẢNH 3D PHỐI CẢNH CUỘN TEM</span>
+              <img id="proof-img-3d" class="w-full h-52 object-contain rounded bg-white" alt="3D Roll Mockup">
+            </div>
+            <div class="border border-slate-200 rounded p-2 text-center bg-slate-50">
+              <span class="text-[11px] font-bold text-slate-700 block mb-1">BẢN VẼ KỸ THUẬT & ĐƯỜNG BẾ 2D</span>
+              <img id="proof-img-2d" class="w-full h-52 object-contain rounded bg-white" alt="2D Technical Blueprint">
+            </div>
+          </div>
+
+          <!-- Detailed Specifications Table -->
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-800 block mb-1.5">BẢNG THÔNG SỐ KỸ THUẬT SẢN XUẤT</span>
+            <table class="w-full text-xs border-collapse border border-slate-300">
+              <tbody class="divide-y divide-slate-200">
+                <tr class="bg-slate-100">
+                  <td class="p-2 font-semibold border-r border-slate-300 w-1/4">Kích thước tem (WxH):</td>
+                  <td id="table-label-size" class="p-2 font-bold w-1/4">50 x 30 mm</td>
+                  <td class="p-2 font-semibold border-r border-slate-300 w-1/4">Độ bo góc (Radius):</td>
+                  <td id="table-radius" class="p-2 font-bold w-1/4">R = 2.0 mm</td>
+                </tr>
+                <tr>
+                  <td class="p-2 font-semibold border-r border-slate-300">Số tem trên 1 hàng:</td>
+                  <td id="table-ups" class="p-2 font-bold">2 tem / hàng</td>
+                  <td class="p-2 font-semibold border-r border-slate-300">Khoảng cách 2 tem:</td>
+                  <td id="table-gap-x" class="p-2 font-bold">3.0 mm</td>
+                </tr>
+                <tr class="bg-slate-100">
+                  <td class="p-2 font-semibold border-r border-slate-300">Bước nhảy 2 hàng:</td>
+                  <td id="table-gap-y" class="p-2 font-bold">3.0 mm</td>
+                  <td class="p-2 font-semibold border-r border-slate-300">Lề biên 2 bên:</td>
+                  <td id="table-margin-x" class="p-2 font-bold">2.0 mm</td>
+                </tr>
+                <tr>
+                  <td class="p-2 font-semibold border-r border-slate-300">Kích thước lõi cuộn:</td>
+                  <td id="table-core" class="p-2 font-bold text-blue-700">1 inch (~25.4 mm)</td>
+                  <td class="p-2 font-semibold border-r border-slate-300">Khổ rộng cuộn giấy:</td>
+                  <td id="table-web-width" class="p-2 font-bold text-emerald-700">107.0 mm</td>
+                </tr>
+                <tr class="bg-slate-100">
+                  <td class="p-2 font-semibold border-r border-slate-300">Chiều dài cuộn / Tem:</td>
+                  <td id="table-roll-length" class="p-2 font-bold">50 m (~3.030 tem)</td>
+                  <td class="p-2 font-semibold border-r border-slate-300">Đường kính ngoài (OD):</td>
+                  <td id="table-od" class="p-2 font-bold">~98 mm</td>
+                </tr>
+                <tr>
+                  <td class="p-2 font-semibold border-r border-slate-300">Màu tem & Chất liệu:</td>
+                  <td id="table-material" class="p-2 font-bold text-slate-800" colspan="3">Decal thường | Màu #FFFFFF</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Signatures Section -->
+          <div class="pt-6 grid grid-cols-2 gap-8 text-center text-xs">
+            <div>
+              <p class="font-bold uppercase text-slate-800">ĐẠI DIỆN XƯỞNG SẢN XUẤT</p>
+              <p class="text-[11px] text-slate-500 italic mt-0.5">(Ký, ghi rõ họ tên & ngày lập)</p>
+              <div class="h-20 flex items-end justify-center">
+                <span id="out-proof-designer" class="font-bold text-slate-700">Kỹ thuật viên In ấn</span>
+              </div>
+            </div>
+            <div>
+              <p class="font-bold uppercase text-slate-800 text-red-600">XÁC NHẬN DUYỆT CỦA KHÁCH HÀNG</p>
+              <p class="text-[11px] text-slate-500 italic mt-0.5">(Tôi đã kiểm tra kỹ kích thước & nội dung maket)</p>
+              <div class="h-20 flex items-end justify-center">
+                <span class="text-slate-400 border-b border-dashed border-slate-400 px-8 pb-1">Ký duyệt tại đây</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CHỌN LOẠI MÃ VẠCH (KÈM HÌNH ẢNH MẪU THỰC TẾ CHUẨN BARTENDER) -->
+  <div id="modal-visual-barcodes" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 hidden">
+    <div class="bg-slate-900 border border-cyan-700/80 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl shadow-black/80 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- MODAL HEADER -->
+      <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/70 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white text-lg shadow-lg shadow-cyan-500/20">
+            <i class="fa-solid fa-barcode"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              Bộ Thư Viện Các Loại Mã Vạch (Có Hình Ảnh Mẫu Thực Tế)
+              <span class="text-xs bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-700 font-mono font-semibold">18+ Chuẩn 1D & 2D</span>
+            </h3>
+            <p class="text-xs text-slate-400">Xem trước mẫu thực tế từng loại mã vạch để dễ dàng lựa chọn đúng chuẩn BarTender</p>
+          </div>
+        </div>
+        <button type="button" id="btn-close-visual-barcodes" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <!-- SEARCH & CATEGORY FILTERS -->
+      <div class="px-5 py-3 border-b border-slate-800/80 bg-slate-900/90 flex flex-col sm:flex-row items-center gap-3 shrink-0">
+        <!-- Search bar -->
+        <div class="relative w-full sm:w-72 shrink-0">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+          <input type="text" id="barcode-catalog-search-input" placeholder="Tìm theo tên (EAN-13, thùng carton, dược phẩm, QR...)" class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500">
+        </div>
+
+        <!-- Category pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto w-full pb-1 sm:pb-0 scrollbar-none" id="barcode-catalog-category-pills">
+          <button type="button" class="symbol-cat-btn active" data-cat="all">Tất cả (18+)</button>
+          <button type="button" class="symbol-cat-btn" data-cat="retail">🛒 Bán lẻ Siêu thị</button>
+          <button type="button" class="symbol-cat-btn" data-cat="logistics">📦 Thùng Carton & Kho</button>
+          <button type="button" class="symbol-cat-btn" data-cat="medical">💊 Dược phẩm & Y tế</button>
+          <button type="button" class="symbol-cat-btn" data-cat="matrix2d">▦ Ma trận 2D & QR</button>
+          <button type="button" class="symbol-cat-btn" data-cat="industrial">🏭 Công nghiệp</button>
+        </div>
+      </div>
+
+      <!-- GRID LIST OF BARCODE SAMPLES -->
+      <div class="p-4 sm:p-5 overflow-y-auto flex-1 min-h-[320px] bg-slate-950/40">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" id="visual-barcodes-modal-grid">
+          <!-- Injected dynamically by designer.js -->
+        </div>
+        <div id="visual-barcodes-empty" class="hidden text-center py-12 text-slate-500 text-xs">
+          <i class="fa-regular fa-folder-open text-3xl mb-2 block text-slate-600"></i>
+          Không tìm thấy loại mã vạch phù hợp với từ khóa
+        </div>
+      </div>
+
+      <!-- MODAL FOOTER -->
+      <div class="px-5 py-3 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between shrink-0 text-xs">
+        <div class="text-slate-400 flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-check text-cyan-400"></i>
+          <span>Click vào loại mã vạch bất kỳ để áp dụng trực tiếp cho tem và tự động sinh số kiểm tra (Check-digit).</span>
+        </div>
+        <button type="button" id="btn-close-visual-barcodes-ft" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition">
+          Đóng
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: THƯ VIỆN 60+ BIỂU TƯỢNG CHUẨN PHẦN MỀM BARTENDER -->
+  <div id="modal-bartender-symbols" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 hidden">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl shadow-black/80 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- MODAL HEADER -->
+      <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white text-lg shadow-lg shadow-emerald-500/20">
+            <i class="fa-solid fa-shapes"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              Thư Viện Biểu Tượng Tem Nhãn Chuẩn BarTender
+              <span class="text-xs bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-700 font-mono font-semibold">60+ Ký Hiệu</span>
+            </h3>
+            <p class="text-xs text-slate-400">Tập hợp toàn bộ ký hiệu ISO 780 vận chuyển, Tái chế, Cảnh báo GHS, Chứng nhận CE/RoHS, Dược phẩm</p>
+          </div>
+        </div>
+        <button type="button" id="btn-close-bartender-symbols" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <!-- SEARCH & CATEGORY FILTERS -->
+      <div class="px-5 py-3 border-b border-slate-800/80 bg-slate-900/90 flex flex-col sm:flex-row items-center gap-3 shrink-0">
+        <!-- Search bar -->
+        <div class="relative w-full sm:w-72 shrink-0">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+          <input type="text" id="symbol-search-input" placeholder="Tìm ký hiệu (dễ vỡ, tái chế, CE...)" class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <!-- Category pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto w-full pb-1 sm:pb-0 scrollbar-none" id="symbol-category-pills">
+          <button type="button" class="symbol-cat-btn active" data-cat="all">Tất cả (60+)</button>
+          <button type="button" class="symbol-cat-btn" data-cat="shipping">🚚 Vận chuyển & Kho</button>
+          <button type="button" class="symbol-cat-btn" data-cat="recycling">♻️ Tái chế</button>
+          <button type="button" class="symbol-cat-btn" data-cat="safety">⚠️ Cảnh báo & GHS</button>
+          <button type="button" class="symbol-cat-btn" data-cat="cert">🛡️ Chứng nhận</button>
+          <button type="button" class="symbol-cat-btn" data-cat="medical">🏥 Y tế & Dược</button>
+          <button type="button" class="symbol-cat-btn" data-cat="commercial">🏷️ Thương mại</button>
+        </div>
+      </div>
+
+      <!-- GRID LIST OF ICONS -->
+      <div class="p-4 sm:p-5 overflow-y-auto flex-1 min-h-[300px] bg-slate-950/40">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5" id="bartender-symbols-modal-grid">
+          <!-- Dynamic cards injected by designer.js -->
+        </div>
+        <div id="bartender-symbols-empty" class="hidden text-center py-12 text-slate-500 text-xs">
+          <i class="fa-regular fa-folder-open text-3xl mb-2 block text-slate-600"></i>
+          Không tìm thấy biểu tượng phù hợp với từ khóa
+        </div>
+      </div>
+
+      <!-- MODAL FOOTER -->
+      <div class="px-5 py-3 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between shrink-0 text-xs">
+        <div class="text-slate-400 flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-info text-emerald-400"></i>
+          <span>Click vào biểu tượng để chèn trực tiếp lên con tem. Hỗ trợ phóng to thu nhỏ 8 hướng và đổi màu tuỳ ý.</span>
+        </div>
+        <button type="button" id="btn-close-bartender-symbols-ft" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition">
+          Đóng
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL: XUẤT ẢNH TÙY CHỌN ĐỊNH DẠNG & KÍCH THƯỚC (600x600, 800x800, TÙY CHỈNH...) -->
+  <!-- ========================================================= -->
+  <div id="modal-custom-export" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 hidden animate-in fade-in zoom-in-95 duration-200">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl shadow-black/80 flex flex-col">
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-slate-900 via-emerald-950/60 to-slate-900 px-5 py-3.5 border-b border-slate-800 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-emerald-600/30 text-emerald-400 flex items-center justify-center text-sm border border-emerald-500/30 shadow-sm">
+            <i class="fa-solid fa-file-image"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+              Xuất Ảnh Tùy Chỉnh Kích Thước
+              <span class="text-[10px] bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-700 font-mono font-bold">HD & Vuông</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">Chọn kích thước 600x600, 800x800 hoặc tự nhập theo ý muốn</p>
+          </div>
+        </div>
+        <button type="button" id="btn-close-export-modal" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-4 sm:p-5 space-y-4 overflow-y-auto max-h-[75vh] text-xs">
+        <!-- 1. NGUỒN ẢNH XUẤT -->
+        <div>
+          <label class="text-[11px] font-bold text-slate-300 block mb-1.5 flex items-center gap-1.5">
+            <i class="fa-solid fa-layer-group text-blue-400"></i> Đối tượng cần xuất ảnh:
+          </label>
+          <div class="grid grid-cols-2 gap-2" id="export-source-group">
+            <button type="button" class="export-source-btn active py-2 px-3 rounded-xl border flex items-center justify-center gap-2 font-bold transition text-xs bg-blue-600/20 text-blue-300 border-blue-500" data-source="3d">
+              <i class="fa-solid fa-cube text-blue-400"></i>
+              <span>Mô Hình 3D Cuộn Tem</span>
+            </button>
+            <button type="button" class="export-source-btn py-2 px-3 rounded-xl border flex items-center justify-center gap-2 font-bold transition text-xs bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700" data-source="designer">
+              <i class="fa-solid fa-pen-ruler text-amber-400"></i>
+              <span>Mặt Tem 2D Thiết Kế</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. KÍCH THƯỚC MẪU SẴN (PRESETS) -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-ruler-combined text-emerald-400"></i> Kích thước ảnh xuất (Pixel):
+            </label>
+            <span class="text-[10px] text-emerald-400 font-mono font-semibold" id="export-res-summary">800 x 800 px (1:1 Vuông)</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-xs" id="export-presets-grid">
+            <button type="button" class="export-preset-btn py-2 px-2 rounded-lg border text-center transition font-semibold bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700" data-w="600" data-h="600">
+              <div class="text-white font-bold text-[11px]">600 x 600</div>
+              <div class="text-[9px] text-slate-400 mt-0.5">Vuông Web/Zalo</div>
+            </button>
+            <button type="button" class="export-preset-btn active py-2 px-2 rounded-lg border text-center transition font-semibold bg-emerald-600/20 text-emerald-300 border-emerald-500" data-w="800" data-h="800">
+              <div class="text-white font-bold text-[11px]">800 x 800</div>
+              <div class="text-[9px] text-emerald-400 mt-0.5">Chuẩn Shopee/TMĐT</div>
+            </button>
+            <button type="button" class="export-preset-btn py-2 px-2 rounded-lg border text-center transition font-semibold bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700" data-w="1000" data-h="1000">
+              <div class="text-white font-bold text-[11px]">1000 x 1000</div>
+              <div class="text-[9px] text-slate-400 mt-0.5">Vuông HD Catalog</div>
+            </button>
+            <button type="button" class="export-preset-btn py-2 px-2 rounded-lg border text-center transition font-semibold bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700" data-w="1200" data-h="630">
+              <div class="text-white font-bold text-[11px]">1200 x 630</div>
+              <div class="text-[9px] text-slate-400 mt-0.5">Facebook/Banner</div>
+            </button>
+            <button type="button" class="export-preset-btn py-2 px-2 rounded-lg border text-center transition font-semibold bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700" data-w="1920" data-h="1080">
+              <div class="text-white font-bold text-[11px]">1920 x 1080</div>
+              <div class="text-[9px] text-slate-400 mt-0.5">Full HD 1080p</div>
+            </button>
+            <button type="button" class="export-preset-btn py-2 px-2 rounded-lg border text-center transition font-semibold bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700" data-w="custom" data-h="custom">
+              <div class="text-white font-bold text-[11px]">Tùy Chỉnh</div>
+              <div class="text-[9px] text-amber-300 mt-0.5">Tự gõ W x H</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. Ô TỰ NHẬP KÍCH THƯỚC (W x H px) -->
+        <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-2.5">
+          <div class="grid grid-cols-2 gap-3 items-center">
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">Chiều rộng (Width px)</label>
+              <div class="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-700">
+                <input type="number" id="input-export-width" value="800" min="200" max="4000" step="50" class="w-full bg-transparent text-white font-mono font-bold text-xs focus:outline-none text-center">
+                <span class="text-[10px] text-slate-400 font-mono">px</span>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">Chiều cao (Height px)</label>
+              <div class="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-700">
+                <input type="number" id="input-export-height" value="800" min="200" max="4000" step="50" class="w-full bg-transparent text-white font-mono font-bold text-xs focus:outline-none text-center">
+                <span class="text-[10px] text-slate-400 font-mono">px</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-1 border-t border-slate-800/60 text-[10px] text-slate-400">
+            <span>Khóa tỷ lệ nhanh:</span>
+            <div class="flex items-center gap-1">
+              <button type="button" class="btn-quick-ratio px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200" data-ratio="1:1">1:1 (Vuông)</button>
+              <button type="button" class="btn-quick-ratio px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200" data-ratio="4:3">4:3</button>
+              <button type="button" class="btn-quick-ratio px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200" data-ratio="16:9">16:9</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. TÙY CHỌN NỀN & ĐỊNH DẠNG -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1">Màu nền ảnh:</label>
+            <select id="select-export-bg" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-xs focus:outline-none">
+              <option value="studio">Nền Studio hiện tại</option>
+              <option value="white">Nền trắng tinh (#FFFFFF)</option>
+              <option value="transparent">Nền trong suốt (PNG tách nền)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1">Định dạng file:</label>
+            <select id="select-export-format" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-xs focus:outline-none">
+              <option value="png">PNG (Nét căng, hỗ trợ trong suốt)</option>
+              <option value="jpg">JPG (Ảnh chụp nén gọn)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 5. CHẾ ĐỘ XUẤT ẢNH 3D (2 CHẾ ĐỘ RÕ RÀNG) -->
+        <div class="pt-1" id="export-specs-option-wrapper">
+          <label class="text-[11px] font-bold text-slate-300 block mb-1.5 flex items-center gap-1.5">
+            <i class="fa-solid fa-layer-group text-blue-400"></i> Chọn chế độ xuất ảnh 3D:
+          </label>
+          <div class="grid grid-cols-2 gap-2.5" id="export-3d-mode-group">
+            <!-- Chế độ 1: Tải nguyên tem 3D -->
+            <button type="button" class="export-mode-btn py-2.5 px-3 rounded-xl border text-left transition flex flex-col gap-1 border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-750" data-mode="roll-only" id="btn-mode-roll-only">
+              <div class="flex items-center gap-2 font-bold text-xs text-white">
+                <i class="fa-solid fa-cube text-emerald-400"></i>
+                <span>1. Tải nguyên tem 3D</span>
+              </div>
+              <p class="text-[10px] text-slate-400 leading-tight">Chỉ xuất cuộn tem 3D chính giữa sạch đẹp, không kèm bảng thông số</p>
+            </button>
+            <!-- Chế độ 2: Tải kèm thông số -->
+            <button type="button" class="export-mode-btn active py-2.5 px-3 rounded-xl border text-left transition flex flex-col gap-1 border-blue-500 bg-blue-600/20 text-blue-300" data-mode="with-specs" id="btn-mode-with-specs">
+              <div class="flex items-center gap-2 font-bold text-xs text-blue-300">
+                <i class="fa-solid fa-clipboard-list text-blue-400"></i>
+                <span>2. Tải kèm thông số</span>
+              </div>
+              <p class="text-[10px] text-slate-400 leading-tight">Cuộn tem 3D + Bảng thông số đặt hàng (bố cục thông minh, không đè)</p>
+            </button>
+          </div>
+          <input type="checkbox" id="check-export-include-specs" checked class="hidden">
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="bg-slate-950/80 px-4 sm:px-5 py-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <button type="button" id="btn-cancel-export-modal" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 text-xs font-medium transition">
+          Hủy bỏ
+        </button>
+        <div class="flex items-center gap-2">
+          <!-- Nút Tải nguyên tem 3D trực tiếp -->
+          <button type="button" id="btn-quick-export-roll" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold transition flex items-center gap-1.5" title="Tải ngay ảnh chỉ có cuộn tem 3D">
+            <i class="fa-solid fa-cube text-emerald-400"></i>
+            <span>Tải Nguyên Tem 3D</span>
+          </button>
+          <!-- Nút Tải kèm thông số / Nút xuất chính -->
+          <button type="button" id="btn-confirm-export-img" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/30 flex items-center gap-1.5">
+            <i class="fa-solid fa-download"></i>
+            <span id="label-btn-export-main">Tải Kèm Thông Số (<span id="export-btn-dim-badge">800x800</span>)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL LƯU MẪU TEM (SAVE CUSTOM PRESET MODAL) -->
+  <div id="modal-save-preset" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden animate-fadeIn">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl space-y-0">
+      <div class="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-blue-600/30 text-blue-400 flex items-center justify-center text-sm border border-blue-500/30">
+            <i class="fa-solid fa-floppy-disk"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-white">Lưu Mẫu Tem Mới</h3>
+            <p class="text-[11px] text-slate-400">Lưu vào danh sách mẫu sẵn để dùng lại bất kỳ lúc nào</p>
+          </div>
+        </div>
+        <button id="btn-close-save-preset-modal" class="text-slate-400 hover:text-white transition text-sm p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 text-xs">
+        <div>
+          <label class="block text-slate-300 font-medium mb-1.5">Tên mẫu tem hiển thị:</label>
+          <input type="text" id="input-save-preset-name" placeholder="Ví dụ: 35 x 22 mm (3 tem/hàng)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-medium focus:border-blue-500 focus:outline-none text-xs">
+        </div>
+
+        <!-- Tóm tắt cấu hình đang lưu -->
+        <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-1.5 font-mono text-[11px]">
+          <div class="flex justify-between text-slate-400">
+            <span>Kích thước:</span>
+            <span id="save-summary-dims" class="text-blue-400 font-bold">50 x 30 mm</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Dàn hàng:</span>
+            <span id="save-summary-ups" class="text-emerald-400 font-bold">2 tem / hàng</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Khoảng cách:</span>
+            <span id="save-summary-gaps" class="text-amber-400 font-bold">Bước nhảy 3mm | Cách hàng 3mm</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Khổ cuộn & Lõi:</span>
+            <span id="save-summary-core" class="text-purple-400 font-bold">Khổ 107mm x Lõi 30mm</span>
+          </div>
+        </div>
+
+        <label class="flex items-center gap-2 cursor-pointer select-none text-slate-300 text-[11px]">
+          <input type="checkbox" id="check-save-with-design" checked class="rounded bg-slate-950 border-slate-700 text-blue-600 focus:ring-0">
+          <span>Lưu kèm cả nội dung thiết kế tem 2D (chữ, mã vạch, logo...)</span>
+        </label>
+      </div>
+
+      <div class="bg-slate-950/60 px-5 py-3.5 border-t border-slate-800 flex items-center justify-between">
+        <button id="btn-cancel-save-preset" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition">
+          Hủy bỏ
+        </button>
+        <button id="btn-confirm-save-preset" class="px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-blue-600/30 flex items-center gap-1.5">
+          <i class="fa-solid fa-check"></i>
+          <span>Xác Nhận Lưu</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MOBILE BOTTOM APP NAVIGATION BAR                          -->
+  <!-- ========================================================= -->
+  <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-slate-900/98 backdrop-blur-md border-t border-slate-800 z-40 flex items-center justify-around px-1 select-none shadow-2xl">
+    <button class="main-tab-btn active flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-blue-400 transition" data-view="view-3d">
+      <i class="fa-solid fa-cube text-base mb-0.5"></i>
+      <span class="text-[10px] font-semibold">Mô Phỏng 3D</span>
+    </button>
+    <button class="main-tab-btn flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-amber-400 transition" data-view="view-designer">
+      <i class="fa-solid fa-pen-ruler text-base mb-0.5"></i>
+      <span class="text-[10px] font-semibold">Thiết Kế 2D</span>
+    </button>
+    <button class="main-tab-btn flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-cyan-400 transition" data-view="view-blueprint">
+      <i class="fa-solid fa-compass-drafting text-base mb-0.5"></i>
+      <span class="text-[10px] font-semibold">Bản Vẽ 2D</span>
+    </button>
+    <button class="main-tab-btn flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-emerald-400 transition" data-view="view-proof">
+      <i class="fa-solid fa-file-invoice text-base mb-0.5"></i>
+      <span class="text-[10px] font-semibold">Phiếu Duyệt</span>
+    </button>
+  </nav>
+
+  <!-- Core JavaScript modules -->
+  <script src="js/app.js?v=2.4"></script>
+  <script src="js/scene3d.js?v=2.4"></script>
+  <script src="js/roll3d.js?v=2.4"></script>
+  <script src="js/designer.js?v=2.4"></script>
+  <script src="js/blueprint2d.js?v=2.4"></script>
+  <script src="js/export_proof.js?v=2.4"></script>
+</body>
+</html>

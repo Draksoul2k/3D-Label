@@ -1,0 +1,780 @@
+/* CSS Stylesheet cho 3D Label & Roll Mockup Studio */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-light: #eff6ff;
+  --accent: #f59e0b;
+  --bg-main: #0f172a;
+  --bg-surface: #1e293b;
+  --bg-card: #273549;
+  --border-color: #334155;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --danger: #ef4444;
+  --success: #10b981;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  background-color: #0b0f19;
+  color: var(--text-main);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #111827;
+}
+::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+/* Form inputs & controls */
+input[type="number"],
+input[type="text"],
+select,
+textarea {
+  background-color: #111827;
+  border: 1px solid #374151;
+  color: #f3f4f6;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+/* Đảm bảo chữ trong danh sách xổ xuống (dropdown options) luôn rõ nét trên nền tối, không bị trắng trên nền trắng */
+select option,
+select optgroup {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+select optgroup {
+  font-weight: 700 !important;
+  color: #60a5fa !important;
+  background-color: #1e293b !important;
+  padding: 6px 10px !important;
+}
+
+select option {
+  padding: 8px 12px !important;
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  font-size: 0.85rem !important;
+}
+
+select option:hover,
+select option:focus,
+select option:checked {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+#preset-selector {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+#preset-selector optgroup {
+  background-color: #1e293b !important;
+  color: #93c5fd !important;
+  font-weight: 700 !important;
+}
+
+#preset-selector option {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  padding: 8px 12px !important;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+input[type="range"] {
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.mono-text {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* 3D Canvas container */
+#viewport-3d {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+#three-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Dimension Badges */
+.dim-badge {
+  background: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(4px);
+  border: 1px solid #3b82f6;
+  color: #93c5fd;
+  font-size: 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 2px 6px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+/* Dimension Eye Toggle Buttons */
+.dim-eye-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+.dim-eye-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 2px solid #374151;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.color-swatch:hover {
+  transform: scale(1.15);
+  border-color: #60a5fa;
+}
+.color-swatch.active {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
+
+/* Tab buttons */
+/* Main Top Tabs Navigation */
+.main-tab-btn {
+  transition: all 0.15s ease;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.main-tab-btn.active {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+
+.main-tab-btn:not(.active):hover {
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+/* VNLabel Canvas Workspace */
+#designer-canvas-wrapper {
+  background-image: 
+    linear-gradient(to right, rgba(51, 65, 85, 0.25) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(51, 65, 85, 0.25) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.tab-btn {
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab-btn:hover {
+  color: #f1f5f9;
+}
+.tab-btn.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.08);
+}
+
+/* Canvas 2D designer */
+#label-canvas-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #0f172a;
+  border: 1px dashed #334155;
+  border-radius: 8px;
+  overflow: hidden;
+  user-select: none;
+}
+
+#label-designer-canvas {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  cursor: crosshair;
+}
+
+/* Technical blueprint container */
+#blueprint-canvas {
+  background-color: #091e3a;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6);
+  border: 1px solid #1e3a8a;
+  border-radius: 6px;
+}
+
+/* Floating controls on 3D viewport */
+.viewport-overlay-btn {
+  background: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(6px);
+  border: 1px solid #374151;
+  color: #e5e7eb;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.viewport-overlay-btn:hover {
+  background: rgba(31, 41, 55, 0.95);
+  border-color: #60a5fa;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+.viewport-overlay-btn.active {
+  background: #2563eb;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+/* Pulsing badge */
+.pulse-badge {
+  animation: pulse-animation 2s infinite;
+}
+@keyframes pulse-animation {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+/* Printable Proof Sheet (Modal) */
+#proof-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  overflow-y: auto;
+  padding: 20px;
+}
+#proof-sheet-content {
+  background: #ffffff;
+  color: #0f172a;
+  max-width: 900px;
+  margin: 0 auto;
+  border-radius: 8px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+}
+
+/* ========================================================= */
+/* MAIN WORKSPACE SEGMENTED TABS                             */
+/* ========================================================= */
+.main-tab-btn {
+  color: #94a3b8;
+  background-color: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.18s ease-in-out;
+  border-radius: 8px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.main-tab-btn:hover {
+  color: #f8fafc;
+  background-color: rgba(255, 255, 255, 0.07);
+}
+.main-tab-btn.active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  border-color: rgba(96, 165, 250, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4) !important;
+}
+
+/* VNLABEL DESIGNER GRID BACKGROUND */
+#designer-canvas-wrapper {
+  background-color: #050811;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+#label-designer-canvas {
+  background-color: #ffffff;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.btn-quick-field {
+  transition: all 0.15s ease-in-out;
+}
+.btn-quick-field:hover {
+  border-color: #3b82f6;
+  color: #60a5fa;
+  transform: translateY(-1px);
+}
+
+/* ========================================================= */
+/* BARTENDER STUDIO COMPONENT STYLES                         */
+/* ========================================================= */
+
+/* BarTender Ribbon Buttons */
+.ribbon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+.ribbon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.ribbon-btn.active {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #3b82f6;
+}
+
+/* BarTender Left Toolbox Buttons */
+.tool-item-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 6px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  color: #e2e8f0;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  text-align: center;
+}
+.tool-item-btn:hover {
+  background: rgba(51, 65, 85, 0.95);
+  border-color: #3b82f6;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Quick Field Pills */
+.quick-field-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: #0b1120;
+  border: 1px solid #1e293b;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  width: 100%;
+}
+.quick-field-pill:hover {
+  border-color: #3b82f6;
+  background: #1e293b;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+/* BarTender Inspector Inputs */
+.inspector-input {
+  background-color: #0b1120 !important;
+  border: 1px solid #334155 !important;
+  border-radius: 6px !important;
+  padding: 5px 8px !important;
+  font-size: 11px !important;
+  color: #f8fafc !important;
+  width: 100%;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.inspector-input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 1px #3b82f6;
+  outline: none !important;
+}
+
+/* Packaging & Shipping Icon Chips */
+.packaging-icon-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 3px;
+  background-color: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  min-height: 50px;
+}
+.packaging-icon-chip:hover {
+  background-color: rgba(30, 41, 59, 0.95);
+  border-color: rgba(16, 185, 129, 0.7);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+.packaging-icon-chip:active {
+  transform: translateY(0);
+  background-color: rgba(6, 78, 59, 0.6);
+}
+
+/* BarTender Symbol Library Modal & Filter Pills */
+.symbol-cat-btn {
+  padding: 5px 11px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  background-color: #0b1120;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.symbol-cat-btn:hover {
+  background-color: #1e293b;
+  border-color: #10b981;
+  color: #ffffff;
+}
+.symbol-cat-btn.active {
+  background-color: #064e3b;
+  border-color: #10b981;
+  color: #34d399;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+}
+
+.bartender-symbol-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 8px;
+  background-color: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  text-align: center;
+  min-height: 110px;
+}
+.bartender-symbol-card:hover {
+  background-color: rgba(30, 41, 59, 0.98);
+  border-color: #10b981;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5), 0 0 12px rgba(16, 185, 129, 0.2);
+}
+.bartender-symbol-card:active {
+  transform: translateY(0);
+}
+.bartender-symbol-card .symbol-svg-wrapper {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+  transition: transform 0.15s ease;
+}
+.bartender-symbol-card:hover .symbol-svg-wrapper {
+  transform: scale(1.1);
+}
+
+/* BarTender Alignment Tool Buttons */
+.align-tool-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 2px;
+  background-color: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  border-radius: 8px;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: all 0.15s ease;
+  user-select: none;
+  min-height: 44px;
+}
+.align-tool-btn:hover {
+  background-color: rgba(30, 41, 59, 0.95);
+  border-color: #38bdf8;
+  color: #f8fafc;
+  transform: translateY(-1px);
+}
+.align-tool-btn:active {
+  transform: translateY(0);
+  background-color: rgba(14, 165, 233, 0.2);
+}
+.align-tool-btn.active-highlight {
+  border-color: rgba(245, 158, 11, 0.7);
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+/* Visual Barcode Catalog Modal & Cards */
+.barcode-visual-card {
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(15, 23, 42, 0.95);
+  border: 1.5px solid rgba(51, 65, 85, 0.8);
+  border-radius: 12px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  position: relative;
+}
+.barcode-visual-card:hover {
+  background-color: rgba(30, 41, 59, 0.98);
+  border-color: #06b6d4;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5), 0 0 14px rgba(6, 182, 212, 0.25);
+}
+.barcode-visual-card.active {
+  border-color: #06b6d4;
+  background-color: rgba(8, 145, 178, 0.18);
+  box-shadow: 0 0 14px rgba(6, 182, 212, 0.4);
+}
+.barcode-visual-card .barcode-sample-img-wrapper {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 6px 8px;
+  height: 86px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+.barcode-visual-card .barcode-sample-img-wrapper svg {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+/* ========================================================= */
+/* MOBILE & RESPONSIVE ADAPTATIONS                           */
+/* ========================================================= */
+
+/* Touch-action and smooth rendering for Three.js canvas */
+#three-canvas {
+  touch-action: none;
+}
+
+/* Mobile Aside Drawer Open State */
+#sidebar-params.mobile-open {
+  transform: translateX(0) !important;
+}
+
+/* Mobile Bottom Navigation */
+#mobile-bottom-nav .main-tab-btn {
+  flex-direction: column;
+  gap: 2px;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0;
+  position: relative;
+  transition: color 0.15s ease;
+}
+
+#mobile-bottom-nav .main-tab-btn.active {
+  color: #38bdf8 !important;
+}
+
+#mobile-bottom-nav .main-tab-btn.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 22%;
+  right: 22%;
+  height: 2.5px;
+  background: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+  border-radius: 9999px;
+}
+
+/* Designer Mobile Sub-Nav Buttons */
+.designer-mobile-nav-btn {
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.designer-mobile-nav-btn.active {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+}
+
+/* Hide scrollbars for slick mobile horizontal scrolling */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Mobile screens adjustments (max-width: 767px) */
+@media (max-width: 767px) {
+  .viewport-overlay-btn {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+  }
+  
+  #ribbon-text-group select {
+    font-size: 11px !important;
+  }
+
+  /* Make sure modal dialogs fit within mobile screen */
+  #modal-visual-barcodes > div,
+  #modal-bartender-symbols > div,
+  #modal-save-preset > div,
+  #proof-modal > div {
+    max-height: 88vh !important;
+    margin: 8px !important;
+  }
+/* NÂNG CẤP PHÓNG TO / THU NHỎ BẢNG THÔNG SỐ ĐẶT HÀNG (#hud-spec-card) */
+#hud-spec-card {
+  --hud-scale: 1.25;
+}
+
+#hud-spec-card .hud-label {
+  font-size: calc(12.5px * var(--hud-scale)) !important;
+  line-height: 1.4 !important;
+}
+
+#hud-spec-card .hud-value {
+  font-size: calc(14px * var(--hud-scale)) !important;
+  line-height: 1.4 !important;
+}
+
+#hud-spec-card .hud-title {
+  font-size: calc(13px * var(--hud-scale)) !important;
+}
+
+#hud-spec-card .hud-badge {
+  font-size: calc(11px * var(--hud-scale)) !important;
+  padding: calc(2px * var(--hud-scale)) calc(6px * var(--hud-scale)) !important;
+}
+
+/* KÉO THẢ DI CHUYỂN BẢNG THÔNG SỐ ĐẶT HÀNG */
+#hud-card-header {
+  cursor: grab;
+  touch-action: none;
+}
+#hud-card-header:active {
+  cursor: grabbing;
+}
+#hud-spec-card.is-dragging {
+  cursor: grabbing !important;
+  opacity: 0.95;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(59, 130, 246, 0.6) !important;
+  transition: none !important;
+}
+/* MENU THẢ XUỐNG TÙY BIẾN BẬT / TẮT (NỀN XÁM ĐEN ĐẬM SẮC NÉT, CHỮ SÁNG RÕ KHÔNG BỊ CHÌM) */
+#dims-dropdown-menu {
+  width: 340px !important;
+  max-width: 92vw !important;
+  background-color: #0f172a !important;
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 20px 30px -5px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  color: #f1f5f9 !important;
+}
+
+#dims-dropdown-menu .bg-slate-950\/80 {
+  background-color: #162032 !important;
+  border-color: #273549 !important;
+}
+
+#dims-dropdown-menu label:hover {
+  background-color: #1e293b !important;
+}
+
+#sidebar-params {
+  background-color: #0f172a !important;
+}
+
+#mobile-bottom-nav {
+  background-color: #0f172a !important;
+}
+
