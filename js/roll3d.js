@@ -89,10 +89,10 @@ window.Roll3D = (function () {
         if (arrow.cone && arrow.cone.geometry) arrow.cone.geometry.dispose();
       }
 
-      if (dist > 1.0) {
+      if (dist > 0.8) {
         dir.normalize();
-        const headLen = Math.min(6.0 * userScale, Math.max(3.2 * userScale, dist * 0.35));
-        const headWidth = Math.min(4.0 * userScale, headLen * 0.68);
+        const headLen = Math.min(3.0, Math.max(1.8, dist * 0.22));
+        const headWidth = Math.min(1.3, headLen * 0.45);
         arrow = new THREE.ArrowHelper(dir, pKnee, dist, activeColor, headLen, headWidth);
         if (arrow.line) { arrow.line.material.depthTest = false; arrow.line.material.depthWrite = false; }
         if (arrow.cone) { arrow.cone.material.depthTest = false; arrow.cone.material.depthWrite = false; }
@@ -1037,9 +1037,9 @@ window.Roll3D = (function () {
       group.add(line);
 
       // 3. Hai đầu mũi tên 2 chiều chạm khít mép trên và mép dưới con tem
-      if (labelHeight > 5) {
-        const arrowLen = Math.min(4.5, labelHeight * 0.22);
-        const arrowW = Math.min(3.0, arrowLen * 0.7);
+      if (labelHeight > 3) {
+        const arrowLen = Math.min(2.5, Math.max(1.5, labelHeight * 0.12));
+        const arrowW = Math.min(1.2, arrowLen * 0.48);
         const aTop = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(arrowX, labelTop - arrowLen, z), arrowLen, colorNum, arrowLen, arrowW);
         const aBot = new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(arrowX, labelBottom + arrowLen, z), arrowLen, colorNum, arrowLen, arrowW);
         [aTop, aBot].forEach(a => {
@@ -1085,9 +1085,9 @@ window.Roll3D = (function () {
       group.add(line);
 
       // 3. Hai đầu mũi tên chỉ vào 2 đường dóng ngang
-      if (labelHeight > 5) {
-        const arrowLen = Math.min(4.5, labelHeight * 0.22);
-        const arrowW = Math.min(3.0, arrowLen * 0.7);
+      if (labelHeight > 3) {
+        const arrowLen = Math.min(2.5, Math.max(1.5, labelHeight * 0.12));
+        const arrowW = Math.min(1.2, arrowLen * 0.48);
         const aTop = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(arrowX, labelTop - arrowLen, z), arrowLen, colorNum, arrowLen, arrowW);
         const aBot = new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(arrowX, labelBottom + arrowLen, z), arrowLen, colorNum, arrowLen, arrowW);
         [aTop, aBot].forEach(a => {
@@ -1203,9 +1203,11 @@ window.Roll3D = (function () {
 
     // 3. Hai đầu mũi tên chỉ vào khoảng cách
     const dist = Math.abs(yTop - yBottom);
-    if (dist >= 5) {
-      const a1 = new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(x, yTop, z), dist, colorNum, 2.5, 2);
-      const a2 = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(x, yBottom, z), dist, colorNum, 2.5, 2);
+    if (dist >= 4) {
+      const arrowLen = Math.min(2.0, dist * 0.35);
+      const arrowW = Math.min(1.0, arrowLen * 0.5);
+      const a1 = new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(x, yTop, z), dist, colorNum, arrowLen, arrowW);
+      const a2 = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(x, yBottom, z), dist, colorNum, arrowLen, arrowW);
       [a1, a2].forEach(a => {
         if (a.line) { a.line.material.depthTest = false; a.line.material.depthWrite = false; }
         if (a.cone) { a.cone.material.depthTest = false; a.cone.material.depthWrite = false; }
@@ -1213,9 +1215,10 @@ window.Roll3D = (function () {
         group.add(a);
       });
     } else {
-      const arrowLen = 3;
-      const a1 = new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(x, yTop + arrowLen, z), arrowLen, colorNum, 2.2, 1.8);
-      const a2 = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(x, yBottom - arrowLen, z), arrowLen, colorNum, 2.2, 1.8);
+      const arrowLen = 1.8;
+      const arrowW = 0.9;
+      const a1 = new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(x, yTop + arrowLen, z), arrowLen, colorNum, arrowLen, arrowW);
+      const a2 = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(x, yBottom - arrowLen, z), arrowLen, colorNum, arrowLen, arrowW);
       [a1, a2].forEach(a => {
         if (a.line) { a.line.material.depthTest = false; a.line.material.depthWrite = false; }
         if (a.cone) { a.cone.material.depthTest = false; a.cone.material.depthWrite = false; }
@@ -1289,9 +1292,11 @@ window.Roll3D = (function () {
 
     // 3. Mũi tên
     const dist = Math.abs(xRight - xLeft);
-    if (dist >= 5) {
-      const a1 = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(xLeft, y, z), dist, colorNum, 2.5, 2);
-      const a2 = new THREE.ArrowHelper(new THREE.Vector3(-1, 0, 0), new THREE.Vector3(xRight, y, z), dist, colorNum, 2.5, 2);
+    if (dist >= 4) {
+      const arrowLen = Math.min(2.0, dist * 0.35);
+      const arrowW = Math.min(1.0, arrowLen * 0.5);
+      const a1 = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(xLeft, y, z), dist, colorNum, arrowLen, arrowW);
+      const a2 = new THREE.ArrowHelper(new THREE.Vector3(-1, 0, 0), new THREE.Vector3(xRight, y, z), dist, colorNum, arrowLen, arrowW);
       [a1, a2].forEach(a => {
         if (a.line) { a.line.material.depthTest = false; a.line.material.depthWrite = false; }
         if (a.cone) { a.cone.material.depthTest = false; a.cone.material.depthWrite = false; }
@@ -1299,9 +1304,10 @@ window.Roll3D = (function () {
         group.add(a);
       });
     } else {
-      const arrowLen = 3;
-      const a1 = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(xLeft - arrowLen, y, z), arrowLen, colorNum, 2.2, 1.8);
-      const a2 = new THREE.ArrowHelper(new THREE.Vector3(-1, 0, 0), new THREE.Vector3(xRight + arrowLen, y, z), arrowLen, colorNum, 2.2, 1.8);
+      const arrowLen = 1.8;
+      const arrowW = 0.9;
+      const a1 = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(xLeft - arrowLen, y, z), arrowLen, colorNum, arrowLen, arrowW);
+      const a2 = new THREE.ArrowHelper(new THREE.Vector3(-1, 0, 0), new THREE.Vector3(xRight + arrowLen, y, z), arrowLen, colorNum, arrowLen, arrowW);
       [a1, a2].forEach(a => {
         if (a.line) { a.line.material.depthTest = false; a.line.material.depthWrite = false; }
         if (a.cone) { a.cone.material.depthTest = false; a.cone.material.depthWrite = false; }
@@ -1390,8 +1396,8 @@ window.Roll3D = (function () {
     group.add(tickRight);
 
     // 3. Hai đầu mũi tên 2 chiều chạm vào thành trong ống carton
-    const arrowLen = Math.min(4.5, coreR * 0.32);
-    const arrowWidth = Math.min(3, arrowLen * 0.7);
+    const arrowLen = Math.min(2.5, Math.max(1.5, coreR * 0.18));
+    const arrowWidth = Math.min(1.2, arrowLen * 0.48);
 
     // Mũi tên trái: chỉ về mép -coreR (hướng -Z)
     const arrowLeft = new THREE.ArrowHelper(
@@ -1463,11 +1469,11 @@ window.Roll3D = (function () {
 
     // 2 đầu mũi tên
     const dist = p1.distanceTo(p2);
-    if (dist > 4) {
+    if (dist > 3) {
       const dir1 = new THREE.Vector3().subVectors(p1, p2).normalize();
       const dir2 = new THREE.Vector3().subVectors(p2, p1).normalize();
-      const arrowLen = isSmall ? 3 : 5;
-      const arrowW = isSmall ? 2 : 3.5;
+      const arrowLen = isSmall ? 2.0 : 2.5;
+      const arrowW = isSmall ? 1.0 : 1.2;
 
       const arrow1 = new THREE.ArrowHelper(dir1, p2, dist, colorNum, arrowLen, arrowW);
       const arrow2 = new THREE.ArrowHelper(dir2, p1, dist, colorNum, arrowLen, arrowW);
