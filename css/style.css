@@ -720,11 +720,13 @@ input[type="range"] {
 #hud-spec-card .hud-label {
   font-size: calc(12.5px * var(--hud-scale)) !important;
   line-height: 1.4 !important;
+  white-space: nowrap;
 }
 
 #hud-spec-card .hud-value {
-  font-size: calc(14px * var(--hud-scale)) !important;
+  font-size: calc(13.5px * var(--hud-scale)) !important;
   line-height: 1.4 !important;
+  text-align: left !important;
 }
 
 #hud-spec-card .hud-title {

@@ -279,8 +279,11 @@ window.Scene3D = (function () {
       const cornerStr = S.cornerRadius > 0 ? `Bo góc R${S.cornerRadius}` : 'Góc vuông';
       rows.push({ label: 'Quy cách:', val: `${cornerStr} - ${S.ups} tem/hàng`, valColor: '#a5b4fc' });
     }
+    if (toggles.rollLength !== false) {
+      rows.push({ label: 'Chiều dài cuộn:', val: `${S.rollLength}m / cuộn`, valColor: '#fbbf24', bold: true });
+    }
     if (toggles.count !== false) {
-      rows.push({ label: 'Số tem / cuộn:', val: `khoảng ${S.labelCount?.toLocaleString('vi-VN') || '1.515'} tem (${S.rollLength}m)`, valColor: '#67e8f9', bold: true });
+      rows.push({ label: 'Số tem ước tính:', val: `khoảng ${S.labelCount?.toLocaleString('vi-VN') || '1.515'} tem`, valColor: '#67e8f9', bold: true });
     }
     if (toggles.core !== false) {
       const coreStr = S.coreName?.includes('inch') ? `${S.coreName} (${S.coreDiameter?.toFixed(1)}mm)` : `Lõi ${S.coreDiameter?.toFixed(0)}mm`;
@@ -290,18 +293,21 @@ window.Scene3D = (function () {
       const colName = S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : (S.colorMode === 'preprint' ? 'In phôi sẵn' : S.labelColor)));
       rows.push({ label: 'Màu nền:', val: colName, valColor: '#f472b6', dot: S.labelColor || '#ffffff' });
     }
+    if (toggles.minOrder !== false) {
+      rows.push({ label: 'Đặt hàng tối thiểu:', val: `${S.minOrder || 20} cuộn`, valColor: '#c084fc', bold: true });
+    }
     if (toggles.leadTime !== false) {
       rows.push({ label: 'Thời gian SX:', val: `${S.leadTimeDays || 3} ngày`, valColor: '#5eead4' });
     }
 
-    // 6. Vẽ các hàng thông số
+    // 6. Vẽ các hàng thông số (chữ liền sát vào dấu :, không căn lề phải)
     const rowCount = rows.length;
     if (rowCount > 0) {
       const startY = lineY + Math.round(h * 0.04);
       const endY = y + h - Math.round(h * 0.04);
       const rowH = (endY - startY) / rowCount;
-      const labelFontSize = Math.max(10, Math.round(w * 0.035));
-      const valFontSize = Math.max(10.5, Math.round(w * 0.037));
+      const labelFontSize = Math.max(9.5, Math.round(w * 0.034));
+      const valFontSize = Math.max(10, Math.round(w * 0.036));
 
       rows.forEach((r, idx) => {
         const rowCenterY = startY + idx * rowH + rowH / 2;
@@ -313,29 +319,30 @@ window.Scene3D = (function () {
         ctx.textBaseline = 'middle';
         ctx.fillText(r.label, x + padX, rowCenterY);
 
-        // Giá trị bên phải
+        // Giá trị liền sát ngay sau dấu ':' của nhãn
+        const labelW = ctx.measureText(r.label).width;
+        const valX = x + padX + labelW + Math.max(6, Math.round(w * 0.02));
+
         ctx.font = `${r.bold ? 'bold' : '600'} ${valFontSize}px ${fontStack}`;
         ctx.fillStyle = r.valColor || '#ffffff';
-        ctx.textAlign = 'right';
+        ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
 
         if (r.dot) {
-          // Vẽ chấm tròn thể hiện màu nền
-          const textW = ctx.measureText(r.val).width;
           const dotR = Math.round(valFontSize * 0.38);
-          const dotX = x + w - padX - textW - dotR * 2.8;
-
-          ctx.fillText(r.val, x + w - padX, rowCenterY);
+          const dotCenterX = valX + dotR + 1;
 
           ctx.beginPath();
-          ctx.arc(dotX, rowCenterY, dotR, 0, Math.PI * 2);
+          ctx.arc(dotCenterX, rowCenterY, dotR, 0, Math.PI * 2);
           ctx.fillStyle = r.dot;
           ctx.fill();
           ctx.strokeStyle = '#ffffff';
           ctx.lineWidth = 1;
           ctx.stroke();
+
+          ctx.fillText(r.val, dotCenterX + dotR + 5, rowCenterY);
         } else {
-          ctx.fillText(r.val, x + w - padX, rowCenterY);
+          ctx.fillText(r.val, valX, rowCenterY);
         }
       });
     }
@@ -347,15 +354,13 @@ window.Scene3D = (function () {
     if (!renderer || !scene || !camera) return null;
 
     const S = window.AppState;
-    const checkEl = document.getElementById('check-export-include-specs');
     // Kiểm tra chế độ: nếu người dùng truyền includeSpecs rõ ràng thì lấy giá trị đó, ngược lại lấy theo giao diện
     const shouldIncludeSpecs = (includeSpecs !== null) 
       ? Boolean(includeSpecs) 
       : ((checkEl ? checkEl.checked : true) && (S?.showSpecCard !== false));
 
-    // 1. Lưu lại cấu hình hiện tại
-    const origAspect = camera.aspect;
     const origBg = scene.background;
+    const origAspect = camera.aspect;
     const card = document.getElementById('hud-spec-card');
     const container = document.getElementById('viewport-3d') || renderer.domElement.parentElement;
 
@@ -400,8 +405,8 @@ window.Scene3D = (function () {
       // CHẾ ĐỘ 2: TẢI KÈM BẢNG THÔNG SỐ (BỐ CỤC PHÂN VÙNG THÔNG MINH, 100% KHÔNG ĐÈ NHAU)
       // =========================================================================
       const scaleMul = S?.specCardScale || 1.0;
-      const cardW = Math.round(Math.min(width * 0.38, Math.max(250, width * 0.33 * scaleMul)));
-      const cardH = Math.round(cardW * 0.70);
+      const cardW = Math.round(Math.min(width * 0.42, Math.max(260, width * 0.35 * scaleMul)));
+      const cardH = Math.round(cardW * 0.78);
 
       // Nhận diện hướng đặt bảng: Người dùng kéo sang bên trái hay bên phải?
       let isCardLeft = false;

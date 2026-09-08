@@ -49,14 +49,18 @@ window.AppState = {
 
   // Trạng thái hiển thị Bảng thông số đặt hàng trên 3D (HUD Spec Card)
   showSpecCard: true,
+  minOrder: 20,       // Đặt hàng tối thiểu (mặc định 20 cuộn, tùy chọn 20 - 30 - tự nhập)
+  minOrderPreset: '20',
   specToggles: {
     material: true,   // 1. Chất liệu
     dimensions: true, // 2. Kích thước
     spec: true,       // 3. Quy cách (Bo góc & Số hàng)
-    count: true,      // 4. Số tem ước tính & Chiều dài
-    core: true,       // 5. Lõi cuộn
-    color: true,      // 6. Màu nền
-    leadTime: true    // 7. Thời gian SX
+    rollLength: true, // 4. Chiều dài cuộn (m)
+    count: true,      // 5. Số tem ước tính
+    core: true,       // 6. Lõi cuộn
+    color: true,      // 7. Màu nền
+    minOrder: true,   // 8. Đặt hàng tối thiểu (MOQ)
+    leadTime: true    // 9. Thời gian SX
   },
 
   // Cỡ chữ và tỉ lệ hiển thị tuỳ biến
@@ -479,8 +483,11 @@ function updateHUDAndBadges() {
   const hudValSpec = document.getElementById('hud-val-spec');
   if (hudValSpec) hudValSpec.textContent = `${cornerStr} - ${S.ups} tem/hàng`;
 
+  const hudValLength = document.getElementById('hud-val-length');
+  if (hudValLength) hudValLength.textContent = `${S.rollLength}m / cuộn`;
+
   const hudValCount = document.getElementById('hud-val-count');
-  if (hudValCount) hudValCount.textContent = `khoảng ${S.labelCount.toLocaleString('vi-VN')} tem (${S.rollLength}m)`;
+  if (hudValCount) hudValCount.textContent = `khoảng ${S.labelCount.toLocaleString('vi-VN')} tem`;
 
   const hudValCore = document.getElementById('hud-val-core');
   if (hudValCore) {
@@ -505,6 +512,12 @@ function updateHUDAndBadges() {
     }
   }
   if (hudColorDot) hudColorDot.style.backgroundColor = S.labelColor;
+
+  const hudValMinOrder = document.getElementById('hud-val-minorder');
+  if (hudValMinOrder) hudValMinOrder.textContent = `${S.minOrder || 20} cuộn`;
+
+  const badgeMinOrder = document.getElementById('badge-min-order');
+  if (badgeMinOrder) badgeMinOrder.textContent = `${S.minOrder || 20} cuộn`;
 
   const hudValLead = document.getElementById('hud-val-leadtime');
   if (hudValLead) hudValLead.textContent = `${S.leadTimeDays} ngày`;
@@ -549,9 +562,11 @@ function syncSpecCardUI() {
     material: document.getElementById('spec-row-material'),
     dimensions: document.getElementById('spec-row-dimensions'),
     spec: document.getElementById('spec-row-spec'),
+    rollLength: document.getElementById('spec-row-length'),
     count: document.getElementById('spec-row-count'),
     core: document.getElementById('spec-row-core'),
     color: document.getElementById('spec-row-color'),
+    minOrder: document.getElementById('spec-row-minorder'),
     leadTime: document.getElementById('spec-row-leadtime')
   };
 
@@ -1262,6 +1277,67 @@ function initEventListeners() {
     });
   }
 
+  // 8B. ĐẶT HÀNG TỐI THIỂU (MOQ)
+  const inputMinOrder = document.getElementById('input-min-order');
+  function setMinOrder(val, isPresetClick = false) {
+    let num = parseInt(val);
+    if (isNaN(num) || num < 1) num = 20;
+    S.minOrder = num;
+    if (inputMinOrder && !isPresetClick) inputMinOrder.value = num;
+
+    document.querySelectorAll('.minorder-btn').forEach(b => {
+      const bVal = b.dataset.val;
+      let isThis = false;
+      if (bVal === 'custom') {
+        isThis = (num !== 20 && num !== 30);
+      } else {
+        isThis = parseInt(bVal) === num;
+      }
+      b.classList.toggle('active', isThis);
+      b.classList.toggle('bg-purple-600', isThis);
+      b.classList.toggle('text-white', isThis);
+      b.classList.toggle('border-purple-500', isThis);
+      b.classList.toggle('font-bold', isThis);
+      b.classList.toggle('bg-slate-800', !isThis);
+      b.classList.toggle('text-slate-300', !isThis);
+      b.classList.toggle('border-slate-700', !isThis);
+    });
+
+    updateHUDAndBadges();
+  }
+
+  document.querySelectorAll('.minorder-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val = btn.dataset.val;
+      if (val === 'custom') {
+        if (inputMinOrder) {
+          inputMinOrder.focus();
+          inputMinOrder.select();
+        }
+        document.querySelectorAll('.minorder-btn').forEach(b => {
+          const isThis = b.dataset.val === 'custom';
+          b.classList.toggle('active', isThis);
+          b.classList.toggle('bg-purple-600', isThis);
+          b.classList.toggle('text-white', isThis);
+          b.classList.toggle('border-purple-500', isThis);
+          b.classList.toggle('font-bold', isThis);
+          b.classList.toggle('bg-slate-800', !isThis);
+          b.classList.toggle('text-slate-300', !isThis);
+          b.classList.toggle('border-slate-700', !isThis);
+        });
+      } else {
+        if (inputMinOrder) inputMinOrder.value = val;
+        setMinOrder(val, true);
+      }
+    });
+  });
+
+  if (inputMinOrder) {
+    inputMinOrder.addEventListener('input', (e) => {
+      setMinOrder(e.target.value, false);
+    });
+  }
+
   // Màu đế giấy
   const selectLinerColor = document.getElementById('select-liner-color');
   if (selectLinerColor) {
@@ -1608,6 +1684,110 @@ function initEventListeners() {
     applySpecCardScale(Math.max(0.8, (cur - 1) / 10));
   });
 
+  // NÚT SAO CHÉP TOÀN BỘ THÔNG SỐ ĐẶT HÀNG (1 PHÁT COPY HẾT)
+  const btnCopySpec = document.getElementById('btn-copy-spec-card');
+  if (btnCopySpec) {
+    btnCopySpec.addEventListener('click', (e) => {
+      e.stopPropagation();
+      copySpecCardToClipboard();
+    });
+  }
+
+  function copySpecCardToClipboard() {
+    const S = window.AppState;
+    const toggles = S.specToggles || {};
+    const lines = ['📋 THÔNG SỐ ĐẶT HÀNG TEM NHÃN:'];
+
+    const matNames = {
+      paper_normal: 'Giấy thường (xé rách được)',
+      paper_thermal: 'Giấy nhiệt (xé rách được)',
+      pvc: 'PVC (xé không rách)',
+      silver: 'Xi bạc (ánh kim)',
+      matte: 'Decal giấy thường / mờ',
+      gloss: 'Cán màng bóng'
+    };
+
+    if (toggles.material !== false) {
+      lines.push(`• Chất liệu: ${matNames[S.materialType] || 'Giấy thường (xé rách được)'}`);
+    }
+    if (toggles.dimensions !== false) {
+      lines.push(`• Kích thước: ${S.labelWidth} x ${S.labelHeight} mm (ngang x cao)`);
+    }
+    if (toggles.spec !== false) {
+      const cornerStr = S.cornerRadius > 0 ? `Bo góc R${S.cornerRadius}` : 'Góc vuông';
+      lines.push(`• Quy cách: ${cornerStr} - ${S.ups} tem/hàng`);
+    }
+    if (toggles.rollLength !== false) {
+      lines.push(`• Chiều dài cuộn: ${S.rollLength}m / cuộn`);
+    }
+    if (toggles.count !== false) {
+      lines.push(`• Số tem ước tính: khoảng ${S.labelCount.toLocaleString('vi-VN')} tem / cuộn`);
+    }
+    if (toggles.core !== false) {
+      const coreStr = S.coreName.includes('inch') ? `${S.coreName} (${S.coreDiameter.toFixed(1)}mm)` : `Lõi ${S.coreDiameter.toFixed(0)}mm`;
+      lines.push(`• Lõi cuộn: ${coreStr}`);
+    }
+    if (toggles.color !== false) {
+      const colName = S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : (S.colorMode === 'preprint' ? 'In phôi sẵn' : S.labelColor)));
+      lines.push(`• Màu nền: ${colName}`);
+    }
+    if (toggles.minOrder !== false) {
+      lines.push(`• Đặt hàng tối thiểu: ${S.minOrder || 20} cuộn`);
+    }
+    if (toggles.leadTime !== false) {
+      lines.push(`• Thời gian SX: ${S.leadTimeDays || 3} ngày`);
+    }
+
+    const fullText = lines.join('\n');
+
+    const onSuccess = () => {
+      const icon = document.getElementById('icon-copy-spec');
+      const text = document.getElementById('text-copy-spec');
+      if (icon) icon.className = 'fa-solid fa-check text-emerald-400 text-[11px]';
+      if (text) {
+        text.textContent = 'Đã chép!';
+        text.className = 'text-emerald-300 font-bold';
+      }
+      btnCopySpec.classList.add('border-emerald-500', 'bg-emerald-950/60');
+
+      setTimeout(() => {
+        if (icon) icon.className = 'fa-regular fa-copy text-[11px]';
+        if (text) {
+          text.textContent = 'Copy';
+          text.className = '';
+        }
+        btnCopySpec.classList.remove('border-emerald-500', 'bg-emerald-950/60');
+      }, 2000);
+
+      showPresetToast('Đã sao chép toàn bộ thông số đặt hàng vào bộ nhớ tạm!');
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(fullText).then(onSuccess).catch(() => {
+        fallbackCopyText(fullText, onSuccess);
+      });
+    } else {
+      fallbackCopyText(fullText, onSuccess);
+    }
+  }
+
+  function fallbackCopyText(text, cb) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      document.execCommand('copy');
+      if (cb) cb();
+    } catch (err) {
+      console.warn('Copy failed', err);
+    }
+    document.body.removeChild(ta);
+  }
+
   // Range slider chỉnh cỡ số đo 3D (W, H, Gap, Lõi)
   const inputDimScale = document.getElementById('input-dim-text-scale');
   if (inputDimScale) {
@@ -1875,6 +2055,22 @@ function applyPreset(p) {
     b.classList.toggle('bg-teal-600', isThis);
     b.classList.toggle('text-white', isThis);
     b.classList.toggle('border-teal-500', isThis);
+    b.classList.toggle('font-bold', isThis);
+    b.classList.toggle('bg-slate-800', !isThis);
+    b.classList.toggle('text-slate-300', !isThis);
+  });
+
+  // Cập nhật Đặt hàng tối thiểu (MOQ)
+  if (p.minOrder) S.minOrder = p.minOrder;
+  const inpMinOrder = document.getElementById('input-min-order');
+  if (inpMinOrder) inpMinOrder.value = S.minOrder || 20;
+  document.querySelectorAll('.minorder-btn').forEach(b => {
+    const bVal = b.dataset.val;
+    const isThis = (bVal === 'custom' ? (S.minOrder !== 20 && S.minOrder !== 30) : parseInt(bVal) === S.minOrder);
+    b.classList.toggle('active', isThis);
+    b.classList.toggle('bg-purple-600', isThis);
+    b.classList.toggle('text-white', isThis);
+    b.classList.toggle('border-purple-500', isThis);
     b.classList.toggle('font-bold', isThis);
     b.classList.toggle('bg-slate-800', !isThis);
     b.classList.toggle('text-slate-300', !isThis);
