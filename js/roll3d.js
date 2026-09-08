@@ -11,6 +11,38 @@ window.Roll3D = (function () {
   let lastDimParams = null;
   let labelCanvasTexture = null;
   let linerMaterial, labelMaterial, coreInnerMaterial, rollBodyMaterial, coreCardboardMat, coreRimMat;
+  let draggableSprites = [];
+
+  /**
+   * TẠO ĐƯỜNG DÓNG NÉT ĐỨT (LEADER LINE) KHI CHÚ THÍCH BỊ KÉO XA VỊ TRÍ GỐC
+   */
+  function attachDragLeaderLine(group, sprite, anchorPos, colorNum) {
+    const lineMat = new THREE.LineDashedMaterial({
+      color: colorNum,
+      linewidth: 1.5,
+      dashSize: 2.0,
+      gapSize: 1.5,
+      depthTest: false,
+      depthWrite: false,
+      transparent: true,
+      opacity: 0.75
+    });
+    const lineGeo = new THREE.BufferGeometry().setFromPoints([anchorPos.clone(), sprite.position.clone()]);
+    const line = new THREE.Line(lineGeo, lineMat);
+    line.computeLineDistances();
+    line.renderOrder = 998;
+    const dist = sprite.position.distanceTo(anchorPos);
+    line.visible = dist > 5.0;
+    group.add(line);
+
+    sprite.userData.leaderLine = line;
+    sprite.userData.updateLeader = function (newPos) {
+      lineGeo.setFromPoints([anchorPos.clone(), newPos.clone()]);
+      line.computeLineDistances();
+      const d = newPos.distanceTo(anchorPos);
+      line.visible = d > 5.0;
+    };
+  }
 
   function init(sceneRef) {
     scene = sceneRef;
@@ -765,6 +797,7 @@ window.Roll3D = (function () {
    * DỰNG CÁC MŨI TÊN & GHI CHÚ KÍCH THƯỚC CHUẨN XÁC NHƯ ẢNH 2
    */
   function buildTechnicalDimensions(rollCenterY, outerR, webW, flapZ, flapTopY, numRows) {
+    draggableSprites = [];
     const S = window.AppState;
     const toggles = S.dimToggles || { width: true, height: true, gapY: true, gapX: true, margin: true, core: true };
 
@@ -796,7 +829,8 @@ window.Roll3D = (function () {
         widthText,
         '#1d4ed8',
         'top',
-        true
+        true,
+        'width'
       );
     }
 
@@ -809,7 +843,9 @@ window.Roll3D = (function () {
         new THREE.Vector3(labelRight + 8, labelBottom, flapZ + 2.5),
         `${S.labelHeight}mm`,
         '#1d4ed8',
-        'right'
+        'right',
+        false,
+        'height'
       );
     }
 
@@ -832,7 +868,8 @@ window.Roll3D = (function () {
         `${S.gapX}mm`,
         '#059669',
         'bottom',
-        true
+        true,
+        'gapX'
       );
     }
 
@@ -897,14 +934,12 @@ window.Roll3D = (function () {
     const tipX = Math.min(webW / 2 - 0.5, labelRight + 0.5);
     const pTip = new THREE.Vector3(tipX, perfY, z);
 
-    // Điểm gấp khúc (Knee) chếch sang phải và hạ nhẹ 5mm
-    const kneeX = webW / 2 + 1.5 * userScale;
-    const kneeY = perfY - 5.0 * userScale;
-    const pKnee = new THREE.Vector3(kneeX, kneeY, z);
-
-    // Điểm kết thúc thanh gạch ngang (Shelf)
+    // Điểm gấp khúc (Knee) mặc định chếch sang phải và hạ nhẹ 5mm
+    const defaultKneeX = webW / 2 + 1.5 * userScale;
+    const defaultKneeY = perfY - 5.0 * userScale;
     const shelfLen = 3.5 * userScale;
-    const pShelf = new THREE.Vector3(kneeX + shelfLen, kneeY, z);
+    const defaultShelfX = defaultKneeX + shelfLen;
+    const defaultSpritePos = new THREE.Vector3(defaultShelfX + 13 * userScale, defaultKneeY, z + 0.2);
 
     const lineMat = new THREE.LineBasicMaterial({
       color: colorNum,
@@ -913,29 +948,79 @@ window.Roll3D = (function () {
       depthWrite: false
     });
 
-    // 1. Thanh gạch chân ngang (Shelf line)
-    const shelfGeo = new THREE.BufferGeometry().setFromPoints([pKnee, pShelf]);
+    const shelfGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(defaultKneeX, defaultKneeY, z),
+      new THREE.Vector3(defaultShelfX, defaultKneeY, z)
+    ]);
     const shelfLine = new THREE.Line(shelfGeo, lineMat);
     shelfLine.renderOrder = 999;
     group.add(shelfLine);
 
-    // 2. Mũi tên từ pKnee chỉ thẳng vào pTip trên đường răng cưa
-    const dir = new THREE.Vector3().subVectors(pTip, pKnee);
-    const dist = dir.length();
-    dir.normalize();
+    // Mũi tên từ Knee chỉ vào Tip
+    let arrow = null;
+    function createArrow(fromPos, toPos) {
+      const dir = new THREE.Vector3().subVectors(toPos, fromPos);
+      const dist = dir.length();
+      if (dist < 0.5) return null;
+      dir.normalize();
+      const arrowHeadLen = Math.min(4.5 * userScale, dist * 0.45);
+      const arrowHeadWidth = Math.min(3.2 * userScale, dist * 0.32);
+      const a = new THREE.ArrowHelper(dir, fromPos, dist, colorNum, arrowHeadLen, arrowHeadWidth);
+      if (a.line) { a.line.material.depthTest = false; a.line.material.depthWrite = false; }
+      if (a.cone) { a.cone.material.depthTest = false; a.cone.material.depthWrite = false; }
+      a.renderOrder = 999;
+      return a;
+    }
 
-    const arrowHeadLen = Math.min(4.5 * userScale, dist * 0.45);
-    const arrowHeadWidth = Math.min(3.2 * userScale, dist * 0.32);
-    const arrow = new THREE.ArrowHelper(dir, pKnee, dist, colorNum, arrowHeadLen, arrowHeadWidth);
-    if (arrow.line) { arrow.line.material.depthTest = false; arrow.line.material.depthWrite = false; }
-    if (arrow.cone) { arrow.cone.material.depthTest = false; arrow.cone.material.depthWrite = false; }
-    arrow.renderOrder = 999;
-    group.add(arrow);
+    arrow = createArrow(new THREE.Vector3(defaultKneeX, defaultKneeY, z), pTip);
+    if (arrow) group.add(arrow);
 
-    // 3. Sprite chữ "Răng cưa xé" gọn gàng, liền mạch ngay sau thanh gạch ngang
     const sprite = createCrispTextSprite('Răng cưa xé', '#0f172a', true, '#ffffff');
-    sprite.position.set(pShelf.x + 13 * userScale, kneeY, z + 0.2);
+    sprite.position.copy(defaultSpritePos);
+
+    function updateCalloutGeometry(pos) {
+      let kneeX, kneeY, shelfX;
+      if (pos.x >= pTip.x) {
+        shelfX = pos.x - 11 * userScale;
+        kneeX = shelfX - shelfLen;
+        kneeY = pos.y;
+      } else {
+        shelfX = pos.x + 11 * userScale;
+        kneeX = shelfX + shelfLen;
+        kneeY = pos.y;
+      }
+      const pKneeNew = new THREE.Vector3(kneeX, kneeY, z);
+      const pShelfNew = new THREE.Vector3(shelfX, kneeY, z);
+      shelfGeo.setFromPoints([pKneeNew, pShelfNew]);
+
+      if (arrow) {
+        group.remove(arrow);
+        if (arrow.line && arrow.line.geometry) arrow.line.geometry.dispose();
+        if (arrow.cone && arrow.cone.geometry) arrow.cone.geometry.dispose();
+      }
+      arrow = createArrow(pKneeNew, pTip);
+      if (arrow) group.add(arrow);
+    }
+
+    const S = window.AppState;
+    if (S && S.dimOffsets && S.dimOffsets.perforation) {
+      const off = S.dimOffsets.perforation;
+      sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
+      updateCalloutGeometry(sprite.position);
+    }
+
+    sprite.userData = {
+      isDimAnnotation: true,
+      dimKey: 'perforation',
+      defaultPos: defaultSpritePos.clone(),
+      anchorPos: defaultSpritePos.clone(),
+      onDrag: function (newPos) {
+        updateCalloutGeometry(newPos);
+      }
+    };
+
     group.add(sprite);
+    draggableSprites.push(sprite);
   }
 
   /**
@@ -1000,10 +1085,29 @@ window.Roll3D = (function () {
 
     // 4. Sprite chữ hiển thị kích thước bước nhảy (Ví dụ: "3mm")
     const midY = (yTop + yBottom) / 2;
-    const sprite = createCrispTextSprite(text, colorHex, true, '#ffffff');
     const userScale = (window.AppState && window.AppState.dimTextScale) ? window.AppState.dimTextScale : 1.35;
-    sprite.position.set(x + 14 * userScale, midY, z + 0.2);
+    const defaultPos = new THREE.Vector3(x + 14 * userScale, midY, z + 0.2);
+    const sprite = createCrispTextSprite(text, colorHex, true, '#ffffff');
+    sprite.position.copy(defaultPos);
+
+    const S = window.AppState;
+    if (S && S.dimOffsets && S.dimOffsets.gapY) {
+      const off = S.dimOffsets.gapY;
+      sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
+    }
+
+    const anchorPos = new THREE.Vector3(x, midY, z);
+    attachDragLeaderLine(group, sprite, anchorPos, colorNum);
+
+    sprite.userData = {
+      isDimAnnotation: true,
+      dimKey: 'gapY',
+      defaultPos: defaultPos.clone(),
+      anchorPos: anchorPos.clone()
+    };
+
     group.add(sprite);
+    draggableSprites.push(sprite);
   }
 
   /**
@@ -1066,13 +1170,30 @@ window.Roll3D = (function () {
       });
     }
 
-    // 4. Sprite chữ hiển thị kích thước lề biên "2mm" (To rõ ràng, không đè lên 50mm hay Lõi)
-    const midX = (xLeft + xRight) / 2;
-    const sprite = createCrispTextSprite(text, colorHex, false, '#ffffff');
+    // 4. Sprite chữ hiển thị kích thước lề biên "2mm" (Đưa sang bên trái mép dải rủ để không trùng 3mm bước nhảy)
     const userScale = (window.AppState && window.AppState.dimTextScale) ? window.AppState.dimTextScale : 1.35;
-    // Đặt phía dưới đường kẻ lề biên (y - 8.5 * userScale) để tách biệt hoàn toàn với nhãn 50mm (ở phía trên)
-    sprite.position.set(midX - 2 * userScale, y - 8.5 * userScale, z + 2.0);
+    const defaultPos = new THREE.Vector3(xLeft - 10 * userScale, y, z + 2.0);
+    const sprite = createCrispTextSprite(text, colorHex, false, '#ffffff');
+    sprite.position.copy(defaultPos);
+
+    const S = window.AppState;
+    if (S && S.dimOffsets && S.dimOffsets.margin) {
+      const off = S.dimOffsets.margin;
+      sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
+    }
+
+    const anchorPos = new THREE.Vector3(xLeft, y, z);
+    attachDragLeaderLine(group, sprite, anchorPos, colorNum);
+
+    sprite.userData = {
+      isDimAnnotation: true,
+      dimKey: 'margin',
+      defaultPos: defaultPos.clone(),
+      anchorPos: anchorPos.clone()
+    };
+
     group.add(sprite);
+    draggableSprites.push(sprite);
   }
 
   /**
@@ -1163,15 +1284,33 @@ window.Roll3D = (function () {
     const text = `Lõi Ø ${coreDiameter.toFixed(0)}mm`;
     const sprite = createCrispTextSprite(text, colorHex, false, '#ffffff');
     const userScale = (window.AppState && window.AppState.dimTextScale) ? window.AppState.dimTextScale : 1.35;
-    // Đặt ở góc cao bên trái (centerY + 16 * userScale) để hoàn toàn tách biệt với nhãn 2mm và 50mm
-    sprite.position.set(faceX - 4 * userScale, centerY + 16 * userScale, 0);
+    const defaultPos = new THREE.Vector3(faceX - 4 * userScale, centerY + 16 * userScale, 0);
+    sprite.position.copy(defaultPos);
+
+    const S = window.AppState;
+    if (S && S.dimOffsets && S.dimOffsets.core) {
+      const off = S.dimOffsets.core;
+      sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
+    }
+
+    const anchorPos = new THREE.Vector3(faceX, centerY, 0);
+    attachDragLeaderLine(group, sprite, anchorPos, colorNum);
+
+    sprite.userData = {
+      isDimAnnotation: true,
+      dimKey: 'core',
+      defaultPos: defaultPos.clone(),
+      anchorPos: anchorPos.clone()
+    };
+
     group.add(sprite);
+    draggableSprites.push(sprite);
   }
 
   /**
    * VẼ MŨI TÊN 2 ĐẦU ĐO KÍCH THƯỚC KỸ THUẬT
    */
-  function draw2HeadArrow(p1, p2, text, colorHex, labelSide, isSmall = false) {
+  function draw2HeadArrow(p1, p2, text, colorHex, labelSide, isSmall = false, dimKey = null) {
     const group = new THREE.Group();
     group.renderOrder = 999;
     dimensionsGroup.add(group);
@@ -1216,7 +1355,29 @@ window.Roll3D = (function () {
     } else if (labelSide === 'bottom') {
       mid.y -= (isSmall ? 4.5 : 8) * userScale;
     }
-    sprite.position.copy(mid);
+
+    const defaultPos = mid.clone();
+    sprite.position.copy(defaultPos);
+
+    if (dimKey) {
+      const S = window.AppState;
+      if (S && S.dimOffsets && S.dimOffsets[dimKey]) {
+        const off = S.dimOffsets[dimKey];
+        sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
+      }
+
+      const anchorPos = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+      attachDragLeaderLine(group, sprite, anchorPos, colorNum);
+
+      sprite.userData = {
+        isDimAnnotation: true,
+        dimKey: dimKey,
+        defaultPos: defaultPos.clone(),
+        anchorPos: anchorPos.clone()
+      };
+      draggableSprites.push(sprite);
+    }
+
     group.add(sprite);
   }
 
@@ -1364,6 +1525,17 @@ window.Roll3D = (function () {
     return new THREE.Vector3(5, 52.5, 5);
   }
 
+  /**
+   * ĐẶT LẠI VỊ TRÍ BAN ĐẦU CHO TẤT CẢ CHÚ THÍCH KÍCH THƯỚC 3D
+   */
+  function resetDimensionPositions() {
+    const S = window.AppState;
+    if (S) {
+      S.dimOffsets = {};
+    }
+    updateDimensions();
+  }
+
   return {
     init,
     rebuildRoll,
@@ -1371,6 +1543,8 @@ window.Roll3D = (function () {
     syncLabelTexture,
     toggleDimensions,
     updateDimensions,
+    resetDimensionPositions,
+    getDraggableSprites: () => draggableSprites,
     getRollRootGroup: () => rollRootGroup,
     getRollGroup: () => rollGroup,
     getModelCenter

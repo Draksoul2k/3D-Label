@@ -48,6 +48,7 @@ window.AppState = {
     core: true,   // Kích thước lõi cuộn
     perforation: true // Ghi chú Răng cưa xé
   },
+  dimOffsets: {}, // Lưu vị trí dịch chuyển thủ công của các chú thích thước đo 3D
 
   // Trạng thái hiển thị Bảng thông số đặt hàng trên 3D (HUD Spec Card)
   showSpecCard: true,
@@ -1757,6 +1758,20 @@ function initEventListeners() {
       }
     });
   });
+
+  // Lắng nghe nút Đặt lại vị trí ban đầu của thước đo 3D
+  const btnResetDimPos = document.getElementById('btn-reset-dim-positions');
+  if (btnResetDimPos) {
+    btnResetDimPos.addEventListener('click', () => {
+      if (window.Roll3D && typeof window.Roll3D.resetDimensionPositions === 'function') {
+        window.Roll3D.resetDimensionPositions();
+      } else {
+        S.dimOffsets = {};
+        if (window.Roll3D) window.Roll3D.updateDimensions();
+      }
+      showPresetToast('Đã khôi phục vị trí các chú thích thước đo 3D ban đầu!');
+    });
+  }
 
   // Lắng nghe master switch Bảng thông số đặt hàng
   const checkMasterSpec = document.getElementById('check-master-spec-card');

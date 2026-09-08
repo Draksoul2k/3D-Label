@@ -68,7 +68,145 @@ window.Scene3D = (function () {
       updateTargetToModelCenter(false);
     }
 
+    // 8. TÍNH NĂNG KÉO THẢ TỰ DO CÁC CHÚ THÍCH KÍCH THƯỚC 3D
+    setupDraggableAnnotations();
+
     animate();
+  }
+
+  /**
+   * THIẾT LẬP KÉO THẢ CÁC CHÚ THÍCH KÍCH THƯỚC 3D TRÊN CANVAS
+   */
+  function setupDraggableAnnotations() {
+    if (!canvas || !camera) return;
+
+    let draggingSprite = null;
+    const dragPlane = new THREE.Plane();
+    const planeIntersect = new THREE.Vector3();
+    const dragOffset = new THREE.Vector3();
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    function updateMouse(e) {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    }
+
+    function getActiveSprites() {
+      if (!window.Roll3D || typeof window.Roll3D.getDraggableSprites !== 'function') return [];
+      return window.Roll3D.getDraggableSprites().filter(s => {
+        return s && s.visible && s.parent && s.parent.visible;
+      });
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      // Chỉ nhận chuột trái
+      if (e.button !== 0) return;
+
+      updateMouse(e);
+      raycaster.setFromCamera(mouse, camera);
+
+      const sprites = getActiveSprites();
+      if (sprites.length === 0) return;
+
+      const intersects = raycaster.intersectObjects(sprites, false);
+      if (intersects.length > 0) {
+        draggingSprite = intersects[0].object;
+
+        e.stopPropagation();
+        e.preventDefault();
+
+        // Tạm thời vô hiệu hóa OrbitControls để không bị xoay mô hình khi đang kéo nhãn
+        if (controls) controls.enabled = false;
+
+        try {
+          canvas.setPointerCapture(e.pointerId);
+        } catch (err) {}
+
+        canvas.style.cursor = 'grabbing';
+
+        // Mặt phẳng kéo song song mặt phẳng nhìn của camera đi qua vị trí sprite
+        const camDir = camera.getWorldDirection(new THREE.Vector3()).negate();
+        dragPlane.setFromNormalAndCoplanarPoint(camDir, draggingSprite.position);
+
+        if (raycaster.ray.intersectPlane(dragPlane, planeIntersect)) {
+          dragOffset.subVectors(draggingSprite.position, planeIntersect);
+        } else {
+          dragOffset.set(0, 0, 0);
+        }
+      }
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      updateMouse(e);
+      raycaster.setFromCamera(mouse, camera);
+
+      if (draggingSprite) {
+        e.stopPropagation();
+        e.preventDefault();
+
+        if (raycaster.ray.intersectPlane(dragPlane, planeIntersect)) {
+          const newPos = planeIntersect.clone().add(dragOffset);
+          draggingSprite.position.copy(newPos);
+
+          if (draggingSprite.userData) {
+            if (typeof draggingSprite.userData.onDrag === 'function') {
+              draggingSprite.userData.onDrag(newPos);
+            }
+            if (typeof draggingSprite.userData.updateLeader === 'function') {
+              draggingSprite.userData.updateLeader(newPos);
+            }
+
+            const key = draggingSprite.userData.dimKey;
+            const defPos = draggingSprite.userData.defaultPos;
+            if (key && defPos && window.AppState) {
+              if (!window.AppState.dimOffsets) window.AppState.dimOffsets = {};
+              const offset = new THREE.Vector3().subVectors(newPos, defPos);
+              window.AppState.dimOffsets[key] = { x: offset.x, y: offset.y, z: offset.z };
+            }
+          }
+        }
+      } else {
+        // Hiển thị con trỏ 'grab' khi rê chuột qua chú thích
+        const sprites = getActiveSprites();
+        if (sprites.length > 0) {
+          const intersects = raycaster.intersectObjects(sprites, false);
+          if (intersects.length > 0) {
+            canvas.style.cursor = 'grab';
+            canvas.title = 'Nhấp giữ và kéo thả để di chuyển chú thích kích thước này';
+          } else {
+            if (canvas.style.cursor === 'grab') {
+              canvas.style.cursor = 'default';
+              canvas.removeAttribute('title');
+            }
+          }
+        }
+      }
+    });
+
+    const stopDragging = (e) => {
+      if (draggingSprite) {
+        try {
+          if (e && e.pointerId !== undefined) {
+            canvas.releasePointerCapture(e.pointerId);
+          }
+        } catch (err) {}
+        draggingSprite = null;
+        if (controls) controls.enabled = true;
+        canvas.style.cursor = 'default';
+        canvas.removeAttribute('title');
+      }
+    };
+
+    canvas.addEventListener('pointerup', stopDragging);
+    canvas.addEventListener('pointercancel', stopDragging);
+    canvas.addEventListener('pointerleave', (e) => {
+      if (!draggingSprite && canvas.style.cursor === 'grab') {
+        canvas.style.cursor = 'default';
+        canvas.removeAttribute('title');
+      }
+    });
   }
 
   function setupCleanStudioLighting() {
