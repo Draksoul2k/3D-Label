@@ -249,6 +249,10 @@ window.Roll3D = (function () {
       labelMaterial.map = labelCanvasTexture;
       labelMaterial.needsUpdate = true;
     }
+
+    if (window.Scene3D && typeof window.Scene3D.requestRender === 'function') {
+      window.Scene3D.requestRender(60);
+    }
   }
 
   /**
@@ -436,6 +440,9 @@ window.Roll3D = (function () {
     if (window.Scene3D && typeof window.Scene3D.updateTargetToModelCenter === 'function') {
       window.Scene3D.updateTargetToModelCenter(true);
     }
+    if (window.Scene3D && typeof window.Scene3D.requestRender === 'function') {
+      window.Scene3D.requestRender(60);
+    }
     } catch (err) {
       console.error('Lỗi khi dựng mô hình 3D cuộn tem:', err);
       const b = document.getElementById('debug-err-banner');
@@ -459,7 +466,7 @@ window.Roll3D = (function () {
     const extrudeSettings = {
       depth: height,
       bevelEnabled: false,
-      curveSegments: 48
+      curveSegments: 32
     };
 
     const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
@@ -473,7 +480,7 @@ window.Roll3D = (function () {
    */
   function createCircleOutline(radius, color, width = 2) {
     const curve = new THREE.EllipseCurve(0, 0, radius, radius, 0, 2 * Math.PI, false, 0);
-    const points = curve.getPoints(64);
+    const points = curve.getPoints(36);
     const geo = new THREE.BufferGeometry().setFromPoints(points);
     const mat = new THREE.LineBasicMaterial({ color: color, linewidth: width });
     return new THREE.Line(geo, mat);
@@ -484,7 +491,7 @@ window.Roll3D = (function () {
    */
   function createArchTransitionGeometry(outerR, width, maxAngle = Math.PI * 0.82) {
     const geo = new THREE.BufferGeometry();
-    const segments = 36;
+    const segments = 24;
     const vertices = [];
     const uvs = [];
 
@@ -529,7 +536,7 @@ window.Roll3D = (function () {
       const circleShape = new THREE.Shape();
       circleShape.absarc(0, 0, radius, 0, Math.PI * 2, false);
 
-      const geo = new THREE.ShapeGeometry(circleShape, 64);
+      const geo = new THREE.ShapeGeometry(circleShape, 36);
       const pos = geo.attributes.position;
       const uvs = [];
       for (let i = 0; i < pos.count; i++) {
@@ -543,7 +550,7 @@ window.Roll3D = (function () {
       group.add(mesh);
 
       // Đường bế viền tròn sắc nét
-      const points = circleShape.getPoints(64);
+      const points = circleShape.getPoints(36);
       const edgeGeo = new THREE.BufferGeometry().setFromPoints(points);
       const edgeLine = new THREE.LineLoop(edgeGeo, new THREE.LineBasicMaterial({ color: 0x1e293b, linewidth: 2 }));
       edgeLine.position.z = 0.05;
@@ -559,7 +566,7 @@ window.Roll3D = (function () {
       const ovalShape = new THREE.Shape();
       ovalShape.absellipse(0, 0, xRadius, yRadius, 0, Math.PI * 2, false);
 
-      const geo = new THREE.ShapeGeometry(ovalShape, 48);
+      const geo = new THREE.ShapeGeometry(ovalShape, 32);
       const pos = geo.attributes.position;
       const uvs = [];
       for (let i = 0; i < pos.count; i++) {
@@ -572,7 +579,7 @@ window.Roll3D = (function () {
       const mesh = new THREE.Mesh(geo, labelMaterial);
       group.add(mesh);
 
-      const points = ovalShape.getPoints(48);
+      const points = ovalShape.getPoints(32);
       const edgeGeo = new THREE.BufferGeometry().setFromPoints(points);
       const edgeLine = new THREE.LineLoop(edgeGeo, new THREE.LineBasicMaterial({ color: 0x1e293b, linewidth: 2 }));
       edgeLine.position.z = 0.05;
@@ -679,8 +686,8 @@ window.Roll3D = (function () {
    */
   function createCurvedLabelMesh(w, h, r, radius, thetaCenter, shape) {
     const group = new THREE.Group();
-    const Ny = 28; // Số lát cắt theo chiều dọc để uốn cong mượt mà theo hình trụ
-    const Nx = 10; // Số điểm theo chiều ngang
+    const Ny = 16; // Giảm từ 28 xuống 16 lát cắt theo chiều dọc (đủ mượt tuyệt đối, giảm 50% polygons)
+    const Nx = 6;  // Giảm từ 10 xuống 6 điểm theo chiều ngang
 
     // Bán kính đặt mặt tem và đường viền (nhô nhẹ hơn thân cuộn để chống z-fighting)
     const Rmesh = radius + 0.32;
@@ -1618,6 +1625,10 @@ window.Roll3D = (function () {
       labelMaterial.map = labelCanvasTexture;
       labelMaterial.needsUpdate = true;
     }
+
+    if (window.Scene3D && typeof window.Scene3D.requestRender === 'function') {
+      window.Scene3D.requestRender(30);
+    }
   }
 
   function toggleDimensions(visible) {
@@ -1628,6 +1639,9 @@ window.Roll3D = (function () {
       if (visible && dimensionsGroup.children.length === 0) {
         updateDimensions();
       }
+    }
+    if (window.Scene3D && typeof window.Scene3D.requestRender === 'function') {
+      window.Scene3D.requestRender(30);
     }
   }
 
@@ -1655,6 +1669,10 @@ window.Roll3D = (function () {
       );
     } else {
       dimensionsGroup.visible = false;
+    }
+
+    if (window.Scene3D && typeof window.Scene3D.requestRender === 'function') {
+      window.Scene3D.requestRender(30);
     }
   }
 

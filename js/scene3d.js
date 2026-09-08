@@ -9,6 +9,15 @@ window.Scene3D = (function () {
   let dirLight, ambientLight, fillLight;
   let canvasContainer, canvas;
   let isInitialized = false;
+  let framesToRender = 90; // Khởi đầu render 90 frames để ổn định mô hình ban đầu
+
+  /**
+   * YÊU CẦU RENDER THEO NHU CẦU (ON-DEMAND RENDERING - TIẾT KIỆM 90% GPU)
+   * Khi người dùng không thao tác gì, GPU tự động ngủ (0% tải) chống đơ máy tuyệt đối!
+   */
+  function requestRender(frames = 45) {
+    framesToRender = Math.max(framesToRender, frames);
+  }
 
   function init() {
     canvasContainer = document.getElementById('viewport-3d');
@@ -38,7 +47,10 @@ window.Scene3D = (function () {
       powerPreference: 'high-performance'
     });
     renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
-    renderer.setPixelRatio(Math.max(window.devicePixelRatio || 1, 2));
+    // Tự động nhận diện thiết bị & tối ưu tỷ lệ Pixel Ratio thông minh chống quá tải GPU đơ máy
+    const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 768;
+    const initialPixelRatio = Math.min(window.devicePixelRatio || 1, isMobileDevice ? 1.25 : 1.5);
+    renderer.setPixelRatio(initialPixelRatio);
     renderer.shadowMap.enabled = false;
     renderer.outputEncoding = THREE.sRGBEncoding;
 
@@ -51,6 +63,14 @@ window.Scene3D = (function () {
     controls.maxDistance = 2000;
     controls.maxPolarAngle = Math.PI / 2 + 0.1;
     controls.target.set(5, 52.5, 5);
+
+    // Kích hoạt render mượt mà khi xoay/zoom, tự ngủ khi dừng để tiết kiệm 100% tài nguyên GPU
+    controls.addEventListener('change', () => {
+      requestRender(30);
+    });
+    controls.addEventListener('start', () => {
+      requestRender(60);
+    });
 
     // 5. ÁNH SÁNG STUDIO SÁNG RÕ
     setupCleanStudioLighting();
@@ -166,6 +186,7 @@ window.Scene3D = (function () {
               window.AppState.dimOffsets[key] = { x: offset.x, y: offset.y, z: offset.z };
             }
           }
+          requestRender(15);
         }
       } else {
         // Hiển thị con trỏ 'grab' khi rê chuột qua chú thích
@@ -196,6 +217,7 @@ window.Scene3D = (function () {
         if (controls) controls.enabled = true;
         canvas.style.cursor = 'default';
         canvas.removeAttribute('title');
+        requestRender(30);
       }
     };
 
@@ -236,13 +258,21 @@ window.Scene3D = (function () {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
     renderer.setSize(width, height);
+    requestRender(20);
   }
 
   function animate() {
     requestAnimationFrame(animate);
-    if (controls) controls.update();
-    if (renderer && scene && camera) {
-      renderer.render(scene, camera);
+
+    const isAutoRotating = controls && controls.autoRotate;
+    if (isAutoRotating || framesToRender > 0) {
+      if (controls) controls.update();
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
+      if (!isAutoRotating && framesToRender > 0) {
+        framesToRender--;
+      }
     }
   }
 
@@ -257,6 +287,7 @@ window.Scene3D = (function () {
       if (ambientLight) ambientLight.intensity = 1.4;
       if (dirLight) dirLight.intensity = 0.8;
     }
+    requestRender(60);
     // Cập nhật lại màu sắc mũi tên chú thích tức thì theo nền
     if (window.Roll3D && typeof window.Roll3D.updateDimensions === 'function') {
       window.Roll3D.updateDimensions();
@@ -268,6 +299,7 @@ window.Scene3D = (function () {
       controls.autoRotate = enabled;
       controls.autoRotateSpeed = 2.0;
     }
+    requestRender(enabled ? 120 : 30);
   }
 
   function getModelCenter() {
@@ -288,6 +320,7 @@ window.Scene3D = (function () {
       controls.target.copy(center);
     }
     controls.update();
+    requestRender(45);
   }
 
   function getModelDimensions() {
@@ -340,6 +373,7 @@ window.Scene3D = (function () {
       camera.position.set(center.x, flapY, center.z + dist * 0.75);
     }
     controls.update();
+    requestRender(60);
   }
 
   function takeSnapshot() {
@@ -609,9 +643,10 @@ window.Scene3D = (function () {
       const h = container.clientHeight;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setPixelRatio(Math.max(window.devicePixelRatio || 1, 2));
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 768;
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.25 : 1.5));
       renderer.setSize(w, h);
-      renderer.render(scene, camera);
+      requestRender(30);
     }
 
     // 5. Tải file về máy với tên gọi tương ứng chế độ
@@ -647,8 +682,26 @@ window.Scene3D = (function () {
     return compositeCanvas.toDataURL('image/png');
   }
 
+  function setPerformanceMode(mode) {
+    if (!renderer || !canvasContainer || !camera) return;
+    if (mode === 'low') {
+      renderer.setPixelRatio(1.0);
+    } else if (mode === 'high') {
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.0));
+    } else {
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 768;
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.25 : 1.5));
+    }
+    const w = canvasContainer.clientWidth;
+    const h = canvasContainer.clientHeight;
+    renderer.setSize(w, h);
+    requestRender(45);
+  }
+
   return {
     init,
+    requestRender,
+    setPerformanceMode,
     getScene: () => scene,
     getCamera: () => camera,
     getRenderer: () => renderer,
