@@ -58,10 +58,12 @@ window.ExportProof = (function () {
     if (windCell) windCell.textContent = getWindDirectionText(S.windDirection);
 
     const matName = getMaterialName(S.materialType || S.materialFinish);
-    const colorText = S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : (S.colorMode === 'preprint' ? 'In phôi sẵn' : S.labelColor)));
+    const colorText = S.colorMode === 'preprint' ? 'In phôi sẵn' : (S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : S.labelColor)));
     const tableMaterial = document.getElementById('table-material');
     if (tableMaterial) {
-      tableMaterial.textContent = `${matName} | Màu nền: ${colorText} | Thời gian SX: ${S.leadTimeDays || 3} ngày`;
+      const ltStr = S.leadTimeDays ? String(S.leadTimeDays).trim() : '3';
+      const ltDisplay = ltStr.toLowerCase().includes('ngày') ? ltStr : `${ltStr} ngày`;
+      tableMaterial.textContent = `${matName} | Màu nền: ${colorText} | Thời gian SX: ${ltDisplay}`;
     }
 
     // Chụp hình 3D phối cảnh

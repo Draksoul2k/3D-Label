@@ -245,14 +245,17 @@ window.Scene3D = (function () {
       rows.push({ label: 'Lõi cuộn:', val: coreStr, valColor: '#fbbf24' });
     }
     if (checkShow('color')) {
-      const colName = S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : (S.colorMode === 'preprint' ? 'In phôi sẵn' : S.labelColor)));
-      rows.push({ label: 'Màu nền:', val: colName, valColor: '#f472b6', dot: S.labelColor || '#ffffff' });
+      const colName = S.colorMode === 'preprint' ? 'In phôi sẵn' : (S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : S.labelColor)));
+      const dot = S.colorMode === 'preprint' ? null : (S.labelColor || '#ffffff');
+      rows.push({ label: 'Màu nền:', val: colName, valColor: '#f472b6', dot });
     }
     if (checkShow('minOrder')) {
       rows.push({ label: 'Đặt hàng tối thiểu:', val: `${S.minOrder} cuộn`, valColor: '#c084fc', bold: true });
     }
     if (checkShow('leadTime')) {
-      rows.push({ label: 'Thời gian SX:', val: `${S.leadTimeDays} ngày`, valColor: '#5eead4' });
+      const str = String(S.leadTimeDays).trim();
+      const hasUnit = /ngày|tuần|tháng|hôm/i.test(str);
+      rows.push({ label: 'Thời gian SX:', val: hasUnit ? str : `${str} ngày`, valColor: '#5eead4' });
     }
 
     const rowCount = rows.length;

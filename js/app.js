@@ -468,8 +468,11 @@ function updateHUDAndBadges() {
 
   // 7. Thời gian sản xuất
   const badgeLeadTime = document.getElementById('badge-lead-time');
+  const ltStr = S.leadTimeDays ? String(S.leadTimeDays).trim() : '';
+  const leadTimeDisplay = ltStr ? (ltStr.toLowerCase().includes('ngày') ? ltStr : `${ltStr} ngày`) : '';
+
   if (badgeLeadTime) {
-    badgeLeadTime.textContent = (S.leadTimeDays && Number(S.leadTimeDays) > 0) ? `${S.leadTimeDays} ngày` : 'Chưa nhập';
+    badgeLeadTime.textContent = leadTimeDisplay || 'Chưa nhập';
   }
 
   // Cập nhật giá trị tính toán
@@ -486,7 +489,7 @@ function updateHUDAndBadges() {
   if (hudSpecBadgeDays) {
     if (shouldShowSpecRow('leadTime', S)) {
       hudSpecBadgeDays.style.display = '';
-      hudSpecBadgeDays.textContent = `SX: ${S.leadTimeDays} ngày`;
+      hudSpecBadgeDays.textContent = `SX: ${leadTimeDisplay}`;
     } else {
       hudSpecBadgeDays.style.display = 'none';
     }
@@ -517,19 +520,23 @@ function updateHUDAndBadges() {
   const hudValColor = document.getElementById('hud-val-color');
   const hudColorDot = document.getElementById('hud-color-dot');
   if (hudValColor) {
-    if (S.colorMode === 'white' || S.labelColor.toUpperCase() === '#FFFFFF') {
+    if (S.colorMode === 'preprint') {
+      hudValColor.textContent = 'In phôi sẵn';
+      if (hudColorDot) hudColorDot.style.display = 'none';
+    } else if (S.colorMode === 'white' || (S.labelColor && S.labelColor.toUpperCase() === '#FFFFFF')) {
       hudValColor.textContent = 'Trắng';
+      if (hudColorDot) { hudColorDot.style.display = ''; hudColorDot.style.backgroundColor = '#FFFFFF'; }
     } else if (S.colorMode === 'blue') {
       hudValColor.textContent = 'Xanh';
+      if (hudColorDot) { hudColorDot.style.display = ''; hudColorDot.style.backgroundColor = S.labelColor; }
     } else if (S.colorMode === 'red') {
       hudValColor.textContent = 'Đỏ';
-    } else if (S.colorMode === 'preprint') {
-      hudValColor.textContent = 'In phôi sẵn';
+      if (hudColorDot) { hudColorDot.style.display = ''; hudColorDot.style.backgroundColor = S.labelColor; }
     } else {
       hudValColor.textContent = S.labelColor;
+      if (hudColorDot) { hudColorDot.style.display = ''; hudColorDot.style.backgroundColor = S.labelColor; }
     }
   }
-  if (hudColorDot) hudColorDot.style.backgroundColor = S.labelColor;
 
   const hudValMinOrder = document.getElementById('hud-val-minorder');
   if (hudValMinOrder) hudValMinOrder.textContent = `${S.minOrder} cuộn`;
@@ -540,7 +547,7 @@ function updateHUDAndBadges() {
   }
 
   const hudValLead = document.getElementById('hud-val-leadtime');
-  if (hudValLead) hudValLead.textContent = `${S.leadTimeDays} ngày`;
+  if (hudValLead) hudValLead.textContent = leadTimeDisplay || 'Chưa nhập';
 
   // HUD cũ (nếu còn tồn tại)
   const hudLabelSize = document.getElementById('hud-label-size');
@@ -589,11 +596,11 @@ function shouldShowSpecRow(key, state) {
     case 'core':
       return Boolean(S.coreDiameter && Number(S.coreDiameter) > 0 && S.coreName);
     case 'color':
-      return Boolean(S.labelColor && S.labelColor.trim() !== '');
+      return Boolean(S.colorMode === 'preprint' || (S.labelColor && S.labelColor.trim() !== ''));
     case 'minOrder':
       return Boolean(S.minOrder !== null && S.minOrder !== undefined && S.minOrder !== '' && Number(S.minOrder) > 0);
     case 'leadTime':
-      return Boolean(S.leadTimeDays !== null && S.leadTimeDays !== undefined && S.leadTimeDays !== '' && Number(S.leadTimeDays) > 0);
+      return Boolean(S.leadTimeDays !== null && S.leadTimeDays !== undefined && String(S.leadTimeDays).trim() !== '' && String(S.leadTimeDays).trim() !== '0');
     default:
       return true;
   }
@@ -637,7 +644,9 @@ function syncSpecCardUI() {
   if (hudSpecBadgeDays) {
     if (shouldShowSpecRow('leadTime', S)) {
       hudSpecBadgeDays.style.display = '';
-      hudSpecBadgeDays.textContent = `SX: ${S.leadTimeDays} ngày`;
+      const ltStr = S.leadTimeDays ? String(S.leadTimeDays).trim() : '';
+      const ltDisplay = ltStr.toLowerCase().includes('ngày') ? ltStr : `${ltStr} ngày`;
+      hudSpecBadgeDays.textContent = `SX: ${ltDisplay}`;
     } else {
       hudSpecBadgeDays.style.display = 'none';
     }
@@ -1357,7 +1366,7 @@ function initEventListeners() {
   });
 
   // =========================================================
-  // SECTION 7: THỜI GIAN SẢN XUẤT (1 NGÀY, 2 NGÀY, 3 NGÀY, NHẬP SỐ NGÀY)
+  // SECTION 7: THỜI GIAN SẢN XUẤT (1 NGÀY, 2 NGÀY, 3 NGÀY, 3-4 NGÀY, TỰ NHẬP TEXT)
   // =========================================================
   const inputLeadTime = document.getElementById('input-lead-time');
 
@@ -1366,18 +1375,22 @@ function initEventListeners() {
       S.leadTimeDays = null;
       if (inputLeadTime && !fromInput) inputLeadTime.value = '';
     } else {
-      const num = parseInt(days);
-      if (isNaN(num) || num <= 0) {
+      const strVal = String(days).trim();
+      if (!strVal || strVal === '0') {
         S.leadTimeDays = null;
         if (inputLeadTime && !fromInput) inputLeadTime.value = '';
       } else {
-        S.leadTimeDays = num;
-        if (inputLeadTime && !fromInput) inputLeadTime.value = num;
+        S.leadTimeDays = strVal;
+        if (inputLeadTime && !fromInput) inputLeadTime.value = strVal;
       }
     }
 
+    const currentVal = S.leadTimeDays ? String(S.leadTimeDays).trim().toLowerCase() : '';
     document.querySelectorAll('.leadtime-btn').forEach(b => {
-      const isThis = S.leadTimeDays !== null && parseInt(b.dataset.days) === S.leadTimeDays;
+      const bDays = (b.dataset.days || '').trim().toLowerCase();
+      const bDaysNoUnit = bDays.replace(/\s*ngày/g, '').trim();
+      const currentValNoUnit = currentVal.replace(/\s*ngày/g, '').trim();
+      const isThis = currentVal !== '' && (bDays === currentVal || bDaysNoUnit === currentValNoUnit);
       b.classList.toggle('active', isThis);
       b.classList.toggle('bg-teal-600', isThis);
       b.classList.toggle('text-white', isThis);
@@ -1400,6 +1413,13 @@ function initEventListeners() {
   if (inputLeadTime) {
     inputLeadTime.addEventListener('input', (e) => {
       setLeadTime(e.target.value, true);
+    });
+    inputLeadTime.addEventListener('blur', (e) => {
+      let val = e.target.value.trim();
+      if (val && /^\d+(-\d+)?$/.test(val)) {
+        val = `${val} ngày`;
+        setLeadTime(val, false);
+      }
     });
   }
 
@@ -1864,14 +1884,16 @@ function initEventListeners() {
       lines.push(`• Lõi cuộn: ${coreStr}`);
     }
     if (shouldShowSpecRow('color', S)) {
-      const colName = S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : (S.colorMode === 'preprint' ? 'In phôi sẵn' : S.labelColor)));
+      const colName = S.colorMode === 'preprint' ? 'In phôi sẵn' : (S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : S.labelColor)));
       lines.push(`• Màu nền: ${colName}`);
     }
     if (shouldShowSpecRow('minOrder', S)) {
       lines.push(`• Đặt hàng tối thiểu: ${S.minOrder} cuộn`);
     }
     if (shouldShowSpecRow('leadTime', S)) {
-      lines.push(`• Thời gian SX: ${S.leadTimeDays} ngày`);
+      const ltStr = S.leadTimeDays ? String(S.leadTimeDays).trim() : '';
+      const ltDisplay = ltStr.toLowerCase().includes('ngày') ? ltStr : `${ltStr} ngày`;
+      lines.push(`• Thời gian SX: ${ltDisplay}`);
     }
 
     const fullText = lines.join('\n');
@@ -2184,9 +2206,13 @@ function applyPreset(p) {
   // Cập nhật Thời gian SX
   if (p.leadTimeDays) S.leadTimeDays = p.leadTimeDays;
   const inpLeadTime = document.getElementById('input-lead-time');
-  if (inpLeadTime) inpLeadTime.value = S.leadTimeDays;
+  if (inpLeadTime) inpLeadTime.value = S.leadTimeDays || '';
+  const pCurrentVal = S.leadTimeDays ? String(S.leadTimeDays).trim().toLowerCase() : '';
   document.querySelectorAll('.leadtime-btn').forEach(b => {
-    const isThis = parseInt(b.dataset.days) === S.leadTimeDays;
+    const bDays = (b.dataset.days || '').trim().toLowerCase();
+    const bDaysNoUnit = bDays.replace(/\s*ngày/g, '').trim();
+    const currentValNoUnit = pCurrentVal.replace(/\s*ngày/g, '').trim();
+    const isThis = pCurrentVal !== '' && (bDays === pCurrentVal || bDaysNoUnit === currentValNoUnit);
     b.classList.toggle('active', isThis);
     b.classList.toggle('bg-teal-600', isThis);
     b.classList.toggle('text-white', isThis);
@@ -2194,6 +2220,7 @@ function applyPreset(p) {
     b.classList.toggle('font-bold', isThis);
     b.classList.toggle('bg-slate-800', !isThis);
     b.classList.toggle('text-slate-300', !isThis);
+    b.classList.toggle('border-slate-700', !isThis);
   });
 
   // Cập nhật Đặt hàng tối thiểu (MOQ)

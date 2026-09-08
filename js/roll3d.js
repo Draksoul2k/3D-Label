@@ -545,10 +545,10 @@ window.Roll3D = (function () {
       new THREE.Vector3(width / 2, 0, 0)
     ]);
     const mat = new THREE.LineDashedMaterial({
-      color: 0x0284c7,
+      color: 0x111111, // Màu đen sắc nét theo yêu cầu
       dashSize: 3,
       gapSize: 2,
-      linewidth: 1.5
+      linewidth: 2.0
     });
     const line = new THREE.Line(geo, mat);
     line.computeLineDistances();
@@ -567,10 +567,10 @@ window.Roll3D = (function () {
       new THREE.Vector3(width / 2, y, z)
     ]);
     const mat = new THREE.LineDashedMaterial({
-      color: 0x0284c7,
+      color: 0x111111, // Màu đen sắc nét theo yêu cầu
       dashSize: 3,
       gapSize: 2,
-      linewidth: 1.5
+      linewidth: 2.0
     });
     const line = new THREE.Line(geo, mat);
     line.computeLineDistances();

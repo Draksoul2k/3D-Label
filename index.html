@@ -275,7 +275,7 @@
             <div class="flex items-end pb-1">
               <label class="flex items-center space-x-1.5 cursor-pointer">
                 <input type="checkbox" id="check-perforation" checked class="rounded bg-slate-800 border-slate-600 text-blue-600 focus:ring-0">
-                <span class="text-[11px] text-slate-300">Đường răng cưa</span>
+                <span class="text-[11px] text-slate-300">Răng cưa xé</span>
               </label>
             </div>
           </div>
@@ -374,7 +374,7 @@
               🔴 Đỏ
             </button>
             <button type="button" class="color-mode-btn py-1.5 px-1 rounded bg-slate-800 text-amber-300 font-bold border border-amber-500/60 text-center shadow-sm hover:bg-slate-700 cursor-pointer" data-mode="preprint">
-              📋 Phôi sẵn
+              📋 In phôi sẵn
             </button>
           </div>
 
@@ -400,16 +400,20 @@
             <span id="badge-lead-time" class="text-[11px] font-bold px-2 py-0.5 rounded bg-teal-950 text-teal-300 border border-teal-800">3 ngày</span>
           </div>
 
-          <!-- Nút chọn nhanh và ô nhập tay số ngày -->
-          <div class="flex items-center gap-1.5">
-            <div class="grid grid-cols-3 gap-1 flex-1 text-xs" id="leadtime-preset-selector">
-              <button type="button" class="leadtime-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center" data-days="1">1 ngày (Gấp)</button>
-              <button type="button" class="leadtime-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center" data-days="2">2 ngày</button>
-              <button type="button" class="leadtime-btn active py-1.5 rounded bg-teal-600 text-white font-bold border border-teal-500 text-center" data-days="3">3 ngày (Chuẩn)</button>
+          <!-- Nút chọn nhanh và ô nhập tay số ngày / nội dung text -->
+          <div class="space-y-1.5">
+            <div class="grid grid-cols-4 gap-1 text-xs" id="leadtime-preset-selector">
+              <button type="button" class="leadtime-btn py-1.5 px-0.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center cursor-pointer transition text-[11px]" data-days="1 ngày">1 ngày</button>
+              <button type="button" class="leadtime-btn py-1.5 px-0.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center cursor-pointer transition text-[11px]" data-days="2 ngày">2 ngày</button>
+              <button type="button" class="leadtime-btn active py-1.5 px-0.5 rounded bg-teal-600 text-white font-bold border border-teal-500 text-center cursor-pointer transition text-[11px]" data-days="3 ngày">3 ngày</button>
+              <button type="button" class="leadtime-btn py-1.5 px-0.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center cursor-pointer transition text-[11px]" data-days="3-4 ngày">3-4 ngày</button>
             </div>
-            <div class="w-24 shrink-0 flex items-center bg-slate-900 rounded-lg border border-slate-700 px-2 py-1">
-              <input type="number" id="input-lead-time" value="3" min="1" max="60" step="1" class="w-full text-center font-mono font-bold text-teal-300 bg-transparent border-0 focus:outline-none text-xs">
-              <span class="text-[10px] text-slate-400 whitespace-nowrap ml-1">ngày</span>
+            <!-- Ô tự nhập nội dung tùy biến (dạng text: nhập 3-4 ngày, 5-7 ngày, theo thỏa thuận...) -->
+            <div class="flex items-center bg-slate-900 rounded-lg border border-slate-700 px-2.5 py-1.5">
+              <span class="text-[11px] text-slate-400 mr-2 shrink-0 flex items-center gap-1">
+                <i class="fa-solid fa-pen text-[10px] text-teal-400"></i> Tự nhập:
+              </span>
+              <input type="text" id="input-lead-time" value="3 ngày" placeholder="VD: 3-4 ngày, 5 ngày..." class="w-full font-sans font-bold text-teal-300 bg-transparent border-0 focus:outline-none text-xs">
             </div>
           </div>
         </div>
@@ -1603,8 +1607,8 @@
             <span>Đường nét liền đỏ: <b>Đường bế demi (Die-cut line)</b></span>
           </div>
           <div class="flex items-center gap-2">
-            <span class="w-4 h-0.5 border-t border-dashed border-cyan-400 inline-block"></span>
-            <span>Đường nét đứt xanh: <b>Đường răng cưa xé (Perforation line)</b></span>
+            <span class="w-4 h-0.5 border-t border-dashed border-slate-400 inline-block"></span>
+            <span>Đường nét đứt: <b>Răng cưa xé (Perforation line)</b></span>
           </div>
           <div class="flex items-center gap-2">
             <span class="w-4 h-2 border border-amber-400 inline-block"></span>
