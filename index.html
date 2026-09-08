@@ -746,26 +746,26 @@
             </div>
           </div>
 
-          <!-- FLOATING BOTTOM-RIGHT TECH SPECS & ORDER SUMMARY CARD (TO RÕ RÀNG & CÓ THỂ CHỈNH KÍCH THƯỚC) -->
-          <div id="hud-spec-card" class="absolute bottom-3 right-3 z-20 pointer-events-auto select-none transition-all duration-300 max-w-[360px] w-full hidden md:block" style="font-size: 12px;">
+          <!-- FLOATING BOTTOM-RIGHT TECH SPECS & ORDER SUMMARY CARD (ÔM SÁT NỘI DUNG, CHỈ DÃN RA KHI NHIỀU CHỮ) -->
+          <div id="hud-spec-card" class="absolute bottom-3 right-3 z-20 pointer-events-auto select-none transition-all duration-300 w-fit max-w-[420px] hidden md:block" style="font-size: 12px;">
             <div class="bg-slate-900/95 backdrop-blur-md border border-slate-700/90 text-slate-200 rounded-2xl shadow-2xl p-3 sm:p-3.5 space-y-2 font-sans" style="background-color: #0f172a !important;">
               <!-- Header (Nhấn giữ để kéo di chuyển vị trí & Nút Copy) -->
-              <div id="hud-card-header" class="flex items-center justify-between pb-2 border-b border-slate-800 cursor-grab active:cursor-grabbing select-none" title="Nhấn giữ và kéo để di chuyển bảng thông số đến bất cứ đâu trên màn hình">
-                <span class="hud-title font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5 pointer-events-none text-xs">
+              <div id="hud-card-header" class="flex items-center justify-between gap-2.5 pb-2 border-b border-slate-800 cursor-grab active:cursor-grabbing select-none" title="Nhấn giữ và kéo để di chuyển bảng thông số đến bất cứ đâu trên màn hình">
+                <span class="hud-title font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5 pointer-events-none text-xs shrink-0">
                   <i class="fa-solid fa-grip-vertical text-slate-500 hover:text-blue-400 mr-0.5" title="Kéo di chuyển"></i>
                   <i class="fa-solid fa-clipboard-list"></i> Thông Số Đặt Hàng
                 </span>
-                <div class="flex items-center gap-1.5" onclick="event.stopPropagation();">
+                <div class="flex items-center gap-1.5 shrink-0" onclick="event.stopPropagation();">
                   <!-- NÚT COPY THÔNG SỐ 1 CHẠM -->
                   <button type="button" id="btn-copy-spec-card" class="flex items-center gap-1 bg-blue-600/30 hover:bg-blue-600/60 text-blue-300 hover:text-white border border-blue-500/50 px-2 py-0.5 rounded-lg text-xs font-semibold transition cursor-pointer active:scale-95 shadow-sm" title="Sao chép toàn bộ thông số đặt hàng để gửi khách">
                     <i class="fa-regular fa-copy text-[11px]" id="icon-copy-spec"></i>
                     <span id="text-copy-spec">Copy</span>
                   </button>
-                  <!-- Nút tăng / giảm kích thước chữ của bảng -->
-                  <div class="flex items-center bg-slate-950/80 rounded-lg border border-slate-700/80 px-1 py-0.5" title="Chỉnh cỡ chữ bảng thông số to/nhỏ tùy ý">
-                    <button type="button" id="btn-card-zoom-out" class="text-slate-400 hover:text-white px-1.5 py-0.5 text-xs font-bold transition hover:bg-slate-800 rounded">A-</button>
-                    <span id="hud-card-scale-badge" class="font-sans text-[10px] text-blue-300 font-bold px-1">100%</span>
-                    <button type="button" id="btn-card-zoom-in" class="text-slate-400 hover:text-white px-1.5 py-0.5 text-xs font-bold transition hover:bg-slate-800 rounded">A+</button>
+                  <!-- Nút tăng / giảm kích thước chữ của bảng (Chỉ còn A- và A+ gọn gàng không chiếm diện tích) -->
+                  <div class="flex items-center bg-slate-950/80 rounded-lg border border-slate-700/80 p-0.5" title="Chỉnh cỡ chữ bảng thông số">
+                    <button type="button" id="btn-card-zoom-out" class="text-slate-400 hover:text-white px-1.5 py-0.5 text-xs font-bold transition hover:bg-slate-800 rounded" title="Thu nhỏ chữ">A-</button>
+                    <button type="button" id="btn-card-zoom-in" class="text-slate-400 hover:text-white px-1.5 py-0.5 text-xs font-bold transition hover:bg-slate-800 rounded" title="Phóng to chữ">A+</button>
+                    <span id="hud-card-scale-badge" class="hidden">100%</span>
                   </div>
                   <button type="button" id="btn-toggle-hud-card" class="text-slate-400 hover:text-white px-1.5 py-0.5 rounded transition cursor-pointer hover:bg-slate-800" title="Thu gọn / Mở rộng">
                     <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" id="hud-card-chevron"></i>

@@ -1051,7 +1051,7 @@ window.Roll3D = (function () {
       }
 
       // Vị trí mặc định: đặt bên ngoài mép phải tem để không che mặt tem, có leader callout chỉ thẳng vào mũi tên trên tem
-      defaultSpritePos = new THREE.Vector3(labelRight + 12 * userScale, midY, z + 0.2);
+      defaultSpritePos = new THREE.Vector3(labelRight + 15 * userScale, midY + 2.5 * userScale, z + 0.2);
 
     } else {
       // BẢN VẼ KỸ THUẬT CAD: MŨI TÊN Ở NGOÀI KÈM 2 ĐƯỜNG DÓNG NGANG TỪ CON TEM SANG
@@ -1137,10 +1137,9 @@ window.Roll3D = (function () {
     const pTip = new THREE.Vector3(tipX, perfY, z);
 
     const defaultKneeX = webW / 2 + 1.5 * userScale;
-    const defaultKneeY = perfY - 5.0 * userScale;
+    const defaultKneeY = perfY - 7.5 * userScale;
     const shelfLen = 3.5 * userScale;
-    const defaultShelfX = defaultKneeX + shelfLen;
-    const defaultSpritePos = new THREE.Vector3(defaultShelfX + 13 * userScale, defaultKneeY, z + 0.2);
+    const defaultSpritePos = new THREE.Vector3(labelRight + 15 * userScale, defaultKneeY, z + 0.2);
 
     const sprite = createCrispTextSprite('Răng cưa xé', '#0f172a', true, '#ffffff');
     sprite.position.copy(defaultSpritePos);
@@ -1230,7 +1229,7 @@ window.Roll3D = (function () {
     // 4. Sprite chữ hiển thị kích thước bước nhảy (Ví dụ: "3mm")
     const midY = (yTop + yBottom) / 2;
     const userScale = (window.AppState && window.AppState.dimTextScale) ? window.AppState.dimTextScale : 1.35;
-    const defaultPos = new THREE.Vector3(x + 14 * userScale, midY, z + 0.2);
+    const defaultPos = new THREE.Vector3(x + 9.5 * userScale, midY, z + 0.2);
     const sprite = createCrispTextSprite(text, colorHex, true, '#ffffff');
     sprite.position.copy(defaultPos);
 
@@ -1316,9 +1315,9 @@ window.Roll3D = (function () {
       });
     }
 
-    // 4. Sprite chữ hiển thị kích thước lề biên "2mm" (Đưa sang bên trái mép dải rủ để không trùng 3mm bước nhảy)
+    // 4. Sprite chữ hiển thị kích thước lề biên "2mm" (Đưa sang bên trái mép dải rủ, có leader callout chỉ vào)
     const userScale = (window.AppState && window.AppState.dimTextScale) ? window.AppState.dimTextScale : 1.35;
-    const defaultPos = new THREE.Vector3(xLeft - 10 * userScale, y, z + 2.0);
+    const defaultPos = new THREE.Vector3(xLeft - 13 * userScale, y - 2.0 * userScale, z + 2.0);
     const sprite = createCrispTextSprite(text, colorHex, false, '#ffffff');
     sprite.position.copy(defaultPos);
 
@@ -1335,7 +1334,7 @@ window.Roll3D = (function () {
       defaultPos: defaultPos.clone(),
       anchorPos: anchorPos.clone()
     };
-    attachDragLeaderCallout(group, sprite, anchorPos, defaultPos, false);
+    attachDragLeaderCallout(group, sprite, anchorPos, defaultPos, true);
 
     group.add(sprite);
     draggableSprites.push(sprite);
@@ -1429,7 +1428,7 @@ window.Roll3D = (function () {
     const text = `Lõi Ø ${coreDiameter.toFixed(0)}mm`;
     const sprite = createCrispTextSprite(text, colorHex, false, '#ffffff');
     const userScale = (window.AppState && window.AppState.dimTextScale) ? window.AppState.dimTextScale : 1.35;
-    const defaultPos = new THREE.Vector3(faceX - 4 * userScale, centerY + 16 * userScale, 0);
+    const defaultPos = new THREE.Vector3(faceX - 9 * userScale, centerY + 16 * userScale, 0);
     sprite.position.copy(defaultPos);
 
     const S = window.AppState;
@@ -1445,7 +1444,7 @@ window.Roll3D = (function () {
       defaultPos: defaultPos.clone(),
       anchorPos: anchorPos.clone()
     };
-    attachDragLeaderCallout(group, sprite, anchorPos, defaultPos, false);
+    attachDragLeaderCallout(group, sprite, anchorPos, defaultPos, true);
 
     group.add(sprite);
     draggableSprites.push(sprite);
@@ -1492,7 +1491,10 @@ window.Roll3D = (function () {
     const sprite = createCrispTextSprite(text, colorHex, isSmall, '#ffffff');
 
     const userScale = (window.AppState && window.AppState.dimTextScale) ? window.AppState.dimTextScale : 1.35;
-    if (labelSide === 'top') {
+    if (dimKey === 'width') {
+      mid.x += 8.0 * userScale;
+      mid.y += 8.5 * userScale;
+    } else if (labelSide === 'top') {
       mid.y += (isSmall ? 4.5 : 8) * userScale;
     } else if (labelSide === 'right') {
       mid.x += (isSmall ? 5.5 : 10) * userScale;
@@ -1517,7 +1519,8 @@ window.Roll3D = (function () {
         defaultPos: defaultPos.clone(),
         anchorPos: anchorPos.clone()
       };
-      attachDragLeaderCallout(group, sprite, anchorPos, defaultPos, false);
+      const alwaysLeader = (dimKey === 'width');
+      attachDragLeaderCallout(group, sprite, anchorPos, defaultPos, alwaysLeader);
       draggableSprites.push(sprite);
     }
 

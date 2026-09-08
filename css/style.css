@@ -712,11 +712,12 @@ input[type="range"] {
     max-height: 88vh !important;
     margin: 8px !important;
   }
-/* NÂNG CẤP BẢNG THÔNG SỐ ĐẶT HÀNG (#hud-spec-card) - CĂN THẲNG HÀNG TĂM TẮP, CHỮ ĐỀU ĐẸP */
+/* NÂNG CẤP BẢNG THÔNG SỐ ĐẶT HÀNG (#hud-spec-card) - CĂN THẲNG HÀNG TĂM TẮP, CHỮ ĐỀU ĐẸP, ÔM SÁT NỘI DUNG */
 #hud-spec-card {
   --hud-scale: 1.0;
-  width: calc(360px * var(--hud-scale)) !important;
-  max-width: 95vw !important;
+  width: fit-content !important;
+  min-width: calc(230px * var(--hud-scale)) !important;
+  max-width: min(calc(420px * var(--hud-scale)), 95vw) !important;
 }
 
 #hud-spec-card .hud-label {
@@ -724,8 +725,8 @@ input[type="range"] {
   font-size: calc(12px * var(--hud-scale)) !important;
   line-height: 1.5 !important;
   white-space: nowrap !important;
-  width: calc(132px * var(--hud-scale)) !important;
-  min-width: calc(132px * var(--hud-scale)) !important;
+  width: auto !important;
+  min-width: calc(105px * var(--hud-scale)) !important;
   flex-shrink: 0 !important;
 }
 
@@ -737,7 +738,7 @@ input[type="range"] {
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  flex: 1 1 auto !important;
+  flex: 0 1 auto !important;
 }
 
 #hud-spec-card .hud-title {

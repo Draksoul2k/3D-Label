@@ -696,8 +696,8 @@ function applySpecCardScale(scale, updateState = true) {
   if (card) {
     card.style.setProperty('--hud-scale', num);
     card.style.fontSize = (12 * num) + 'px';
-    card.style.width = Math.round(360 * num) + 'px';
-    card.style.maxWidth = '95vw';
+    card.style.width = 'fit-content';
+    card.style.maxWidth = Math.min(window.innerWidth * 0.95, Math.round(420 * num)) + 'px';
   }
 
   const badge = document.getElementById('hud-card-scale-badge');
