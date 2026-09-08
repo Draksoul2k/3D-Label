@@ -360,24 +360,31 @@ LABEL_PRESETS.round_label = LABEL_PRESETS.round_seal_40_2up;
 function recalculatePhysics() {
   const S = window.AppState;
 
+  const lw = (S.labelWidth && Number(S.labelWidth) > 0) ? Number(S.labelWidth) : 50;
+  const lh = (S.labelHeight && Number(S.labelHeight) > 0) ? Number(S.labelHeight) : 30;
+  const ups = (S.ups && Number(S.ups) > 0) ? Number(S.ups) : 1;
+
   // 1. Khổ cuộn giấy (Web Width mm)
-  S.webWidth = (S.ups * S.labelWidth) + ((S.ups - 1) * S.gapX) + (2 * S.marginX);
+  S.webWidth = (ups * lw) + ((ups - 1) * S.gapX) + (2 * S.marginX);
 
   // 2. Bước nhảy một bước tem (Pitch mm)
-  const pitch = S.labelHeight + S.gapY;
+  const pitch = lh + S.gapY;
 
   // 3. Số hàng tem trên cuộn
-  const totalRows = Math.floor((S.rollLength * 1000) / pitch);
+  const effectiveLen = (S.rollLength && Number(S.rollLength) > 0) ? Number(S.rollLength) : 50;
+  const totalRows = Math.floor((effectiveLen * 1000) / pitch);
 
   // 4. Tổng số con tem trên cuộn
-  S.labelCount = totalRows * S.ups;
+  if (S.rollLength !== null && S.rollLength !== undefined && S.rollLength !== '') {
+    S.labelCount = totalRows * ups;
+  }
 
   // 5. Đường kính ngoài của cuộn tem (Outer Diameter - OD mm)
   // Công thức xấp xỉ ngành in: OD = sqrt(Core^2 + (4 * Thickness * Length / PI))
   // Độ dày trung bình giấy decal + đế glassine: ~0.15mm (150 microns)
   const caliper = 0.155; // mm
-  const coreR = S.coreDiameter / 2;
-  const areaPaper = S.rollLength * 1000 * caliper;
+  const coreR = (S.coreDiameter || 76) / 2;
+  const areaPaper = effectiveLen * 1000 * caliper;
   const totalArea = Math.PI * (coreR * coreR) + areaPaper;
   const outerR = Math.sqrt(totalArea / Math.PI);
   S.outerDiameter = Math.round(outerR * 2);
@@ -428,7 +435,9 @@ function updateHUDAndBadges() {
   if (badgeRowLayout) badgeRowLayout.textContent = `${S.ups} tem / hàng`;
 
   // 4. Số tem ước tính & Chiều dài cuộn
-  const countEstFormatted = `khoảng ${S.labelCount.toLocaleString('vi-VN')} tem / cuộn`;
+  const countEstFormatted = (S.labelCount && Number(S.labelCount) > 0)
+    ? `khoảng ${S.labelCount.toLocaleString('vi-VN')} tem / cuộn`
+    : 'Chưa xác định';
   const badgeCountEst = document.getElementById('badge-label-count-est');
   if (badgeCountEst) badgeCountEst.textContent = countEstFormatted;
 
@@ -437,12 +446,12 @@ function updateHUDAndBadges() {
 
   const inputLabelCount = document.getElementById('input-label-count');
   if (inputLabelCount && document.activeElement !== inputLabelCount) {
-    inputLabelCount.value = S.labelCount;
+    inputLabelCount.value = (S.labelCount !== null && S.labelCount !== undefined) ? S.labelCount : '';
   }
 
   const inputRollLength = document.getElementById('input-roll-length');
   if (inputRollLength && document.activeElement !== inputRollLength) {
-    inputRollLength.value = S.rollLength;
+    inputRollLength.value = (S.rollLength !== null && S.rollLength !== undefined) ? S.rollLength : '';
   }
 
   // 5. Thẻ lõi cuộn
@@ -459,7 +468,9 @@ function updateHUDAndBadges() {
 
   // 7. Thời gian sản xuất
   const badgeLeadTime = document.getElementById('badge-lead-time');
-  if (badgeLeadTime) badgeLeadTime.textContent = `${S.leadTimeDays} ngày`;
+  if (badgeLeadTime) {
+    badgeLeadTime.textContent = (S.leadTimeDays && Number(S.leadTimeDays) > 0) ? `${S.leadTimeDays} ngày` : 'Chưa nhập';
+  }
 
   // Cập nhật giá trị tính toán
   const calcWebWidth = document.getElementById('calc-web-width');
@@ -472,7 +483,14 @@ function updateHUDAndBadges() {
   // CẬP NHẬT NỘI DUNG THẺ THÔNG SỐ ĐẶT HÀNG TRÊN 3D (#hud-spec-card)
   // =========================================================
   const hudSpecBadgeDays = document.getElementById('hud-spec-badge-days');
-  if (hudSpecBadgeDays) hudSpecBadgeDays.textContent = `SX: ${S.leadTimeDays} ngày`;
+  if (hudSpecBadgeDays) {
+    if (shouldShowSpecRow('leadTime', S)) {
+      hudSpecBadgeDays.style.display = '';
+      hudSpecBadgeDays.textContent = `SX: ${S.leadTimeDays} ngày`;
+    } else {
+      hudSpecBadgeDays.style.display = 'none';
+    }
+  }
 
   const hudValMat = document.getElementById('hud-val-material');
   if (hudValMat) hudValMat.textContent = materialNameMap[S.materialType] || 'Giấy thường (xé rách được)';
@@ -487,7 +505,7 @@ function updateHUDAndBadges() {
   if (hudValLength) hudValLength.textContent = `${S.rollLength}m / cuộn`;
 
   const hudValCount = document.getElementById('hud-val-count');
-  if (hudValCount) hudValCount.textContent = `khoảng ${S.labelCount.toLocaleString('vi-VN')} tem`;
+  if (hudValCount) hudValCount.textContent = `khoảng ${S.labelCount ? S.labelCount.toLocaleString('vi-VN') : ''} tem`;
 
   const hudValCore = document.getElementById('hud-val-core');
   if (hudValCore) {
@@ -514,10 +532,12 @@ function updateHUDAndBadges() {
   if (hudColorDot) hudColorDot.style.backgroundColor = S.labelColor;
 
   const hudValMinOrder = document.getElementById('hud-val-minorder');
-  if (hudValMinOrder) hudValMinOrder.textContent = `${S.minOrder || 20} cuộn`;
+  if (hudValMinOrder) hudValMinOrder.textContent = `${S.minOrder} cuộn`;
 
   const badgeMinOrder = document.getElementById('badge-min-order');
-  if (badgeMinOrder) badgeMinOrder.textContent = `${S.minOrder || 20} cuộn`;
+  if (badgeMinOrder) {
+    badgeMinOrder.textContent = (S.minOrder && Number(S.minOrder) > 0) ? `${S.minOrder} cuộn` : 'Chưa nhập';
+  }
 
   const hudValLead = document.getElementById('hud-val-leadtime');
   if (hudValLead) hudValLead.textContent = `${S.leadTimeDays} ngày`;
@@ -538,7 +558,50 @@ function updateHUDAndBadges() {
 }
 
 /**
- * ĐỒNG BỘ HIỂN THỊ BẢNG THÔNG SỐ ĐẶT HÀNG TRÊN 3D THEO CÁC TOGGLE
+ * KIỂM TRA MỘT HÀNG THÔNG SỐ CÓ ĐƯỢC HIỂN THỊ HAY KHÔNG
+ * Điều kiện hiển thị:
+ * 1. Không bị tắt trong menu tùy biến (S.specToggles[key] !== false)
+ * 2. Người dùng ĐÃ NHẬP LIỆU (không bị rỗng, null, undefined hoặc <= 0)
+ * @param {string} key - Tên trường thông số
+ * @param {object} [state] - Đối tượng AppState (mặc định lấy window.AppState)
+ * @returns {boolean}
+ */
+function shouldShowSpecRow(key, state) {
+  const S = state || window.AppState;
+  if (!S) return false;
+
+  // 1. Kiểm tra toggle bật / tắt của người dùng trong menu tùy biến
+  const toggles = S.specToggles || {};
+  if (toggles[key] === false) return false;
+
+  // 2. Kiểm tra dữ liệu thực tế người dùng nhập (nếu để trống hoặc = 0 thì ẩn)
+  switch (key) {
+    case 'material':
+      return Boolean(S.materialType && S.materialType.trim() !== '');
+    case 'dimensions':
+      return Boolean(S.labelWidth && Number(S.labelWidth) > 0 && S.labelHeight && Number(S.labelHeight) > 0);
+    case 'spec':
+      return Boolean(S.ups && Number(S.ups) > 0);
+    case 'rollLength':
+      return Boolean(S.rollLength !== null && S.rollLength !== undefined && S.rollLength !== '' && Number(S.rollLength) > 0);
+    case 'count':
+      return Boolean(S.labelCount !== null && S.labelCount !== undefined && S.labelCount !== '' && Number(S.labelCount) > 0);
+    case 'core':
+      return Boolean(S.coreDiameter && Number(S.coreDiameter) > 0 && S.coreName);
+    case 'color':
+      return Boolean(S.labelColor && S.labelColor.trim() !== '');
+    case 'minOrder':
+      return Boolean(S.minOrder !== null && S.minOrder !== undefined && S.minOrder !== '' && Number(S.minOrder) > 0);
+    case 'leadTime':
+      return Boolean(S.leadTimeDays !== null && S.leadTimeDays !== undefined && S.leadTimeDays !== '' && Number(S.leadTimeDays) > 0);
+    default:
+      return true;
+  }
+}
+window.shouldShowSpecRow = shouldShowSpecRow;
+
+/**
+ * ĐỒNG BỘ HIỂN THỊ BẢNG THÔNG SỐ ĐẶT HÀNG TRÊN 3D THEO CÁC TOGGLE VÀ DỮ LIỆU NHẬP
  */
 function syncSpecCardUI() {
   const S = window.AppState;
@@ -546,16 +609,6 @@ function syncSpecCardUI() {
   const masterCheck = document.getElementById('check-master-spec-card');
 
   if (masterCheck) masterCheck.checked = S.showSpecCard;
-
-  if (card) {
-    if (S.showSpecCard) {
-      card.classList.remove('hidden');
-      card.style.display = '';
-    } else {
-      card.classList.add('hidden');
-      card.style.display = 'none';
-    }
-  }
 
   // Đồng bộ từng hàng
   const rowMap = {
@@ -570,10 +623,33 @@ function syncSpecCardUI() {
     leadTime: document.getElementById('spec-row-leadtime')
   };
 
+  let anyRowVisible = false;
   for (const [key, el] of Object.entries(rowMap)) {
     if (el) {
-      const isShow = S.specToggles[key] !== false;
+      const isShow = shouldShowSpecRow(key, S);
       el.style.display = isShow ? 'flex' : 'none';
+      if (isShow) anyRowVisible = true;
+    }
+  }
+
+  // Đồng bộ badge số ngày SX ở header thẻ nếu có
+  const hudSpecBadgeDays = document.getElementById('hud-spec-badge-days');
+  if (hudSpecBadgeDays) {
+    if (shouldShowSpecRow('leadTime', S)) {
+      hudSpecBadgeDays.style.display = '';
+      hudSpecBadgeDays.textContent = `SX: ${S.leadTimeDays} ngày`;
+    } else {
+      hudSpecBadgeDays.style.display = 'none';
+    }
+  }
+
+  if (card) {
+    if (S.showSpecCard && anyRowVisible) {
+      card.classList.remove('hidden');
+      card.style.display = '';
+    } else {
+      card.classList.add('hidden');
+      card.style.display = 'none';
     }
   }
 
@@ -955,13 +1031,23 @@ function initEventListeners() {
 
   if (inputW) {
     inputW.addEventListener('input', (e) => {
-      S.labelWidth = Math.max(10, parseFloat(e.target.value) || 10);
+      const v = e.target.value.trim();
+      if (v === '' || isNaN(parseFloat(v)) || parseFloat(v) <= 0) {
+        S.labelWidth = null;
+      } else {
+        S.labelWidth = parseFloat(v);
+      }
       onParamsChanged();
     });
   }
   if (inputH) {
     inputH.addEventListener('input', (e) => {
-      S.labelHeight = Math.max(10, parseFloat(e.target.value) || 10);
+      const v = e.target.value.trim();
+      if (v === '' || isNaN(parseFloat(v)) || parseFloat(v) <= 0) {
+        S.labelHeight = null;
+      } else {
+        S.labelHeight = parseFloat(v);
+      }
       onParamsChanged();
     });
   }
@@ -1075,16 +1161,31 @@ function initEventListeners() {
   const inputRollLength = document.getElementById('input-roll-length');
   const inputLabelCount = document.getElementById('input-label-count');
 
-  function syncRollLengthFromCount(count) {
-    const pitch = S.labelHeight + S.gapY;
-    const rows = Math.ceil(count / S.ups);
-    S.rollLength = Math.max(5, Math.round((rows * pitch) / 1000));
-    S.labelCount = count;
-    if (inputRollLength) inputRollLength.value = S.rollLength;
+  function syncRollLengthFromCount(count, fromInput = false) {
+    if (count === '' || count === null || count === undefined) {
+      S.labelCount = null;
+      S.rollLength = null;
+      if (inputLabelCount && !fromInput) inputLabelCount.value = '';
+      if (inputRollLength) inputRollLength.value = '';
+    } else {
+      const num = parseInt(count);
+      if (isNaN(num) || num <= 0) {
+        S.labelCount = null;
+        S.rollLength = null;
+        if (inputLabelCount && !fromInput) inputLabelCount.value = '';
+        if (inputRollLength) inputRollLength.value = '';
+      } else {
+        S.labelCount = num;
+        const pitch = S.labelHeight + S.gapY;
+        const rows = Math.ceil(num / S.ups);
+        S.rollLength = Math.max(1, Math.round((rows * pitch) / 1000));
+        if (inputRollLength) inputRollLength.value = S.rollLength;
+      }
+    }
 
     // Cập nhật active preset chiều dài
     document.querySelectorAll('.length-btn').forEach(b => {
-      const isThis = parseInt(b.dataset.m) === S.rollLength;
+      const isThis = S.rollLength !== null && parseInt(b.dataset.m) === S.rollLength;
       b.classList.toggle('active', isThis);
       b.classList.toggle('bg-amber-600', isThis);
       b.classList.toggle('text-white', isThis);
@@ -1097,16 +1198,31 @@ function initEventListeners() {
     onParamsChanged();
   }
 
-  function syncCountFromRollLength(m) {
-    S.rollLength = Math.max(5, parseFloat(m) || 5);
-    const pitch = S.labelHeight + S.gapY;
-    const rows = Math.floor((S.rollLength * 1000) / pitch);
-    S.labelCount = rows * S.ups;
-    if (inputLabelCount) inputLabelCount.value = S.labelCount;
+  function syncCountFromRollLength(m, fromInput = false) {
+    if (m === '' || m === null || m === undefined) {
+      S.rollLength = null;
+      S.labelCount = null;
+      if (inputRollLength && !fromInput) inputRollLength.value = '';
+      if (inputLabelCount) inputLabelCount.value = '';
+    } else {
+      const num = parseFloat(m);
+      if (isNaN(num) || num <= 0) {
+        S.rollLength = null;
+        S.labelCount = null;
+        if (inputRollLength && !fromInput) inputRollLength.value = '';
+        if (inputLabelCount) inputLabelCount.value = '';
+      } else {
+        S.rollLength = num;
+        const pitch = S.labelHeight + S.gapY;
+        const rows = Math.floor((S.rollLength * 1000) / pitch);
+        S.labelCount = rows * S.ups;
+        if (inputLabelCount) inputLabelCount.value = S.labelCount;
+      }
+    }
 
     // Cập nhật active preset chiều dài
     document.querySelectorAll('.length-btn').forEach(b => {
-      const isThis = parseInt(b.dataset.m) === S.rollLength;
+      const isThis = S.rollLength !== null && parseInt(b.dataset.m) === S.rollLength;
       b.classList.toggle('active', isThis);
       b.classList.toggle('bg-amber-600', isThis);
       b.classList.toggle('text-white', isThis);
@@ -1121,14 +1237,13 @@ function initEventListeners() {
 
   if (inputRollLength) {
     inputRollLength.addEventListener('input', (e) => {
-      syncCountFromRollLength(e.target.value);
+      syncCountFromRollLength(e.target.value, true);
     });
   }
 
   if (inputLabelCount) {
     inputLabelCount.addEventListener('input', (e) => {
-      const count = Math.max(10, parseInt(e.target.value) || 10);
-      syncRollLengthFromCount(count);
+      syncRollLengthFromCount(e.target.value, true);
     });
   }
 
@@ -1137,7 +1252,7 @@ function initEventListeners() {
     btn.addEventListener('click', () => {
       const m = parseInt(btn.dataset.m);
       if (inputRollLength) inputRollLength.value = m;
-      syncCountFromRollLength(m);
+      syncCountFromRollLength(m, false);
     });
   });
 
@@ -1245,13 +1360,23 @@ function initEventListeners() {
   // =========================================================
   const inputLeadTime = document.getElementById('input-lead-time');
 
-  function setLeadTime(days) {
-    days = Math.max(1, parseInt(days) || 1);
-    S.leadTimeDays = days;
-    if (inputLeadTime) inputLeadTime.value = days;
+  function setLeadTime(days, fromInput = false) {
+    if (days === '' || days === null || days === undefined) {
+      S.leadTimeDays = null;
+      if (inputLeadTime && !fromInput) inputLeadTime.value = '';
+    } else {
+      const num = parseInt(days);
+      if (isNaN(num) || num <= 0) {
+        S.leadTimeDays = null;
+        if (inputLeadTime && !fromInput) inputLeadTime.value = '';
+      } else {
+        S.leadTimeDays = num;
+        if (inputLeadTime && !fromInput) inputLeadTime.value = num;
+      }
+    }
 
     document.querySelectorAll('.leadtime-btn').forEach(b => {
-      const isThis = parseInt(b.dataset.days) === days;
+      const isThis = S.leadTimeDays !== null && parseInt(b.dataset.days) === S.leadTimeDays;
       b.classList.toggle('active', isThis);
       b.classList.toggle('bg-teal-600', isThis);
       b.classList.toggle('text-white', isThis);
@@ -1267,31 +1392,42 @@ function initEventListeners() {
 
   document.querySelectorAll('.leadtime-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      setLeadTime(btn.dataset.days);
+      setLeadTime(btn.dataset.days, false);
     });
   });
 
   if (inputLeadTime) {
     inputLeadTime.addEventListener('input', (e) => {
-      setLeadTime(e.target.value);
+      setLeadTime(e.target.value, true);
     });
   }
 
   // 8B. ĐẶT HÀNG TỐI THIỂU (MOQ)
   const inputMinOrder = document.getElementById('input-min-order');
-  function setMinOrder(val, isPresetClick = false) {
-    let num = parseInt(val);
-    if (isNaN(num) || num < 1) num = 20;
-    S.minOrder = num;
-    if (inputMinOrder && !isPresetClick) inputMinOrder.value = num;
+  function setMinOrder(val, isPresetClick = false, fromInput = false) {
+    if (val === '' || val === null || val === undefined) {
+      S.minOrder = null;
+      if (inputMinOrder && !fromInput) inputMinOrder.value = '';
+    } else {
+      const num = parseInt(val);
+      if (isNaN(num) || num <= 0) {
+        S.minOrder = null;
+        if (inputMinOrder && !fromInput) inputMinOrder.value = '';
+      } else {
+        S.minOrder = num;
+        if (inputMinOrder && !fromInput && !isPresetClick) inputMinOrder.value = num;
+      }
+    }
 
     document.querySelectorAll('.minorder-btn').forEach(b => {
       const bVal = b.dataset.val;
       let isThis = false;
-      if (bVal === 'custom') {
-        isThis = (num !== 20 && num !== 30);
-      } else {
-        isThis = parseInt(bVal) === num;
+      if (S.minOrder !== null) {
+        if (bVal === 'custom') {
+          isThis = (S.minOrder !== 20 && S.minOrder !== 30);
+        } else {
+          isThis = parseInt(bVal) === S.minOrder;
+        }
       }
       b.classList.toggle('active', isThis);
       b.classList.toggle('bg-purple-600', isThis);
@@ -1327,14 +1463,14 @@ function initEventListeners() {
         });
       } else {
         if (inputMinOrder) inputMinOrder.value = val;
-        setMinOrder(val, true);
+        setMinOrder(val, true, false);
       }
     });
   });
 
   if (inputMinOrder) {
     inputMinOrder.addEventListener('input', (e) => {
-      setMinOrder(e.target.value, false);
+      setMinOrder(e.target.value, false, true);
     });
   }
 
@@ -1695,7 +1831,6 @@ function initEventListeners() {
 
   function copySpecCardToClipboard() {
     const S = window.AppState;
-    const toggles = S.specToggles || {};
     const lines = ['📋 THÔNG SỐ ĐẶT HÀNG TEM NHÃN:'];
 
     const matNames = {
@@ -1707,35 +1842,35 @@ function initEventListeners() {
       gloss: 'Cán màng bóng'
     };
 
-    if (toggles.material !== false) {
+    if (shouldShowSpecRow('material', S)) {
       lines.push(`• Chất liệu: ${matNames[S.materialType] || 'Giấy thường (xé rách được)'}`);
     }
-    if (toggles.dimensions !== false) {
+    if (shouldShowSpecRow('dimensions', S)) {
       lines.push(`• Kích thước: ${S.labelWidth} x ${S.labelHeight} mm (ngang x cao)`);
     }
-    if (toggles.spec !== false) {
+    if (shouldShowSpecRow('spec', S)) {
       const cornerStr = S.cornerRadius > 0 ? `Bo góc R${S.cornerRadius}` : 'Góc vuông';
       lines.push(`• Quy cách: ${cornerStr} - ${S.ups} tem/hàng`);
     }
-    if (toggles.rollLength !== false) {
+    if (shouldShowSpecRow('rollLength', S)) {
       lines.push(`• Chiều dài cuộn: ${S.rollLength}m / cuộn`);
     }
-    if (toggles.count !== false) {
-      lines.push(`• Số tem ước tính: khoảng ${S.labelCount.toLocaleString('vi-VN')} tem / cuộn`);
+    if (shouldShowSpecRow('count', S)) {
+      lines.push(`• Số tem ước tính: khoảng ${S.labelCount ? S.labelCount.toLocaleString('vi-VN') : ''} tem / cuộn`);
     }
-    if (toggles.core !== false) {
+    if (shouldShowSpecRow('core', S)) {
       const coreStr = S.coreName.includes('inch') ? `${S.coreName} (${S.coreDiameter.toFixed(1)}mm)` : `Lõi ${S.coreDiameter.toFixed(0)}mm`;
       lines.push(`• Lõi cuộn: ${coreStr}`);
     }
-    if (toggles.color !== false) {
+    if (shouldShowSpecRow('color', S)) {
       const colName = S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : (S.colorMode === 'preprint' ? 'In phôi sẵn' : S.labelColor)));
       lines.push(`• Màu nền: ${colName}`);
     }
-    if (toggles.minOrder !== false) {
-      lines.push(`• Đặt hàng tối thiểu: ${S.minOrder || 20} cuộn`);
+    if (shouldShowSpecRow('minOrder', S)) {
+      lines.push(`• Đặt hàng tối thiểu: ${S.minOrder} cuộn`);
     }
-    if (toggles.leadTime !== false) {
-      lines.push(`• Thời gian SX: ${S.leadTimeDays || 3} ngày`);
+    if (shouldShowSpecRow('leadTime', S)) {
+      lines.push(`• Thời gian SX: ${S.leadTimeDays} ngày`);
     }
 
     const fullText = lines.join('\n');

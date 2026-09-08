@@ -208,57 +208,12 @@ window.Scene3D = (function () {
    */
   function drawSpecCardOnCanvas(ctx, x, y, w, h, S) {
     if (!ctx || !S) return;
-    ctx.save();
 
-    // 1. Không dùng bóng đổ theo yêu cầu
-    ctx.shadowColor = 'transparent';
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-
-    // 2. Nền thẻ đặc bo tròn (Dark Slate #090e1a -> #131d33)
-    const radius = Math.round(w * 0.04);
-    const bgGrad = ctx.createLinearGradient(x, y, x + w, y + h);
-    bgGrad.addColorStop(0, '#090e1a');
-    bgGrad.addColorStop(1, '#131d33');
-    ctx.fillStyle = bgGrad;
-    ctx.beginPath();
-    if (ctx.roundRect) {
-      ctx.roundRect(x, y, w, h, radius);
-    } else {
-      ctx.rect(x, y, w, h);
-    }
-    ctx.fill();
-
-    // 3. Viền thẻ tinh tế
-    ctx.shadowColor = 'transparent';
-    ctx.strokeStyle = '#2d3f5e';
-    ctx.lineWidth = Math.max(1.5, Math.round(w * 0.004));
-    ctx.stroke();
-
-    // 4. Header thẻ: "📋 THÔNG SỐ ĐẶT HÀNG"
-    const padX = Math.round(w * 0.055);
-    const padTop = Math.round(h * 0.09);
-    const fontStack = '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    const headerFontSize = Math.max(12, Math.round(w * 0.045));
-    ctx.font = `bold ${headerFontSize}px ${fontStack}`;
-    ctx.fillStyle = '#60a5fa'; // Blue-400
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('📋 THÔNG SỐ ĐẶT HÀNG', x + padX, y + padTop);
-
-    // Đường kẻ phân cách dưới header
-    const lineY = y + padTop + Math.round(headerFontSize * 0.9);
-    ctx.strokeStyle = '#1e293b';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(x + padX, lineY);
-    ctx.lineTo(x + w - padX, lineY);
-    ctx.stroke();
-
-    // 5. Chuẩn bị danh sách các dòng thông số theo thiết lập của người dùng
+    // 1. Chuẩn bị danh sách các dòng thông số theo thiết lập và dữ liệu thực tế
     const rows = [];
-    const toggles = S.specToggles || {};
+    const checkShow = (k) => (typeof window.shouldShowSpecRow === 'function')
+      ? window.shouldShowSpecRow(k, S)
+      : (S.specToggles ? S.specToggles[k] !== false : true);
 
     const materialNames = {
       paper_normal: 'Giấy thường (xé rách được)',
@@ -269,45 +224,100 @@ window.Scene3D = (function () {
       gloss: 'Cán màng bóng'
     };
 
-    if (toggles.material !== false) {
+    if (checkShow('material')) {
       rows.push({ label: 'Chất liệu:', val: materialNames[S.materialType] || 'Giấy thường (xé rách được)', valColor: '#34d399' });
     }
-    if (toggles.dimensions !== false) {
+    if (checkShow('dimensions')) {
       rows.push({ label: 'Kích thước:', val: `${S.labelWidth} x ${S.labelHeight} mm (ngang x cao)`, valColor: '#ffffff', bold: true });
     }
-    if (toggles.spec !== false) {
+    if (checkShow('spec')) {
       const cornerStr = S.cornerRadius > 0 ? `Bo góc R${S.cornerRadius}` : 'Góc vuông';
       rows.push({ label: 'Quy cách:', val: `${cornerStr} - ${S.ups} tem/hàng`, valColor: '#a5b4fc' });
     }
-    if (toggles.rollLength !== false) {
+    if (checkShow('rollLength')) {
       rows.push({ label: 'Chiều dài cuộn:', val: `${S.rollLength}m / cuộn`, valColor: '#fbbf24', bold: true });
     }
-    if (toggles.count !== false) {
-      rows.push({ label: 'Số tem ước tính:', val: `khoảng ${S.labelCount?.toLocaleString('vi-VN') || '1.515'} tem`, valColor: '#67e8f9', bold: true });
+    if (checkShow('count')) {
+      rows.push({ label: 'Số tem ước tính:', val: `khoảng ${S.labelCount?.toLocaleString('vi-VN') || ''} tem`, valColor: '#67e8f9', bold: true });
     }
-    if (toggles.core !== false) {
+    if (checkShow('core')) {
       const coreStr = S.coreName?.includes('inch') ? `${S.coreName} (${S.coreDiameter?.toFixed(1)}mm)` : `Lõi ${S.coreDiameter?.toFixed(0)}mm`;
       rows.push({ label: 'Lõi cuộn:', val: coreStr, valColor: '#fbbf24' });
     }
-    if (toggles.color !== false) {
+    if (checkShow('color')) {
       const colName = S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : (S.colorMode === 'preprint' ? 'In phôi sẵn' : S.labelColor)));
       rows.push({ label: 'Màu nền:', val: colName, valColor: '#f472b6', dot: S.labelColor || '#ffffff' });
     }
-    if (toggles.minOrder !== false) {
-      rows.push({ label: 'Đặt hàng tối thiểu:', val: `${S.minOrder || 20} cuộn`, valColor: '#c084fc', bold: true });
+    if (checkShow('minOrder')) {
+      rows.push({ label: 'Đặt hàng tối thiểu:', val: `${S.minOrder} cuộn`, valColor: '#c084fc', bold: true });
     }
-    if (toggles.leadTime !== false) {
-      rows.push({ label: 'Thời gian SX:', val: `${S.leadTimeDays || 3} ngày`, valColor: '#5eead4' });
+    if (checkShow('leadTime')) {
+      rows.push({ label: 'Thời gian SX:', val: `${S.leadTimeDays} ngày`, valColor: '#5eead4' });
     }
 
-    // 6. Vẽ các hàng thông số (chữ liền sát vào dấu :, không căn lề phải)
     const rowCount = rows.length;
-    if (rowCount > 0) {
-      const startY = lineY + Math.round(h * 0.04);
-      const endY = y + h - Math.round(h * 0.04);
-      const rowH = (endY - startY) / rowCount;
-      const labelFontSize = Math.max(9.5, Math.round(w * 0.034));
-      const valFontSize = Math.max(10, Math.round(w * 0.036));
+    if (rowCount === 0) return;
+
+    // Tính toán chiều cao thẻ co giãn linh hoạt theo số lượng dòng thực tế
+    const fontStack = '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    const headerFontSize = Math.max(12, Math.round(w * 0.045));
+    const padX = Math.round(w * 0.055);
+    const padTop = Math.max(16, Math.round(w * 0.055));
+    const idealRowH = Math.max(20, Math.round(w * 0.058));
+    const neededH = padTop + Math.round(headerFontSize * 1.6) + (rowCount * idealRowH) + Math.round(w * 0.04);
+    const drawH = Math.min(h, Math.max(neededH, Math.round(h * 0.45)));
+    const drawY = y + (h - drawH); // Căn đáy góc dưới để bảng luôn vững chắc
+
+    ctx.save();
+
+    // 2. Không dùng bóng đổ
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+
+    // 3. Nền thẻ đặc bo tròn (Dark Slate #090e1a -> #131d33)
+    const radius = Math.round(w * 0.04);
+    const bgGrad = ctx.createLinearGradient(x, drawY, x + w, drawY + drawH);
+    bgGrad.addColorStop(0, '#090e1a');
+    bgGrad.addColorStop(1, '#131d33');
+    ctx.fillStyle = bgGrad;
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(x, drawY, w, drawH, radius);
+    } else {
+      ctx.rect(x, drawY, w, drawH);
+    }
+    ctx.fill();
+
+    // 4. Viền thẻ tinh tế
+    ctx.shadowColor = 'transparent';
+    ctx.strokeStyle = '#2d3f5e';
+    ctx.lineWidth = Math.max(1.5, Math.round(w * 0.004));
+    ctx.stroke();
+
+    // 5. Header thẻ: "📋 THÔNG SỐ ĐẶT HÀNG"
+    ctx.font = `bold ${headerFontSize}px ${fontStack}`;
+    ctx.fillStyle = '#60a5fa'; // Blue-400
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('📋 THÔNG SỐ ĐẶT HÀNG', x + padX, drawY + padTop);
+
+    // Đường kẻ phân cách dưới header
+    const lineY = drawY + padTop + Math.round(headerFontSize * 0.9);
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(x + padX, lineY);
+    ctx.lineTo(x + w - padX, lineY);
+    ctx.stroke();
+
+    // 6. Vẽ các hàng thông số (chữ liền sát vào dấu :, không căn lề phải)
+    const startY = lineY + Math.round(drawH * 0.04);
+    const endY = drawY + drawH - Math.round(drawH * 0.04);
+    const rowH = (endY - startY) / rowCount;
+    const labelFontSize = Math.max(9.5, Math.round(w * 0.034));
+    const valFontSize = Math.max(10, Math.round(w * 0.036));
 
       rows.forEach((r, idx) => {
         const rowCenterY = startY + idx * rowH + rowH / 2;
@@ -345,7 +355,6 @@ window.Scene3D = (function () {
           ctx.fillText(r.val, valX, rowCenterY);
         }
       });
-    }
 
     ctx.restore();
   }
