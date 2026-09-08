@@ -722,7 +722,7 @@
           </div>
 
           <!-- FLOATING BOTTOM-RIGHT TECH SPECS & ORDER SUMMARY CARD (TO RÕ RÀNG & CÓ THỂ CHỈNH KÍCH THƯỚC) -->
-          <div id="hud-spec-card" class="absolute bottom-3 right-3 z-20 pointer-events-auto select-none transition-all duration-300 max-w-[340px] w-full hidden md:block" style="font-size: 12.5px;">
+          <div id="hud-spec-card" class="absolute bottom-3 right-3 z-20 pointer-events-auto select-none transition-all duration-300 max-w-[360px] w-full hidden md:block" style="font-size: 12px;">
             <div class="bg-slate-900/95 backdrop-blur-md border border-slate-700/90 text-slate-200 rounded-2xl shadow-2xl p-3 sm:p-3.5 space-y-2 font-sans" style="background-color: #0f172a !important;">
               <!-- Header (Nhấn giữ để kéo di chuyển vị trí & Nút Copy) -->
               <div id="hud-card-header" class="flex items-center justify-between pb-2 border-b border-slate-800 cursor-grab active:cursor-grabbing select-none" title="Nhấn giữ và kéo để di chuyển bảng thông số đến bất cứ đâu trên màn hình">
@@ -739,7 +739,7 @@
                   <!-- Nút tăng / giảm kích thước chữ của bảng -->
                   <div class="flex items-center bg-slate-950/80 rounded-lg border border-slate-700/80 px-1 py-0.5" title="Chỉnh cỡ chữ bảng thông số to/nhỏ tùy ý">
                     <button type="button" id="btn-card-zoom-out" class="text-slate-400 hover:text-white px-1.5 py-0.5 text-xs font-bold transition hover:bg-slate-800 rounded">A-</button>
-                    <span id="hud-card-scale-badge" class="font-mono text-[10px] text-blue-300 font-bold px-1">100%</span>
+                    <span id="hud-card-scale-badge" class="font-sans text-[10px] text-blue-300 font-bold px-1">100%</span>
                     <button type="button" id="btn-card-zoom-in" class="text-slate-400 hover:text-white px-1.5 py-0.5 text-xs font-bold transition hover:bg-slate-800 rounded">A+</button>
                   </div>
                   <button type="button" id="btn-toggle-hud-card" class="text-slate-400 hover:text-white px-1.5 py-0.5 rounded transition cursor-pointer hover:bg-slate-800" title="Thu gọn / Mở rộng">
@@ -748,63 +748,63 @@
                 </div>
               </div>
 
-              <!-- Body rows (CHỮ LIỀN SÁT NHAU, KHÔNG CĂN PHẢI) -->
+              <!-- Body rows (CĂN CỘT THẲNG HÀNG TĂM TẮP, CHỮ ĐỒNG BỘ 1 CỠ) -->
               <div id="hud-card-body" class="space-y-1">
                 <!-- 1. Chất liệu -->
-                <div id="spec-row-material" class="flex items-baseline flex-wrap gap-1.5 py-0.5 text-left">
-                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-layer-group text-emerald-400"></i> Chất liệu:</span>
-                  <span id="hud-val-material" class="hud-value font-bold text-emerald-300 text-left">Giấy thường (xé rách được)</span>
+                <div id="spec-row-material" class="flex items-center gap-2 py-0.5 text-left">
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-layer-group text-emerald-400 w-3.5 text-center"></i> Chất liệu:</span>
+                  <span id="hud-val-material" class="hud-value font-semibold text-emerald-300 text-left">Giấy thường (xé rách được)</span>
                 </div>
 
                 <!-- 2. Kích thước -->
-                <div id="spec-row-dimensions" class="flex items-baseline flex-wrap gap-1.5 py-0.5 text-left">
-                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-ruler-combined text-blue-400"></i> Kích thước:</span>
-                  <span id="hud-val-dimensions" class="hud-value font-mono font-bold text-white text-left">50 x 30 mm (ngang x cao)</span>
+                <div id="spec-row-dimensions" class="flex items-center gap-2 py-0.5 text-left">
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-ruler-combined text-blue-400 w-3.5 text-center"></i> Kích thước:</span>
+                  <span id="hud-val-dimensions" class="hud-value font-semibold text-white text-left">50 x 30 mm (ngang x cao)</span>
                 </div>
 
                 <!-- 3. Quy cách -->
-                <div id="spec-row-spec" class="flex items-baseline flex-wrap gap-1.5 py-0.5 text-left">
-                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-shapes text-indigo-400"></i> Quy cách:</span>
-                  <span id="hud-val-spec" class="hud-value font-bold text-indigo-300 text-left">Bo góc R2 - 1 tem/hàng</span>
+                <div id="spec-row-spec" class="flex items-center gap-2 py-0.5 text-left">
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-shapes text-indigo-400 w-3.5 text-center"></i> Quy cách:</span>
+                  <span id="hud-val-spec" class="hud-value font-semibold text-indigo-300 text-left">Bo góc R2 - 1 tem/hàng</span>
                 </div>
 
                 <!-- 4. Chiều dài cuộn (MỚI) -->
-                <div id="spec-row-length" class="flex items-baseline flex-wrap gap-1.5 py-0.5 text-left">
-                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-ruler-horizontal text-amber-400"></i> Chiều dài cuộn:</span>
-                  <span id="hud-val-length" class="hud-value font-bold text-amber-300 text-left">50m / cuộn</span>
+                <div id="spec-row-length" class="flex items-center gap-2 py-0.5 text-left">
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-ruler-horizontal text-amber-400 w-3.5 text-center"></i> Chiều dài cuộn:</span>
+                  <span id="hud-val-length" class="hud-value font-semibold text-amber-300 text-left">50m / cuộn</span>
                 </div>
 
                 <!-- 5. Số tem ước tính -->
-                <div id="spec-row-count" class="flex items-baseline flex-wrap gap-1.5 py-0.5 text-left">
-                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-calculator text-cyan-400"></i> Số tem ước tính:</span>
-                  <span id="hud-val-count" class="hud-value font-mono font-bold text-cyan-300 text-left">khoảng 1.515 tem</span>
+                <div id="spec-row-count" class="flex items-center gap-2 py-0.5 text-left">
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-calculator text-cyan-400 w-3.5 text-center"></i> Số tem ước tính:</span>
+                  <span id="hud-val-count" class="hud-value font-semibold text-cyan-300 text-left">khoảng 1.515 tem</span>
                 </div>
 
                 <!-- 6. Lõi cuộn -->
-                <div id="spec-row-core" class="flex items-baseline flex-wrap gap-1.5 py-0.5 text-left">
-                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-circle-notch text-amber-400"></i> Lõi cuộn:</span>
-                  <span id="hud-val-core" class="hud-value font-bold text-amber-300 text-left">1 inch (25.4mm)</span>
+                <div id="spec-row-core" class="flex items-center gap-2 py-0.5 text-left">
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-circle-notch text-amber-400 w-3.5 text-center"></i> Lõi cuộn:</span>
+                  <span id="hud-val-core" class="hud-value font-semibold text-amber-300 text-left">1 inch (25.4mm)</span>
                 </div>
 
                 <!-- 7. Màu nền -->
-                <div id="spec-row-color" class="flex items-center flex-wrap gap-1.5 py-0.5 text-left">
-                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-palette text-pink-400"></i> Màu nền:</span>
-                  <div class="flex items-center gap-1.5">
+                <div id="spec-row-color" class="flex items-center gap-2 py-0.5 text-left">
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-palette text-pink-400 w-3.5 text-center"></i> Màu nền:</span>
+                  <div class="hud-value flex items-center gap-1.5">
                     <span id="hud-color-dot" class="w-3.5 h-3.5 rounded-full border border-white/40 inline-block bg-white shrink-0 shadow-sm"></span>
-                    <span id="hud-val-color" class="hud-value font-bold text-pink-300 text-left">Trắng</span>
+                    <span id="hud-val-color" class="font-semibold text-pink-300 text-left">Trắng</span>
                   </div>
                 </div>
 
                 <!-- 8. Đặt hàng tối thiểu (MỚI) -->
-                <div id="spec-row-minorder" class="flex items-baseline flex-wrap gap-1.5 py-0.5 text-left">
-                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-boxes-stacked text-purple-400"></i> Đặt hàng tối thiểu:</span>
-                  <span id="hud-val-minorder" class="hud-value font-bold text-purple-300 text-left">20 cuộn</span>
+                <div id="spec-row-minorder" class="flex items-center gap-2 py-0.5 text-left">
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-boxes-stacked text-purple-400 w-3.5 text-center"></i> Đặt hàng tối thiểu:</span>
+                  <span id="hud-val-minorder" class="hud-value font-semibold text-purple-300 text-left">20 cuộn</span>
                 </div>
 
                 <!-- 9. Thời gian SX -->
-                <div id="spec-row-leadtime" class="flex items-baseline flex-wrap gap-1.5 py-0.5 text-left">
-                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-clock-rotate-left text-teal-400"></i> Thời gian SX:</span>
-                  <span id="hud-val-leadtime" class="hud-value font-bold text-teal-300 text-left">3 ngày</span>
+                <div id="spec-row-leadtime" class="flex items-center gap-2 py-0.5 text-left">
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-clock-rotate-left text-teal-400 w-3.5 text-center"></i> Thời gian SX:</span>
+                  <span id="hud-val-leadtime" class="hud-value font-semibold text-teal-300 text-left">3 ngày</span>
                 </div>
               </div>
             </div>

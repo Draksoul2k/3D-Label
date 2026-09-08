@@ -312,49 +312,47 @@ window.Scene3D = (function () {
     ctx.lineTo(x + w - padX, lineY);
     ctx.stroke();
 
-    // 6. Vẽ các hàng thông số (chữ liền sát vào dấu :, không căn lề phải)
+    // 6. Vẽ các hàng thông số (căn cột thẳng hàng tăm tắp, cỡ chữ đồng đều)
     const startY = lineY + Math.round(drawH * 0.04);
     const endY = drawY + drawH - Math.round(drawH * 0.04);
     const rowH = (endY - startY) / rowCount;
-    const labelFontSize = Math.max(9.5, Math.round(w * 0.034));
-    const valFontSize = Math.max(10, Math.round(w * 0.036));
+    const uniformFontSize = Math.max(10, Math.round(w * 0.035));
+    const labelColW = Math.round(w * 0.40); // Cố định độ rộng cột nhãn để tất cả giá trị thẳng hàng
+    const valX = x + padX + labelColW;
 
-      rows.forEach((r, idx) => {
-        const rowCenterY = startY + idx * rowH + rowH / 2;
+    rows.forEach((r, idx) => {
+      const rowCenterY = startY + idx * rowH + rowH / 2;
 
-        // Nhãn bên trái
-        ctx.font = `500 ${labelFontSize}px ${fontStack}`;
-        ctx.fillStyle = '#94a3b8'; // Slate-400
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(r.label, x + padX, rowCenterY);
+      // Nhãn bên trái (cùng cỡ chữ với giá trị)
+      ctx.font = `500 ${uniformFontSize}px ${fontStack}`;
+      ctx.fillStyle = '#94a3b8'; // Slate-400
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(r.label, x + padX, rowCenterY);
 
-        // Giá trị liền sát ngay sau dấu ':' của nhãn
-        const labelW = ctx.measureText(r.label).width;
-        const valX = x + padX + labelW + Math.max(6, Math.round(w * 0.02));
+      // Giá trị bên phải (thẳng hàng dọc ở cột valX)
+      ctx.font = `600 ${uniformFontSize}px ${fontStack}`;
+      ctx.fillStyle = r.valColor || '#ffffff';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
 
-        ctx.font = `${r.bold ? 'bold' : '600'} ${valFontSize}px ${fontStack}`;
-        ctx.fillStyle = r.valColor || '#ffffff';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
+      if (r.dot) {
+        const dotR = Math.round(uniformFontSize * 0.38);
+        const dotCenterX = valX + dotR + 1;
 
-        if (r.dot) {
-          const dotR = Math.round(valFontSize * 0.38);
-          const dotCenterX = valX + dotR + 1;
+        ctx.beginPath();
+        ctx.arc(dotCenterX, rowCenterY, dotR, 0, Math.PI * 2);
+        ctx.fillStyle = r.dot;
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.stroke();
 
-          ctx.beginPath();
-          ctx.arc(dotCenterX, rowCenterY, dotR, 0, Math.PI * 2);
-          ctx.fillStyle = r.dot;
-          ctx.fill();
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 1;
-          ctx.stroke();
-
-          ctx.fillText(r.val, dotCenterX + dotR + 5, rowCenterY);
-        } else {
-          ctx.fillText(r.val, valX, rowCenterY);
-        }
-      });
+        ctx.fillText(r.val, dotCenterX + dotR + 6, rowCenterY);
+      } else {
+        ctx.fillText(r.val, valX, rowCenterY);
+      }
+    });
 
     ctx.restore();
   }

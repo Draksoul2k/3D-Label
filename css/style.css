@@ -712,29 +712,40 @@ input[type="range"] {
     max-height: 88vh !important;
     margin: 8px !important;
   }
-/* NÂNG CẤP PHÓNG TO / THU NHỎ BẢNG THÔNG SỐ ĐẶT HÀNG (#hud-spec-card) */
+/* NÂNG CẤP BẢNG THÔNG SỐ ĐẶT HÀNG (#hud-spec-card) - CĂN THẲNG HÀNG TĂM TẮP, CHỮ ĐỀU ĐẸP */
 #hud-spec-card {
-  --hud-scale: 1.25;
+  --hud-scale: 1.0;
+  width: calc(360px * var(--hud-scale)) !important;
+  max-width: 95vw !important;
 }
 
 #hud-spec-card .hud-label {
-  font-size: calc(12.5px * var(--hud-scale)) !important;
-  line-height: 1.4 !important;
-  white-space: nowrap;
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: calc(12px * var(--hud-scale)) !important;
+  line-height: 1.5 !important;
+  white-space: nowrap !important;
+  width: calc(132px * var(--hud-scale)) !important;
+  min-width: calc(132px * var(--hud-scale)) !important;
+  flex-shrink: 0 !important;
 }
 
 #hud-spec-card .hud-value {
-  font-size: calc(13.5px * var(--hud-scale)) !important;
-  line-height: 1.4 !important;
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: calc(12px * var(--hud-scale)) !important;
+  line-height: 1.5 !important;
   text-align: left !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  flex: 1 1 auto !important;
 }
 
 #hud-spec-card .hud-title {
-  font-size: calc(13px * var(--hud-scale)) !important;
+  font-size: calc(12.5px * var(--hud-scale)) !important;
 }
 
 #hud-spec-card .hud-badge {
-  font-size: calc(11px * var(--hud-scale)) !important;
+  font-size: calc(10.5px * var(--hud-scale)) !important;
   padding: calc(2px * var(--hud-scale)) calc(6px * var(--hud-scale)) !important;
 }
 
