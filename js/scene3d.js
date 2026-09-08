@@ -245,9 +245,9 @@ window.Scene3D = (function () {
       rows.push({ label: 'Lõi cuộn:', val: coreStr, valColor: '#fbbf24' });
     }
     if (checkShow('color')) {
-      const colName = S.colorMode === 'preprint' ? 'In phôi sẵn' : (S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : S.labelColor)));
-      const dot = S.colorMode === 'preprint' ? null : (S.labelColor || '#ffffff');
-      rows.push({ label: 'Màu nền:', val: colName, valColor: '#f472b6', dot });
+      const colName = S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : S.labelColor));
+      const valStr = S.isPreprint ? `${colName} (In phôi sẵn)` : colName;
+      rows.push({ label: 'Màu nền:', val: valStr, valColor: '#f472b6', dot: S.labelColor || '#ffffff' });
     }
     if (checkShow('minOrder')) {
       rows.push({ label: 'Đặt hàng tối thiểu:', val: `${S.minOrder} cuộn`, valColor: '#c084fc', bold: true });

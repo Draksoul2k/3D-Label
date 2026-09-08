@@ -362,7 +362,7 @@
             <span id="badge-color-preview" class="w-4 h-4 rounded-full border border-white/40 inline-block shadow-sm" style="background-color: #FFFFFF;"></span>
           </div>
 
-          <!-- 4 nút chọn nhanh theo yêu cầu: trắng - xanh - đỏ - in phôi sẵn -->
+          <!-- 3 nút màu chọn nhanh + Nút toggle In phôi sẵn -->
           <div class="grid grid-cols-4 gap-1 text-[11px]" id="color-preset-selector">
             <button type="button" class="color-mode-btn active py-1.5 px-1 rounded bg-white text-slate-900 font-bold border border-white text-center shadow-sm cursor-pointer" data-mode="white" data-hex="#FFFFFF">
               ⚪ Trắng
@@ -373,8 +373,8 @@
             <button type="button" class="color-mode-btn py-1.5 px-1 rounded bg-red-600 text-white font-bold border border-red-500 text-center shadow-sm cursor-pointer" data-mode="red" data-hex="#DC2626">
               🔴 Đỏ
             </button>
-            <button type="button" class="color-mode-btn py-1.5 px-1 rounded bg-slate-800 text-amber-300 font-bold border border-amber-500/60 text-center shadow-sm hover:bg-slate-700 cursor-pointer" data-mode="preprint">
-              📋 In phôi sẵn
+            <button type="button" id="btn-toggle-preprint" class="py-1.5 px-1 rounded bg-slate-800 text-amber-300 font-bold border border-amber-500/60 text-center shadow-sm hover:bg-slate-700 cursor-pointer transition select-none flex items-center justify-center gap-1" title="Bật / tắt tùy chọn In phôi sẵn">
+              <i class="fa-solid fa-file-lines text-amber-400"></i> In phôi sẵn
             </button>
           </div>
 
@@ -796,6 +796,7 @@
                   <div class="hud-value flex items-center gap-1.5">
                     <span id="hud-color-dot" class="w-3.5 h-3.5 rounded-full border border-white/40 inline-block bg-white shrink-0 shadow-sm"></span>
                     <span id="hud-val-color" class="font-semibold text-pink-300 text-left">Trắng</span>
+                    <span id="hud-tag-preprint" class="hidden text-[10px] px-1.5 py-0.5 rounded bg-amber-500/25 text-amber-300 border border-amber-500/40 font-semibold tracking-wide leading-none select-none">In phôi sẵn</span>
                   </div>
                 </div>
 

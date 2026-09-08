@@ -30,7 +30,8 @@ window.AppState = {
   // Màu sắc & Chất liệu & Đặt hàng
   materialType: 'paper_normal', // 'paper_normal', 'paper_thermal', 'pvc', 'silver'
   leadTimeDays: 3,
-  colorMode: 'white', // 'white', 'blue', 'red', 'preprint'
+  colorMode: 'white', // 'white', 'blue', 'red', 'custom'
+  isPreprint: false, // Bật/tắt tùy chọn in phôi sẵn
   labelColor: '#FFFFFF',
   linerColor: '#FFFFFF', // Trắng tinh sạch sẽ theo yêu cầu
   inkColor: '#000000',
@@ -519,23 +520,25 @@ function updateHUDAndBadges() {
 
   const hudValColor = document.getElementById('hud-val-color');
   const hudColorDot = document.getElementById('hud-color-dot');
+  const hudTagPreprint = document.getElementById('hud-tag-preprint');
+
   if (hudValColor) {
-    if (S.colorMode === 'preprint') {
-      hudValColor.textContent = 'In phôi sẵn';
-      if (hudColorDot) hudColorDot.style.display = 'none';
-    } else if (S.colorMode === 'white' || (S.labelColor && S.labelColor.toUpperCase() === '#FFFFFF')) {
+    if (S.colorMode === 'white' || (S.labelColor && S.labelColor.toUpperCase() === '#FFFFFF')) {
       hudValColor.textContent = 'Trắng';
-      if (hudColorDot) { hudColorDot.style.display = ''; hudColorDot.style.backgroundColor = '#FFFFFF'; }
-    } else if (S.colorMode === 'blue') {
+    } else if (S.colorMode === 'blue' || (S.labelColor && S.labelColor.toUpperCase() === '#2563EB')) {
       hudValColor.textContent = 'Xanh';
-      if (hudColorDot) { hudColorDot.style.display = ''; hudColorDot.style.backgroundColor = S.labelColor; }
-    } else if (S.colorMode === 'red') {
+    } else if (S.colorMode === 'red' || (S.labelColor && S.labelColor.toUpperCase() === '#DC2626')) {
       hudValColor.textContent = 'Đỏ';
-      if (hudColorDot) { hudColorDot.style.display = ''; hudColorDot.style.backgroundColor = S.labelColor; }
     } else {
       hudValColor.textContent = S.labelColor;
-      if (hudColorDot) { hudColorDot.style.display = ''; hudColorDot.style.backgroundColor = S.labelColor; }
     }
+  }
+  if (hudColorDot) {
+    hudColorDot.style.display = '';
+    hudColorDot.style.backgroundColor = S.labelColor || '#FFFFFF';
+  }
+  if (hudTagPreprint) {
+    hudTagPreprint.style.display = S.isPreprint ? 'inline-flex' : 'none';
   }
 
   const hudValMinOrder = document.getElementById('hud-val-minorder');
@@ -596,7 +599,7 @@ function shouldShowSpecRow(key, state) {
     case 'core':
       return Boolean(S.coreDiameter && Number(S.coreDiameter) > 0 && S.coreName);
     case 'color':
-      return Boolean(S.colorMode === 'preprint' || (S.labelColor && S.labelColor.trim() !== ''));
+      return Boolean(S.labelColor && S.labelColor.trim() !== '');
     case 'minOrder':
       return Boolean(S.minOrder !== null && S.minOrder !== undefined && S.minOrder !== '' && Number(S.minOrder) > 0);
     case 'leadTime':
@@ -1351,19 +1354,43 @@ function initEventListeners() {
     });
   }
 
-  // 4 Nút màu nhanh theo yêu cầu: Trắng, Xanh, Đỏ, Phôi sẵn
+  // 3 Nút màu nhanh theo yêu cầu: Trắng, Xanh, Đỏ
   document.querySelectorAll('.color-mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const mode = btn.dataset.mode;
-      if (mode === 'preprint') {
-        S.colorMode = 'preprint';
-        setLabelColor('#FFFFFF', 'preprint');
-      } else {
-        const hex = btn.dataset.hex || '#FFFFFF';
-        setLabelColor(hex, mode);
-      }
+      const hex = btn.dataset.hex || '#FFFFFF';
+      setLabelColor(hex, mode);
     });
   });
+
+  // Nút Bật / Tắt Tùy chọn In phôi sẵn (Độc lập với màu nền)
+  const btnTogglePreprint = document.getElementById('btn-toggle-preprint');
+  function updatePreprintUI() {
+    if (!btnTogglePreprint) return;
+    const active = Boolean(S.isPreprint);
+    btnTogglePreprint.classList.toggle('active', active);
+    btnTogglePreprint.classList.toggle('bg-amber-600', active);
+    btnTogglePreprint.classList.toggle('text-white', active);
+    btnTogglePreprint.classList.toggle('border-amber-400', active);
+    btnTogglePreprint.classList.toggle('shadow-md', active);
+    btnTogglePreprint.classList.toggle('ring-1', active);
+    btnTogglePreprint.classList.toggle('ring-amber-300', active);
+
+    btnTogglePreprint.classList.toggle('bg-slate-800', !active);
+    btnTogglePreprint.classList.toggle('text-amber-300', !active);
+    btnTogglePreprint.classList.toggle('border-amber-500/60', !active);
+    btnTogglePreprint.classList.toggle('hover:bg-slate-700', !active);
+  }
+  window.updatePreprintUI = updatePreprintUI;
+
+  if (btnTogglePreprint) {
+    btnTogglePreprint.addEventListener('click', () => {
+      S.isPreprint = !S.isPreprint;
+      updatePreprintUI();
+      updateHUDAndBadges();
+      if (window.Blueprint2D) window.Blueprint2D.render();
+    });
+  }
 
   // =========================================================
   // SECTION 7: THỜI GIAN SẢN XUẤT (1 NGÀY, 2 NGÀY, 3 NGÀY, 3-4 NGÀY, TỰ NHẬP TEXT)
@@ -1884,8 +1911,9 @@ function initEventListeners() {
       lines.push(`• Lõi cuộn: ${coreStr}`);
     }
     if (shouldShowSpecRow('color', S)) {
-      const colName = S.colorMode === 'preprint' ? 'In phôi sẵn' : (S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : S.labelColor)));
-      lines.push(`• Màu nền: ${colName}`);
+      const colName = S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : S.labelColor));
+      const fullColorText = S.isPreprint ? `${colName} (In phôi sẵn)` : colName;
+      lines.push(`• Màu nền: ${fullColorText}`);
     }
     if (shouldShowSpecRow('minOrder', S)) {
       lines.push(`• Đặt hàng tối thiểu: ${S.minOrder} cuộn`);
@@ -2245,6 +2273,10 @@ function applyPreset(p) {
     b.classList.toggle('ring-2', isMatch);
     b.classList.toggle('ring-blue-400', isMatch);
   });
+
+  // Cập nhật In phôi sẵn
+  if (p.isPreprint !== undefined) S.isPreprint = Boolean(p.isPreprint);
+  updatePreprintUI();
 
   onParamsChanged();
 

@@ -58,7 +58,8 @@ window.ExportProof = (function () {
     if (windCell) windCell.textContent = getWindDirectionText(S.windDirection);
 
     const matName = getMaterialName(S.materialType || S.materialFinish);
-    const colorText = S.colorMode === 'preprint' ? 'In phôi sẵn' : (S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : S.labelColor)));
+    const colName = S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : S.labelColor));
+    const colorText = S.isPreprint ? `${colName} (In phôi sẵn)` : colName;
     const tableMaterial = document.getElementById('table-material');
     if (tableMaterial) {
       const ltStr = S.leadTimeDays ? String(S.leadTimeDays).trim() : '3';
