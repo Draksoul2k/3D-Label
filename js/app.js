@@ -2351,6 +2351,16 @@ function initEventListeners() {
       onCustomDimInput();
     });
   });
+
+  // 14. TÙY CHỌN WATERMARK TRONG MODAL XUẤT ẢNH
+  document.querySelectorAll('.watermark-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setWatermarkOption(btn.dataset.wm || 'none');
+    });
+  });
+
+  document.getElementById('input-wm-line1')?.addEventListener('input', updateWatermarkDesc);
+  document.getElementById('input-wm-line2')?.addEventListener('input', updateWatermarkDesc);
 }
 
 /**
@@ -2787,6 +2797,210 @@ function updateExportDimensionsSummary(w, h) {
   if (summary) summary.textContent = `${w} x ${h} px (${ratioStr})`;
 }
 
+let currentWatermarkType = 'none';
+
+function setWatermarkOption(type) {
+  currentWatermarkType = type;
+  document.querySelectorAll('.watermark-btn').forEach(b => {
+    const isThis = (b.dataset.wm === type);
+    b.classList.toggle('active', isThis);
+    b.classList.toggle('bg-sky-600/20', isThis);
+    b.classList.toggle('border-sky-500', isThis);
+    b.classList.toggle('text-sky-300', isThis);
+    b.classList.toggle('bg-slate-800', !isThis);
+    b.classList.toggle('text-slate-300', !isThis);
+    b.classList.toggle('border-slate-700', !isThis);
+  });
+
+  const customArea = document.getElementById('watermark-custom-inputs');
+  if (customArea) {
+    if (type === 'custom') {
+      customArea.classList.remove('hidden');
+    } else {
+      customArea.classList.add('hidden');
+    }
+  }
+
+  updateWatermarkDesc();
+}
+
+function updateWatermarkDesc() {
+  const descEl = document.getElementById('watermark-selected-desc');
+  if (!descEl) return;
+
+  if (currentWatermarkType === 'none') {
+    descEl.textContent = 'Không đóng dấu';
+  } else if (currentWatermarkType === 'hacode') {
+    descEl.textContent = 'hacode.vn';
+  } else if (currentWatermarkType === 'hacode_phone') {
+    descEl.textContent = 'hacode.vn • 0942.85.82.86';
+  } else if (currentWatermarkType === 'phone') {
+    descEl.textContent = '0942.85.82.86';
+  } else if (currentWatermarkType === 'custom') {
+    const l1 = document.getElementById('input-wm-line1')?.value?.trim() || '';
+    const l2 = document.getElementById('input-wm-line2')?.value?.trim() || '';
+    descEl.textContent = (l1 + (l2 ? ' • ' + l2 : '')) || 'Tự nhập';
+  }
+}
+
+/**
+ * HÀM VẼ WATERMARK BẢN QUYỀN CHUẨN XÁC LÊN CANVAS
+ */
+window.drawWatermarkOnCanvas = function(ctx, width, height, wmConfig, avoidRect = null) {
+  if (!ctx || !wmConfig || wmConfig.type === 'none') return;
+
+  let line1 = '';
+  let line2 = '';
+
+  if (wmConfig.type === 'hacode') {
+    line1 = 'hacode.vn';
+  } else if (wmConfig.type === 'hacode_phone') {
+    line1 = 'hacode.vn';
+    line2 = '0942.85.82.86';
+  } else if (wmConfig.type === 'phone') {
+    line1 = '0942.85.82.86';
+  } else if (wmConfig.type === 'custom') {
+    line1 = wmConfig.customText1 || '';
+    line2 = wmConfig.customText2 || '';
+  }
+
+  if (!line1 && !line2) return;
+
+  const pos = wmConfig.pos || 'bottom-right';
+  const style = wmConfig.style || 'badge';
+
+  const baseScale = Math.max(0.6, Math.min(2.5, width / 800));
+  const fontLine1 = Math.round(18 * baseScale);
+  const fontLine2 = Math.round(14 * baseScale);
+  const padX = Math.round(22 * baseScale);
+  const padY = Math.round(20 * baseScale);
+
+  ctx.save();
+
+  if (pos === 'center') {
+    // CHÍNH GIỮA ẢNH (BẢN QUYỀN MỜ NGHIÊNG 30 ĐỘ CHỐNG SAO CHÉP)
+    ctx.translate(width / 2, height / 2);
+    ctx.rotate(-Math.PI / 6);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const bigFont = Math.round(36 * baseScale);
+    ctx.font = `bold ${bigFont}px "Plus Jakarta Sans", sans-serif`;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = 4;
+
+    if (line1 && line2) {
+      ctx.fillText(line1, 0, -bigFont * 0.55);
+      ctx.font = `bold ${Math.round(bigFont * 0.72)}px "Plus Jakarta Sans", sans-serif`;
+      ctx.fillText(line2, 0, bigFont * 0.55);
+    } else {
+      ctx.fillText(line1 || line2, 0, 0);
+    }
+  } else {
+    // CÁC VỊ TRÍ GÓC (DƯỚI PHẢI, DƯỚI TRÁI, TRÊN PHẢI)
+    ctx.font = `bold ${fontLine1}px "Plus Jakarta Sans", sans-serif`;
+    const w1 = line1 ? ctx.measureText(line1).width : 0;
+    ctx.font = `bold ${fontLine2}px "Plus Jakarta Sans", sans-serif`;
+    const w2 = line2 ? ctx.measureText(line2).width : 0;
+    const maxTextW = Math.max(w1, w2);
+    const lineGap = Math.round(4 * baseScale);
+    const totalTextH = (line1 && line2) ? (fontLine1 + fontLine2 + lineGap) : (line1 ? fontLine1 : fontLine2);
+
+    let boxX, boxY;
+    if (pos === 'bottom-left') {
+      boxX = padX;
+      boxY = height - totalTextH - padY;
+    } else if (pos === 'top-right') {
+      boxX = width - maxTextW - padX;
+      boxY = padY;
+    } else {
+      // bottom-right default
+      boxX = width - maxTextW - padX;
+      boxY = height - totalTextH - padY;
+
+      // Tránh đè lên bảng thông số nếu bảng thông số đang nằm ở góc dưới phải
+      if (avoidRect && avoidRect.y !== undefined) {
+        const badgeMargin = style === 'badge' ? Math.round(14 * baseScale) : 0;
+        const proposedBottom = boxY + totalTextH + badgeMargin;
+        if (boxX < (avoidRect.x + avoidRect.width) && (boxX + maxTextW) > avoidRect.x && proposedBottom > avoidRect.y) {
+          boxY = avoidRect.y - totalTextH - (style === 'badge' ? Math.round(20 * baseScale) : Math.round(12 * baseScale));
+        }
+      }
+    }
+
+    if (style === 'badge') {
+      // KHUNG PILL BADGE KÍNH MỜ SANG TRỌNG
+      const badgePadX = Math.round(14 * baseScale);
+      const badgePadY = Math.round(9 * baseScale);
+      const bX = boxX - badgePadX;
+      const bY = boxY - badgePadY;
+      const bW = maxTextW + badgePadX * 2;
+      const bH = totalTextH + badgePadY * 2;
+      const bR = Math.round(8 * baseScale);
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+      ctx.lineWidth = Math.max(1, Math.round(1.5 * baseScale));
+
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(bX, bY, bW, bH, bR);
+      } else {
+        ctx.rect(bX, bY, bW, bH);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+
+      if (line1 && line2) {
+        ctx.font = `bold ${fontLine1}px "Plus Jakarta Sans", sans-serif`;
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillText(line1, boxX, boxY);
+
+        ctx.font = `bold ${fontLine2}px "Plus Jakarta Sans", sans-serif`;
+        ctx.fillStyle = '#34d399';
+        ctx.fillText(line2, boxX, boxY + fontLine1 + lineGap);
+      } else {
+        const singleText = line1 || line2;
+        ctx.font = `bold ${fontLine1}px "Plus Jakarta Sans", sans-serif`;
+        ctx.fillStyle = line1 ? '#38bdf8' : '#34d399';
+        ctx.fillText(singleText, boxX, boxY);
+      }
+    } else {
+      // CHỮ BÓNG MỜ THANH LỊCH (ĐỌC ĐƯỢC TRÊN MỌI NỀN)
+      const isLeft = (pos === 'bottom-left');
+      ctx.textAlign = isLeft ? 'left' : 'right';
+      ctx.textBaseline = 'top';
+      const anchorX = isLeft ? boxX : (boxX + maxTextW);
+
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+      ctx.shadowBlur = Math.round(5 * baseScale);
+      ctx.shadowOffsetX = 1;
+      ctx.shadowOffsetY = 2;
+
+      if (line1 && line2) {
+        ctx.font = `bold ${fontLine1}px "Plus Jakarta Sans", sans-serif`;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.fillText(line1, anchorX, boxY);
+
+        ctx.font = `bold ${fontLine2}px "Plus Jakarta Sans", sans-serif`;
+        ctx.fillStyle = 'rgba(52, 211, 153, 0.95)';
+        ctx.fillText(line2, anchorX, boxY + fontLine1 + lineGap);
+      } else {
+        const singleText = line1 || line2;
+        ctx.font = `bold ${fontLine1}px "Plus Jakarta Sans", sans-serif`;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.fillText(singleText, anchorX, boxY);
+      }
+    }
+  }
+
+  ctx.restore();
+};
+
 function confirmCustomExport(overrideIncludeSpecs = null) {
   const inpW = document.getElementById('input-export-width');
   const inpH = document.getElementById('input-export-height');
@@ -2803,18 +3017,35 @@ function confirmCustomExport(overrideIncludeSpecs = null) {
     ? Boolean(overrideIncludeSpecs) 
     : (checkEl ? checkEl.checked : true);
 
+  // Lấy cấu hình Watermark
+  const wmType = currentWatermarkType || 'none';
+  const wmPos = document.getElementById('select-watermark-pos')?.value || 'bottom-right';
+  const wmStyle = document.getElementById('select-watermark-style')?.value || 'badge';
+  const customL1 = document.getElementById('input-wm-line1')?.value?.trim() || 'hacode.vn';
+  const customL2 = document.getElementById('input-wm-line2')?.value?.trim() || '';
+
+  const watermark = {
+    type: wmType,
+    pos: wmPos,
+    style: wmStyle,
+    customText1: customL1,
+    customText2: customL2
+  };
+
   closeCustomExportModal();
 
   if (currentExportSource === '3d') {
     if (window.Scene3D && typeof window.Scene3D.exportCustomImage === 'function') {
-      window.Scene3D.exportCustomImage({ width, height, format, bgOption, includeSpecs });
+      window.Scene3D.exportCustomImage({ width, height, format, bgOption, includeSpecs, watermark });
       const modeText = includeSpecs ? 'Kèm Bảng Thông Số' : 'Nguyên Tem 3D';
-      showPresetToast(`Đã xuất ảnh 3D (${modeText}, ${width}x${height} px) thành công!`);
+      const wmText = wmType !== 'none' ? ' + Watermark' : '';
+      showPresetToast(`Đã xuất ảnh 3D (${modeText}${wmText}, ${width}x${height} px) thành công!`);
     }
   } else {
     if (window.LabelDesigner && typeof window.LabelDesigner.exportCustomLabelImage === 'function') {
-      window.LabelDesigner.exportCustomLabelImage({ width, height, format, bgOption });
-      showPresetToast(`Đã xuất ảnh Tem 2D (${width}x${height} px) thành công!`);
+      window.LabelDesigner.exportCustomLabelImage({ width, height, format, bgOption, watermark });
+      const wmText = wmType !== 'none' ? ' + Watermark' : '';
+      showPresetToast(`Đã xuất ảnh Tem 2D (${width}x${height} px${wmText}) thành công!`);
     }
   }
 }

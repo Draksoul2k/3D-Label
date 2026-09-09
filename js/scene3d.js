@@ -549,7 +549,7 @@ window.Scene3D = (function () {
     ctx.restore();
   }
 
-  async function exportCustomImage({ width = 800, height = 800, format = 'png', bgOption = 'studio', quality = 0.95, includeSpecs = null } = {}) {
+  async function exportCustomImage({ width = 800, height = 800, format = 'png', bgOption = 'studio', quality = 0.95, includeSpecs = null, watermark = null } = {}) {
     if (!renderer || !scene || !camera) return null;
 
     const S = window.AppState;
@@ -586,6 +586,8 @@ window.Scene3D = (function () {
       ctx.fillStyle = canvasBgColor;
       ctx.fillRect(0, 0, width, height);
     }
+
+    let avoidRect = null;
 
     if (!shouldIncludeSpecs) {
       // =========================================================================
@@ -624,6 +626,7 @@ window.Scene3D = (function () {
       // Tọa độ an toàn cho bảng
       const cardX = isCardLeft ? Math.max(16, Math.round(width * 0.025)) : (width - cardW - Math.max(16, Math.round(width * 0.025)));
       cardY = Math.max(16, Math.min(height - cardH - 16, cardY));
+      avoidRect = { x: cardX, y: cardY, width: cardW, height: cardH };
 
       // Phân vùng không gian hiển thị 3D độc lập:
       // Chiều rộng dành cho mô hình 3D: đảm bảo không gian cuộn tem nằm riêng biệt
@@ -643,6 +646,11 @@ window.Scene3D = (function () {
 
       // Vẽ bảng thông số đặt hàng sắc nét
       drawSpecCardOnCanvas(ctx, cardX, cardY, cardW, cardH, S);
+    }
+
+    // Vẽ Watermark chữ bản quyền nếu được chọn
+    if (typeof window.drawWatermarkOnCanvas === 'function' && watermark) {
+      window.drawWatermarkOnCanvas(ctx, width, height, watermark, avoidRect);
     }
 
     const mimeType = (format === 'jpeg' || format === 'jpg') ? 'image/jpeg' : 'image/png';

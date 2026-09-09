@@ -4002,7 +4002,7 @@ window.LabelDesigner = (function () {
     render();
   }
 
-  function exportCustomLabelImage({ width = 800, height = 800, format = 'png', bgOption = 'white', quality = 0.95 } = {}) {
+  function exportCustomLabelImage({ width = 800, height = 800, format = 'png', bgOption = 'white', quality = 0.95, watermark = null } = {}) {
     const offCanvas = document.createElement('canvas');
     offCanvas.width = width;
     offCanvas.height = height;
@@ -4042,6 +4042,11 @@ window.LabelDesigner = (function () {
     }
 
     render(false);
+
+    // Vẽ Watermark chữ bản quyền nếu được chọn
+    if (typeof window.drawWatermarkOnCanvas === 'function' && watermark) {
+      window.drawWatermarkOnCanvas(offCtx, width, height, watermark);
+    }
 
     const mimeType = (format === 'jpeg' || format === 'jpg') ? 'image/jpeg' : 'image/png';
     const dataURL = offCanvas.toDataURL(mimeType, quality);
