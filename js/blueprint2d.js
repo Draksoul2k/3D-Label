@@ -25,8 +25,9 @@ window.Blueprint2D = (function () {
     ctx = canvas.getContext('2d');
 
     const S = window.AppState;
-    const cw = 740;
-    const ch = 740;
+    // Tỷ lệ khổ ngang kỹ thuật chuẩn 760 x 520 (Vừa vặn 100% màn hình, không bị to quá cỡ hay tràn trang)
+    const cw = 760;
+    const ch = 520;
     canvas.width = cw;
     canvas.height = ch;
 
@@ -35,15 +36,15 @@ window.Blueprint2D = (function () {
     ctx.fillRect(0, 0, cw, ch);
 
     // Lưới kỹ thuật mờ
-    ctx.strokeStyle = '#f1f5f9';
+    ctx.strokeStyle = '#f8fafc';
     ctx.lineWidth = 1;
-    for (let x = 0; x < cw; x += 25) {
+    for (let x = 0; x < cw; x += 20) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, ch);
       ctx.stroke();
     }
-    for (let y = 0; y < ch; y += 25) {
+    for (let y = 0; y < ch; y += 20) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(cw, y);
@@ -52,45 +53,45 @@ window.Blueprint2D = (function () {
 
     // Tiêu đề bản vẽ
     ctx.fillStyle = '#0f172a';
-    ctx.font = 'bold 15px "JetBrains Mono", monospace';
-    ctx.fillText('BẢN VẼ KỸ THUẬT QUY CÁCH BẾ TEM CUỘN', 30, 36);
+    ctx.font = 'bold 14px "JetBrains Mono", monospace';
+    ctx.fillText('BẢN VẼ KỸ THUẬT QUY CÁCH BẾ TEM CUỘN', 28, 28);
     ctx.fillStyle = '#64748b';
     ctx.font = '11px sans-serif';
-    ctx.fillText(`Tỷ lệ kỹ thuật: 1:1 | Khổ cuộn: ${S.webWidth.toFixed(1)}mm | Lõi: ${S.coreDiameter.toFixed(0)}mm (${S.coreName || 'Chuẩn'})`, 30, 54);
+    ctx.fillText(`Tỷ lệ kỹ thuật: 1:1 | Khổ cuộn: ${S.webWidth.toFixed(1)}mm | Lõi: ${S.coreDiameter.toFixed(0)}mm (${S.coreName || 'Chuẩn'})`, 28, 44);
 
     // ==========================================
-    // 2. TÍNH TOÁN TỶ LỆ SCALE CHUẨN XÁC ĐỂ VỪA VẶN BẢN VẼ
+    // 2. TÍNH TOÁN KÍCH THƯỚC VỪA ĐỦ, CÂN ĐỐI (KHÔNG BỊ QUÁ TO)
     // ==========================================
-    const rollCx = 160;
-    const rollCy = 175;
-    const rollRx = 60;
-    const rollRy = 105;
+    const rollCx = 145;
+    const rollCy = 145;
+    const rollRx = 48;
+    const rollRy = 85;
 
     // Tính tỷ lệ elip cho lõi
     const coreRatio = Math.max(0.3, Math.min(0.65, S.coreDiameter / Math.max(S.outerDiameter, 80)));
     const coreRx = Math.round(rollRx * coreRatio);
     const coreRy = Math.round(rollRy * coreRatio);
 
-    const stripStartX = 235;
-    const availMaxW = 340;
-    const availMaxH = 430;
+    const stripStartX = 205;
+    const availMaxW = 300;
+    const availMaxH = 295;
 
-    // Mục tiêu hiển thị: ít nhất 2 hàng (nếu nhãn quá dài > 80mm thì hiển thị 1 hàng)
+    // Hiển thị 2 hàng tem (nếu nhãn quá dài > 80mm thì hiển thị 1 hàng)
     const targetRows = (S.labelHeight > 80) ? 1 : 2;
-    const neededHMm = targetRows * S.labelHeight + (targetRows - 1) * S.gapY + 12;
+    const neededHMm = targetRows * S.labelHeight + (targetRows - 1) * S.gapY + 10;
 
     const scaleW = availMaxW / S.webWidth;
-    const scaleH = (availMaxH - 45) / neededHMm;
+    const scaleH = (availMaxH - 32) / neededHMm;
     const scale = Math.min(scaleW, scaleH);
 
     const stripWidth = Math.round(S.webWidth * scale);
     const stripEndX = stripStartX + stripWidth;
-    const stripStartY = rollCy + 15;
-    const stripHeight = Math.round(neededHMm * scale) + 40;
+    const stripStartY = rollCy + 10;
+    const stripHeight = Math.round(neededHMm * scale) + 32;
 
     const topY = rollCy - rollRy;
     const bottomY = rollCy + rollRy;
-    const cornerR = Math.min(70, Math.round(stripWidth * 0.28));
+    const cornerR = Math.min(50, Math.round(stripWidth * 0.25));
 
     // Thân trụ cuộn tem (Cylinder body nối sang mép dải giấy)
     ctx.save();
@@ -110,7 +111,7 @@ window.Blueprint2D = (function () {
     ctx.stroke();
     ctx.restore();
 
-    // Mặt bên trái của cuộn tem (Elip và Lõi tròn chuẩn)
+    // Mặt bên trái của cuộn tem (Elip và Lõi tròn chuẩn kỹ thuật)
     ctx.save();
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#0f172a';
@@ -130,10 +131,10 @@ window.Blueprint2D = (function () {
 
     // Chữ chỉ lõi "Lõi 40mm" với mũi tên xanh chỉ thẳng vào tâm lõi (rõ ràng, không bị đè)
     ctx.fillStyle = '#1d4ed8';
-    ctx.font = 'bold 15px "Plus Jakarta Sans", sans-serif';
+    ctx.font = 'bold 13px "Plus Jakarta Sans", sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText(`Lõi ${S.coreDiameter.toFixed(0)}mm`, rollCx - coreRx - 25, rollCy - 8);
-    drawArrow(ctx, rollCx - coreRx - 20, rollCy - 8, rollCx - 5, rollCy, '#1d4ed8', 2);
+    ctx.fillText(`Lõi ${S.coreDiameter.toFixed(0)}mm`, rollCx - coreRx - 20, rollCy - 8);
+    drawArrow(ctx, rollCx - coreRx - 15, rollCy - 8, rollCx - 4, rollCy, '#1d4ed8', 1.8);
 
     // ==========================================
     // 3. VẼ DẢI GIẤY CUỘN DUỖI THẲNG XUỐNG
@@ -147,8 +148,8 @@ window.Blueprint2D = (function () {
     ctx.strokeRect(stripStartX, stripStartY, stripWidth, stripHeight);
     ctx.restore();
 
-    // Mũi tên hướng ra tem bên trái (dưới mặt bên cuộn tem, không va chạm)
-    drawBigWindingArrow(ctx, rollCx - 25, rollCy + rollRy + 35, 170);
+    // Mũi tên hướng ra tem bên trái (dưới mặt bên cuộn tem, vừa vặn không va chạm)
+    drawBigWindingArrow(ctx, rollCx - 20, bottomY + 25, 140);
 
     // ==========================================
     // 4. VẼ CÁC CON TEM & ĐƯỜNG BẾ DEMI (ĐỎ NÉT LIỀN)
@@ -160,7 +161,7 @@ window.Blueprint2D = (function () {
     const marginX_px = S.marginX * scale;
     const radius_px = S.cornerRadius * scale;
 
-    const topLabelPadding = 32;
+    const topLabelPadding = 24;
     const numRows = targetRows;
 
     // Lấy canvas sạch (không dính khung chọn / 8 tay cầm) từ Designer
@@ -217,7 +218,7 @@ window.Blueprint2D = (function () {
           // Placeholder chữ nếu chưa có canvas
           ctx.save();
           ctx.fillStyle = '#64748b';
-          ctx.font = '12px "JetBrains Mono", monospace';
+          ctx.font = '11px "JetBrains Mono", monospace';
           ctx.textAlign = 'center';
           ctx.fillText(`Tem ${r * S.ups + col + 1}`, labelX + labelW_px / 2, rowY + labelH_px / 2 + 4);
           ctx.restore();
@@ -225,7 +226,7 @@ window.Blueprint2D = (function () {
 
         // Đường bế demi đỏ (Die-cut line) sắc nét
         ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth = 1.8;
+        ctx.lineWidth = 1.6;
         if (S.shape === 'circle') {
           const rad = Math.min(labelW_px, labelH_px) / 2;
           ctx.beginPath();
@@ -245,8 +246,8 @@ window.Blueprint2D = (function () {
         const perfY = rowY + labelH_px + gapY_px / 2;
         ctx.save();
         ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([6, 4]);
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([5, 3]);
         ctx.beginPath();
         ctx.moveTo(stripStartX, perfY);
         ctx.lineTo(stripStartX + stripWidth, perfY);
@@ -265,10 +266,10 @@ window.Blueprint2D = (function () {
 
     // A. Thước đo chiều rộng con tem / đường kính (Ø)
     const dimWText = S.shape === 'circle' ? `Ø${S.labelWidth}mm` : `${S.labelWidth}mm`;
-    drawDimensionH(ctx, targetLabelX, targetLabelX + labelW_px, firstRowY - 12, dimWText, '#1d4ed8');
+    drawDimensionH(ctx, targetLabelX, targetLabelX + labelW_px, firstRowY - 9, dimWText, '#1d4ed8');
 
-    // B. Thước đo chiều cao con tem bên hông tem bên phải
-    drawDimensionV(ctx, targetLabelX + labelW_px + 12, firstRowY, firstRowY + labelH_px, `${S.labelHeight}mm`, '#1d4ed8');
+    // B. Thước đo chiều cao con tem bên hông tem bên phải (side: right)
+    drawDimensionV(ctx, targetLabelX + labelW_px + 8, firstRowY, firstRowY + labelH_px, `${S.labelHeight}mm`, '#1d4ed8', false, 'right');
 
     // C. Thước đo khoảng cách giữa 2 con tem trên cùng hàng (Gap X)
     if (S.ups > 1 && S.gapX > 0) {
@@ -277,15 +278,15 @@ window.Blueprint2D = (function () {
       drawDimensionH(ctx, gapXStart, gapXEnd, firstRowY + labelH_px / 2, `${S.gapX}mm`, '#059669', true);
     }
 
-    // D. Thước đo bước nhảy 2 hàng (Gap Y)
+    // D. Thước đo bước nhảy 2 hàng (Gap Y - side: left)
     if (S.gapY > 0 && numRows > 1) {
       const gapYStart = firstRowY + labelH_px;
       const secondRowY = firstRowY + labelH_px + gapY_px;
-      drawDimensionV(ctx, firstLabelX - 12, gapYStart, secondRowY, `${S.gapY}mm`, '#059669', true);
+      drawDimensionV(ctx, firstLabelX - 8, gapYStart, secondRowY, `${S.gapY}mm`, '#059669', true, 'left');
     }
 
     // E. Thước đo khổ cuộn giấy (Web Width)
-    const bottomDimY = stripStartY + stripHeight + 20;
+    const bottomDimY = stripStartY + stripHeight + 16;
     drawDimensionH(ctx, stripStartX, stripEndX, bottomDimY, `Khổ rộng cuộn: ${S.webWidth.toFixed(1)} mm`, '#ec4899');
   }
 
@@ -296,7 +297,7 @@ window.Blueprint2D = (function () {
     c.save();
     c.strokeStyle = color;
     c.fillStyle = color;
-    c.lineWidth = 1.5;
+    c.lineWidth = 1.4;
 
     // Đường gióng chính
     c.beginPath();
@@ -306,32 +307,39 @@ window.Blueprint2D = (function () {
 
     // Vạch chặn hai đầu
     c.beginPath();
-    c.moveTo(x1, y - 4);
-    c.lineTo(x1, y + 4);
-    c.moveTo(x2, y - 4);
-    c.lineTo(x2, y + 4);
+    c.moveTo(x1, y - 3);
+    c.lineTo(x1, y + 3);
+    c.moveTo(x2, y - 3);
+    c.lineTo(x2, y + 3);
     c.stroke();
 
     // 2 Mũi tên
-    drawArrowHead(c, x1 + 6, y, x1, y, color);
-    drawArrowHead(c, x2 - 6, y, x2, y, color);
+    drawArrowHead(c, x1 + 5, y, x1, y, color);
+    drawArrowHead(c, x2 - 5, y, x2, y, color);
 
     // Text kích thước
-    c.font = `bold ${isSmall ? 10 : 12}px "JetBrains Mono", monospace`;
+    c.font = `bold ${isSmall ? 10 : 11}px "JetBrains Mono", monospace`;
     c.textAlign = 'center';
     c.textBaseline = 'bottom';
-    c.fillText(text, (x1 + x2) / 2, y - 3);
+
+    // Nền trắng che mờ sau chữ để chống đè nét
+    const textW = c.measureText(text).width;
+    c.fillStyle = '#ffffff';
+    c.fillRect((x1 + x2) / 2 - textW / 2 - 2, y - 13, textW + 4, 11);
+
+    c.fillStyle = color;
+    c.fillText(text, (x1 + x2) / 2, y - 2);
     c.restore();
   }
 
   /**
    * VẼ ĐƯỜNG KÍCH THƯỚC DỌC (VERTICAL DIMENSION)
    */
-  function drawDimensionV(c, x, y1, y2, text, color, isSmall = false) {
+  function drawDimensionV(c, x, y1, y2, text, color, isSmall = false, side = 'right') {
     c.save();
     c.strokeStyle = color;
     c.fillStyle = color;
-    c.lineWidth = 1.5;
+    c.lineWidth = 1.4;
 
     // Đường gióng chính
     c.beginPath();
@@ -341,23 +349,31 @@ window.Blueprint2D = (function () {
 
     // Vạch chặn hai đầu
     c.beginPath();
-    c.moveTo(x - 4, y1);
-    c.lineTo(x + 4, y1);
-    c.moveTo(x - 4, y2);
-    c.lineTo(x + 4, y2);
+    c.moveTo(x - 3, y1);
+    c.lineTo(x + 3, y1);
+    c.moveTo(x - 3, y2);
+    c.lineTo(x + 3, y2);
     c.stroke();
 
     // 2 Mũi tên
-    drawArrowHead(c, x, y1 + 6, x, y1, color);
-    drawArrowHead(c, x, y2 - 6, x, y2, color);
+    drawArrowHead(c, x, y1 + 5, x, y1, color);
+    drawArrowHead(c, x, y2 - 5, x, y2, color);
 
     // Text kích thước xoay 90 độ
     c.save();
-    c.translate(x - 6, (y1 + y2) / 2);
+    const offsetX = side === 'right' ? 8 : -8;
+    c.translate(x + offsetX, (y1 + y2) / 2);
     c.rotate(-Math.PI / 2);
-    c.font = `bold ${isSmall ? 10 : 12}px "JetBrains Mono", monospace`;
+    c.font = `bold ${isSmall ? 10 : 11}px "JetBrains Mono", monospace`;
     c.textAlign = 'center';
-    c.textBaseline = 'bottom';
+    c.textBaseline = side === 'right' ? 'top' : 'bottom';
+
+    // Nền trắng che mờ sau chữ
+    const textW = c.measureText(text).width;
+    c.fillStyle = '#ffffff';
+    c.fillRect(-textW / 2 - 2, side === 'right' ? -1 : -11, textW + 4, 11);
+
+    c.fillStyle = color;
     c.fillText(text, 0, 0);
     c.restore();
 
@@ -389,18 +405,18 @@ window.Blueprint2D = (function () {
   }
 
   /**
-   * MŨI TÊN CHỈ HƯỚNG RA TEM (WINDING DIRECTION ARROW LỚN)
+   * MŨI TÊN CHỈ HƯỚNG RA TEM (WINDING DIRECTION ARROW)
    */
   function drawBigWindingArrow(c, x, y, length) {
     c.save();
     c.strokeStyle = '#2563eb';
     c.fillStyle = '#1e40af';
-    c.lineWidth = 3;
+    c.lineWidth = 2;
 
-    // Vẽ thân mũi tên lớn
-    const shaftW = 16;
-    const headW = 34;
-    const headLen = 40;
+    // Vẽ thân mũi tên vừa vặn
+    const shaftW = 12;
+    const headW = 26;
+    const headLen = 28;
 
     c.beginPath();
     c.moveTo(x - shaftW / 2, y);
@@ -416,10 +432,10 @@ window.Blueprint2D = (function () {
 
     // Chữ chú thích hướng cuộn xoay dọc
     c.save();
-    c.translate(x - 22, y + length / 2);
+    c.translate(x - 16, y + length / 2);
     c.rotate(-Math.PI / 2);
-    c.fillStyle = '#60a5fa';
-    c.font = 'bold 11px "JetBrains Mono", monospace';
+    c.fillStyle = '#3b82f6';
+    c.font = 'bold 10px "JetBrains Mono", monospace';
     c.textAlign = 'center';
     c.fillText('HƯỚNG RA TEM (OUT)', 0, 0);
     c.restore();
