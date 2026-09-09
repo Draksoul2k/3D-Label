@@ -6,9 +6,51 @@
 window.ExportProof = (function () {
 
   function init() {
+    // Khôi phục các giá trị đã lưu gần nhất từ localStorage nếu có
+    try {
+      const savedComp = localStorage.getItem('proof_company_name');
+      const savedClient = localStorage.getItem('proof_client_name');
+      const savedJob = localStorage.getItem('proof_job_id');
+      const savedDate = localStorage.getItem('proof_date');
+      const savedDes = localStorage.getItem('proof_designer_name');
+
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && val) el.value = val;
+      };
+
+      setVal('proof-company-name-view', savedComp);
+      setVal('proof-company-name', savedComp);
+      setVal('proof-client-name-view', savedClient);
+      setVal('proof-client-name', savedClient);
+      setVal('proof-job-id-view', savedJob);
+      setVal('proof-job-id', savedJob);
+      setVal('proof-date-view', savedDate);
+      setVal('proof-date', savedDate);
+      setVal('proof-designer-name-view', savedDes);
+      setVal('proof-designer-name', savedDes);
+    } catch (e) {}
+
+    // Lắng nghe thay đổi trực tiếp trên các ô input
+    ['proof-company-name-view', 'proof-client-name-view', 'proof-job-id-view', 'proof-date-view', 'proof-designer-name-view'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', (e) => {
+        const keyMap = {
+          'proof-company-name-view': 'proof_company_name',
+          'proof-client-name-view': 'proof_client_name',
+          'proof-job-id-view': 'proof_job_id',
+          'proof-date-view': 'proof_date',
+          'proof-designer-name-view': 'proof_designer_name'
+        };
+        try {
+          if (keyMap[id]) localStorage.setItem(keyMap[id], e.target.value.trim());
+        } catch (err) {}
+      });
+    });
+
     // 1. Mở modal phiếu duyệt
     document.getElementById('btn-open-proof')?.addEventListener('click', openProofModal);
     document.getElementById('btn-generate-proof-sheet')?.addEventListener('click', openProofModal);
+    document.getElementById('btn-generate-proof-sheet-view')?.addEventListener('click', openProofModal);
 
     // 2. Đóng modal
     document.getElementById('btn-close-proof')?.addEventListener('click', closeProofModal);
@@ -28,20 +70,44 @@ window.ExportProof = (function () {
 
     const S = window.AppState;
 
-    // Lấy thông tin từ form
-    const compName = document.getElementById('proof-company-name')?.value || 'CÔNG TY TNHH IN ẤN & TEM NHÃN VIỆT NAM';
-    const clientName = document.getElementById('proof-client-name')?.value || 'Khách hàng';
-    const jobId = document.getElementById('proof-job-id')?.value || 'JOB-2026-01';
-    const proofDate = document.getElementById('proof-date')?.value || new Date().toLocaleDateString('vi-VN');
-    const designerName = document.getElementById('proof-designer-name')?.value || 'Kỹ thuật viên In ấn';
+    // Lấy thông tin từ form (hỗ trợ cả id có hậu tố -view và không có)
+    const getVal = (idView, idAlt, defaultVal) => {
+      const elView = document.getElementById(idView);
+      if (elView && elView.value && elView.value.trim()) return elView.value.trim();
+      const elAlt = document.getElementById(idAlt);
+      if (elAlt && elAlt.value && elAlt.value.trim()) return elAlt.value.trim();
+      return defaultVal;
+    };
+
+    const compName = getVal('proof-company-name-view', 'proof-company-name', 'CÔNG TY CỔ PHẦN GIẢI PHÁP HACODE');
+    const clientName = getVal('proof-client-name-view', 'proof-client-name', 'Công Ty Cổ Phần Thực Phẩm An Gia');
+    const jobId = getVal('proof-job-id-view', 'proof-job-id', 'JOB-2026-8899');
+    const proofDate = getVal('proof-date-view', 'proof-date', '07/09/2026');
+    const designerName = getVal('proof-designer-name-view', 'proof-designer-name', 'Lê Duy');
+
+    // Lưu lại vào localStorage để ghi nhớ
+    try {
+      localStorage.setItem('proof_company_name', compName);
+      localStorage.setItem('proof_client_name', clientName);
+      localStorage.setItem('proof_job_id', jobId);
+      localStorage.setItem('proof_date', proofDate);
+      localStorage.setItem('proof_designer_name', designerName);
+    } catch (e) {}
 
     // Đổ dữ liệu vào phiếu
-    document.getElementById('out-proof-company').textContent = compName;
-    document.getElementById('out-proof-client').textContent = clientName;
-    document.getElementById('out-proof-job').textContent = `MÃ ĐƠN: ${jobId}`;
-    document.getElementById('out-proof-date').textContent = `Ngày lập: ${proofDate}`;
-    document.getElementById('out-proof-designer').textContent = designerName;
-    document.getElementById('out-proof-summary').textContent = `Tem cuộn ${S.labelWidth}x${S.labelHeight}mm, ${S.ups} tem/hàng, lõi ${S.coreName}`;
+    const setElemText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+
+    setElemText('out-proof-company', compName);
+    setElemText('out-proof-client', clientName);
+    setElemText('out-proof-client-sign', clientName);
+    setElemText('out-proof-job', `MÃ ĐƠN: ${jobId}`);
+    setElemText('out-proof-date', `Ngày lập: ${proofDate}`);
+    setElemText('out-proof-designer', designerName);
+    setElemText('out-proof-designer-header', designerName);
+    setElemText('out-proof-summary', `Tem cuộn ${S.labelWidth}x${S.labelHeight}mm, ${S.ups} tem/hàng, lõi ${S.coreName}`);
 
     // Đổ dữ liệu bảng thông số kỹ thuật
     document.getElementById('table-label-size').textContent = `${S.labelWidth} x ${S.labelHeight} mm`;
@@ -132,7 +198,9 @@ window.ExportProof = (function () {
       backgroundColor: '#ffffff'
     }).then(canvas => {
       const link = document.createElement('a');
-      const jobId = document.getElementById('proof-job-id')?.value || 'JOB';
+      const jobId = document.getElementById('proof-job-id-view')?.value
+        || document.getElementById('proof-job-id')?.value
+        || 'JOB';
       link.download = `Phieu-Duyet-Maket-Tem-Cuon-${jobId}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
