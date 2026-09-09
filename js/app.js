@@ -1091,12 +1091,35 @@ function initEventListeners() {
       const hexInp = document.getElementById('input-hex-color');
       if (picker) picker.value = '#B0B9C5';
       if (hexInp) hexInp.value = 'B0B9C5';
-    } else if (matKey === 'pvc') {
-      S.materialFinish = 'gloss';
-    } else if (matKey === 'paper_thermal') {
-      S.materialFinish = 'matte';
+      document.querySelectorAll('.color-mode-btn').forEach(b => {
+        b.classList.remove('ring-2', 'ring-blue-400', 'scale-105');
+      });
     } else {
-      S.materialFinish = 'matte';
+      if (matKey === 'pvc') {
+        S.materialFinish = 'gloss';
+      } else if (matKey === 'paper_thermal') {
+        S.materialFinish = 'matte';
+      } else {
+        S.materialFinish = 'matte';
+      }
+
+      // Khi chuyển từ Xi bạc về Giấy thường, Giấy nhiệt, PVC: Reset màu về Trắng tinh khiết (#FFFFFF)
+      if (S.labelColor === '#B0B9C5' || S.labelColor === '#D8DCE3' || !S.labelColor || S.colorMode === 'silver') {
+        S.labelColor = '#FFFFFF';
+        S.colorMode = 'white';
+        const picker = document.getElementById('picker-label-color');
+        const hexInp = document.getElementById('input-hex-color');
+        if (picker) picker.value = '#FFFFFF';
+        if (hexInp) hexInp.value = 'FFFFFF';
+      }
+
+      // Đồng bộ lại trạng thái active của các nút màu nhanh
+      document.querySelectorAll('.color-mode-btn').forEach(b => {
+        const isMatch = b.dataset.mode === (S.colorMode || 'white');
+        b.classList.toggle('ring-2', isMatch);
+        b.classList.toggle('ring-blue-400', isMatch);
+        b.classList.toggle('scale-105', isMatch);
+      });
     }
 
     updateHUDAndBadges();
