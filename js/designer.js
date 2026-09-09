@@ -1302,12 +1302,12 @@ window.LabelDesigner = (function () {
       grad.addColorStop(0.75, '#b8860b');
       grad.addColorStop(1, '#ffd700');
       ctx.fillStyle = grad;
-    } else if (S.materialFinish === 'metallic') {
+    } else if (S.materialFinish === 'metallic' || S.materialType === 'silver') {
       const grad = ctx.createLinearGradient(0, 0, cw, ch);
-      grad.addColorStop(0, '#cbd5e1');
-      grad.addColorStop(0.35, '#ffffff');
-      grad.addColorStop(0.7, '#94a3b8');
-      grad.addColorStop(1, '#e2e8f0');
+      grad.addColorStop(0, '#c5ccd6');
+      grad.addColorStop(0.3, '#e5ebf2');
+      grad.addColorStop(0.65, '#b4bcc8');
+      grad.addColorStop(1, '#d0d8e2');
       ctx.fillStyle = grad;
     } else if (S.materialFinish === 'kraft') {
       ctx.fillStyle = '#c5a069';

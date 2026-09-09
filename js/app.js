@@ -589,7 +589,10 @@ function updateHUDAndBadges() {
     }
     if (hudValColor) {
       hudValColor.className = 'hud-value font-semibold text-pink-300 text-left';
-      if (S.colorMode === 'white' || (S.labelColor && S.labelColor.toUpperCase() === '#FFFFFF')) {
+      if (S.materialType === 'silver') {
+        hudValColor.textContent = 'Xi bạc (Ánh kim)';
+        if (hudColorDot) hudColorDot.style.backgroundColor = '#b0b9c5';
+      } else if (S.colorMode === 'white' || (S.labelColor && S.labelColor.toUpperCase() === '#FFFFFF')) {
         hudValColor.textContent = 'Trắng';
       } else if (S.colorMode === 'yellow' || (S.labelColor && S.labelColor.toUpperCase() === '#FACC15')) {
         hudValColor.textContent = 'Vàng';
@@ -1083,11 +1086,11 @@ function initEventListeners() {
 
     if (matKey === 'silver') {
       S.materialFinish = 'metallic';
-      S.labelColor = '#D8DCE3';
+      S.labelColor = '#B0B9C5';
       const picker = document.getElementById('picker-label-color');
       const hexInp = document.getElementById('input-hex-color');
-      if (picker) picker.value = '#D8DCE3';
-      if (hexInp) hexInp.value = 'D8DCE3';
+      if (picker) picker.value = '#B0B9C5';
+      if (hexInp) hexInp.value = 'B0B9C5';
     } else if (matKey === 'pvc') {
       S.materialFinish = 'gloss';
     } else if (matKey === 'paper_thermal') {
@@ -1097,6 +1100,9 @@ function initEventListeners() {
     }
 
     updateHUDAndBadges();
+    if (window.LabelDesigner && typeof window.LabelDesigner.render === 'function') {
+      window.LabelDesigner.render();
+    }
     if (window.Roll3D) {
       window.Roll3D.updateMaterials();
       window.Roll3D.rebuildRoll();

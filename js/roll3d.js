@@ -189,9 +189,9 @@ window.Roll3D = (function () {
 
     // Hiệu ứng chất liệu theo đúng 4 nhóm yêu cầu: Giấy thường, Giấy nhiệt, PVC, Xi bạc
     if (S.materialType === 'silver' || S.materialFinish === 'metallic') {
-      labelMaterial.color.set('#d8dce3'); // Xi bạc sáng bóng kim loại chrome
-      labelMaterial.roughness = 0.12;
-      labelMaterial.metalness = 0.95;
+      labelMaterial.color.set('#9aa4b2'); // Xi bạc nhôm mờ satin (chuẩn decal xi bạc công nghiệp)
+      labelMaterial.roughness = 0.38;
+      labelMaterial.metalness = 0.46;
       labelMaterial.transparent = false;
       labelMaterial.opacity = 1.0;
     } else if (S.materialType === 'pvc') {

@@ -134,12 +134,15 @@ window.Blueprint2D = (function () {
       for (let col = 0; col < S.ups; col++) {
         const labelX = stripStartX + marginX_px + col * (labelW_px + gapX_px);
 
+        const isSilver = (S.materialType === 'silver' || S.materialFinish === 'metallic');
+        const fillCol = isSilver ? '#cbd5e1' : (S.labelColor || '#FFFFFF');
+
         // Vẽ nền tem & đường bế demi đỏ (Die-cut line)
         if (S.shape === 'circle') {
           const rad = Math.min(labelW_px, labelH_px) / 2;
           ctx.beginPath();
           ctx.arc(labelX + labelW_px / 2, rowY + labelH_px / 2, rad, 0, Math.PI * 2);
-          ctx.fillStyle = S.labelColor || '#FFFFFF';
+          ctx.fillStyle = fillCol;
           ctx.fill();
           ctx.strokeStyle = '#ef4444';
           ctx.lineWidth = 1.8;
@@ -147,13 +150,13 @@ window.Blueprint2D = (function () {
         } else if (S.shape === 'oval') {
           ctx.beginPath();
           ctx.ellipse(labelX + labelW_px / 2, rowY + labelH_px / 2, labelW_px / 2, labelH_px / 2, 0, 0, Math.PI * 2);
-          ctx.fillStyle = S.labelColor || '#FFFFFF';
+          ctx.fillStyle = fillCol;
           ctx.fill();
           ctx.strokeStyle = '#ef4444';
           ctx.lineWidth = 1.8;
           ctx.stroke();
         } else {
-          ctx.fillStyle = S.labelColor || '#FFFFFF';
+          ctx.fillStyle = fillCol;
           drawRoundedRect(ctx, labelX, rowY, labelW_px, labelH_px, radius_px, true, false);
           ctx.strokeStyle = '#ef4444';
           ctx.lineWidth = 1.8;
