@@ -1547,7 +1547,17 @@ window.LabelDesigner = (function () {
       const minX = Math.min(el.x1, el.x2);
       const maxX = Math.max(el.x1, el.x2);
       const minY = Math.min(el.y1, el.y2);
-      return { x: minX, y: minY - 8, w: Math.max(maxX - minX, 20), h: 16 };
+      const maxY = Math.max(el.y1, el.y2);
+      const isH = Math.abs(maxY - minY) < 4;
+      const isV = Math.abs(maxX - minX) < 4;
+      const pad = 8;
+      if (isH) {
+        return { x: minX, y: minY - pad, w: Math.max(maxX - minX, 12), h: pad * 2 };
+      } else if (isV) {
+        return { x: minX - pad, y: minY, w: pad * 2, h: Math.max(maxY - minY, 12) };
+      } else {
+        return { x: minX - pad, y: minY - pad, w: Math.max(maxX - minX, 12) + pad * 2, h: Math.max(maxY - minY, 12) + pad * 2 };
+      }
     }
 
     if (el.type === 'rect') {
@@ -1594,13 +1604,18 @@ window.LabelDesigner = (function () {
   function moveElementTo(el, newBx, newBy) {
     if (!el) return;
     if (el.type === 'line') {
-      const len = Math.abs(el.x2 - el.x1);
-      el.x1 = newBx;
-      el.x2 = newBx + len;
-      if (typeof newBy === 'number') {
-        el.y1 = newBy;
-        el.y2 = newBy;
-      }
+      const curMinX = Math.min(el.x1, el.x2);
+      const curMinY = Math.min(el.y1, el.y2);
+      const isH = Math.abs(el.y2 - el.y1) < 4;
+      const isV = Math.abs(el.x2 - el.x1) < 4;
+      const targetX = typeof newBx === 'number' ? newBx : curMinX;
+      const targetY = typeof newBy === 'number' ? newBy : curMinY;
+      const shiftX = targetX - curMinX;
+      const shiftY = targetY - curMinY;
+      el.x1 += shiftX;
+      el.x2 += shiftX;
+      el.y1 += shiftY;
+      el.y2 += shiftY;
     } else if (el.type === 'rect') {
       el.x = newBx;
       if (typeof newBy === 'number') el.y = newBy;
@@ -1673,6 +1688,60 @@ window.LabelDesigner = (function () {
   function drawSelectionBox(c, el) {
     const b = getElementBounds(el);
     c.save();
+
+    if (el.type === 'line') {
+      const isH = Math.abs(el.y2 - el.y1) < 4;
+      const isV = Math.abs(el.x2 - el.x1) < 4;
+      const lengthPx = Math.hypot(el.x2 - el.x1, el.y2 - el.y1);
+      const lengthMm = pxToMm(lengthPx, isV);
+
+      // 1. Viền bao quanh nét đứt màu xanh BarTender
+      c.strokeStyle = '#2563eb';
+      c.lineWidth = 1.5;
+      c.setLineDash([5, 3]);
+      c.strokeRect(b.x - 2, b.y - 2, b.w + 4, b.h + 4);
+      c.setLineDash([]);
+
+      // 2. Hai tay cầm ở 2 ĐẦU ĐƯỜNG KẺ (Endpoint Handles 9px nổi bật, kéo dài ngắn tự do)
+      const hs = 9;
+      const drawLineEndHandle = (hx, hy) => {
+        c.fillStyle = '#ffffff';
+        c.strokeStyle = '#2563eb';
+        c.lineWidth = 2;
+        c.fillRect(Math.round(hx - hs / 2), Math.round(hy - hs / 2), hs, hs);
+        c.strokeRect(Math.round(hx - hs / 2), Math.round(hy - hs / 2), hs, hs);
+      };
+      drawLineEndHandle(el.x1, el.y1);
+      drawLineEndHandle(el.x2, el.y2);
+
+      // 3. Tooltip chiều dài milimet (ví dụ: "Ngang: 46.7 mm" hoặc "Đứng: 28.0 mm")
+      const orientLabel = isV ? 'Đứng' : (isH ? 'Ngang' : 'Kẻ');
+      const tipText = `${orientLabel}: ${lengthMm} mm`;
+      c.font = 'bold 11px monospace';
+      const tipW = c.measureText(tipText).width + 12;
+      const tipX = b.x + b.w / 2 - tipW / 2;
+      const tipY = Math.max(16, b.y - 8);
+
+      c.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      c.strokeStyle = '#3b82f6';
+      c.lineWidth = 1;
+      c.beginPath();
+      if (typeof c.roundRect === 'function') {
+        c.roundRect(tipX, tipY - 14, tipW, 16, 4);
+      } else {
+        c.rect(tipX, tipY - 14, tipW, 16);
+      }
+      c.fill();
+      c.stroke();
+
+      c.fillStyle = '#60a5fa';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(tipText, b.x + b.w / 2, tipY - 6);
+
+      c.restore();
+      return;
+    }
 
     // 1. Viền bao quanh nét đứt màu xanh BarTender
     c.strokeStyle = '#2563eb';
@@ -1980,19 +2049,48 @@ window.LabelDesigner = (function () {
       const mouseX = (e.clientX - rect.left) * scaleX;
       const mouseY = (e.clientY - rect.top) * scaleY;
 
-      // KIỂM TRA CLICK TRÚNG 1 TRONG 8 TAY CẦM (HANDLES) CỦA ĐỐI TƯỢNG ĐANG CHỌN
+      // KIỂM TRA CLICK TRÚNG 1 TRONG CÁC TAY CẦM (HANDLES) CỦA ĐỐI TƯỢNG ĐANG CHỌN
       if (selectedElementId) {
         const curEl = elements.find(item => item.id === selectedElementId);
-        if (curEl && curEl.type !== 'line') {
-          const b = getElementBounds(curEl);
-          const handles = getHandles(b);
-          for (const h of handles) {
-            if (Math.abs(mouseX - h.x) <= 8 && Math.abs(mouseY - h.y) <= 8) {
+        if (curEl) {
+          if (curEl.type === 'line') {
+            const hs = 16; // Vùng bấm tay cầm 2 đầu đường kẻ rộng rãi, dễ kéo dài ngắn
+            if (Math.hypot(mouseX - curEl.x1, mouseY - curEl.y1) <= hs) {
               isResizing = true;
-              activeHandleKey = h.key;
-              startBounds = { ...b };
+              activeHandleKey = 'line_p1';
+              startBounds = { x1: curEl.x1, y1: curEl.y1, x2: curEl.x2, y2: curEl.y2 };
               startMouse = { x: mouseX, y: mouseY };
               return;
+            }
+            if (Math.hypot(mouseX - curEl.x2, mouseY - curEl.y2) <= hs) {
+              isResizing = true;
+              activeHandleKey = 'line_p2';
+              startBounds = { x1: curEl.x1, y1: curEl.y1, x2: curEl.x2, y2: curEl.y2 };
+              startMouse = { x: mouseX, y: mouseY };
+              return;
+            }
+            const b = getElementBounds(curEl);
+            const handles = getHandles(b);
+            for (const h of handles) {
+              if (Math.abs(mouseX - h.x) <= 8 && Math.abs(mouseY - h.y) <= 8) {
+                isResizing = true;
+                activeHandleKey = h.key;
+                startBounds = { ...b, x1: curEl.x1, y1: curEl.y1, x2: curEl.x2, y2: curEl.y2 };
+                startMouse = { x: mouseX, y: mouseY };
+                return;
+              }
+            }
+          } else {
+            const b = getElementBounds(curEl);
+            const handles = getHandles(b);
+            for (const h of handles) {
+              if (Math.abs(mouseX - h.x) <= 8 && Math.abs(mouseY - h.y) <= 8) {
+                isResizing = true;
+                activeHandleKey = h.key;
+                startBounds = { ...b };
+                startMouse = { x: mouseX, y: mouseY };
+                return;
+              }
             }
           }
         }
@@ -2057,6 +2155,58 @@ window.LabelDesigner = (function () {
       if (isResizing && selectedElementId && startBounds && startMouse) {
         const el = elements.find(item => item.id === selectedElementId);
         if (!el) return;
+
+        // XỬ LÝ KÉO CO DÃN ĐƯỜNG KẺ Ở 2 ĐẦU
+        if (el.type === 'line') {
+          const dx = mouseX - startMouse.x;
+          const dy = mouseY - startMouse.y;
+          const isH = Math.abs(startBounds.y2 - startBounds.y1) < 4;
+          const isV = Math.abs(startBounds.x2 - startBounds.x1) < 4;
+
+          if (activeHandleKey === 'line_p1') {
+            if (isH) {
+              el.x1 = Math.round(startBounds.x1 + dx);
+              el.y1 = startBounds.y1;
+              el.y2 = startBounds.y2;
+            } else if (isV) {
+              el.y1 = Math.round(startBounds.y1 + dy);
+              el.x1 = startBounds.x1;
+              el.x2 = startBounds.x2;
+            } else {
+              el.x1 = Math.round(startBounds.x1 + dx);
+              el.y1 = Math.round(startBounds.y1 + dy);
+            }
+          } else if (activeHandleKey === 'line_p2') {
+            if (isH) {
+              el.x2 = Math.round(startBounds.x2 + dx);
+              el.y1 = startBounds.y1;
+              el.y2 = startBounds.y2;
+            } else if (isV) {
+              el.y2 = Math.round(startBounds.y2 + dy);
+              el.x1 = startBounds.x1;
+              el.x2 = startBounds.x2;
+            } else {
+              el.x2 = Math.round(startBounds.x2 + dx);
+              el.y2 = Math.round(startBounds.y2 + dy);
+            }
+          } else if (activeHandleKey === 'w' || activeHandleKey === 'nw' || activeHandleKey === 'sw') {
+            if (isH) el.x1 = Math.round(startBounds.x1 + dx);
+            else if (isV) el.y1 = Math.round(startBounds.y1 + dy);
+          } else if (activeHandleKey === 'e' || activeHandleKey === 'ne' || activeHandleKey === 'se') {
+            if (isH) el.x2 = Math.round(startBounds.x2 + dx);
+            else if (isV) el.y2 = Math.round(startBounds.y2 + dy);
+          } else if (activeHandleKey === 'n') {
+            if (isV) el.y1 = Math.round(startBounds.y1 + dy);
+          } else if (activeHandleKey === 's') {
+            if (isV) el.y2 = Math.round(startBounds.y2 + dy);
+          }
+
+          el.w = Math.abs(el.x2 - el.x1);
+          el.h = Math.abs(el.y2 - el.y1);
+          syncSelectedElementToUI(el);
+          render();
+          return;
+        }
 
         const dx = mouseX - startMouse.x;
         const dy = mouseY - startMouse.y;
@@ -2134,7 +2284,18 @@ window.LabelDesigner = (function () {
       // THAY ĐỔI CON TRỎ CHUỘT THÔNG MINH KHI RÊ QUA TAY CẦM HOẶC ĐỐI TƯỢNG
       if (selectedElementId) {
         const curEl = elements.find(item => item.id === selectedElementId);
-        if (curEl && curEl.type !== 'line') {
+        if (curEl) {
+          if (curEl.type === 'line') {
+            const hs = 16;
+            const isH = Math.abs(curEl.y2 - curEl.y1) < 4;
+            const isV = Math.abs(curEl.x2 - curEl.x1) < 4;
+            const lineCursor = isH ? 'ew-resize' : (isV ? 'ns-resize' : 'crosshair');
+            if (Math.hypot(mouseX - curEl.x1, mouseY - curEl.y1) <= hs ||
+                Math.hypot(mouseX - curEl.x2, mouseY - curEl.y2) <= hs) {
+              canvas.style.cursor = lineCursor;
+              return;
+            }
+          }
           const b = getElementBounds(curEl);
           const handles = getHandles(b);
           for (const h of handles) {
@@ -2436,6 +2597,28 @@ window.LabelDesigner = (function () {
         };
         elements.push(newEl);
         selectedElementId = newEl.id;
+        selectedElementIds = [newEl.id];
+        saveHistory();
+        syncSelectedElementToUI(newEl);
+        render();
+      });
+    });
+
+    document.querySelectorAll('.btn-action-add-line-vertical').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const newEl = {
+          id: 'line_' + Date.now(),
+          type: 'line',
+          x1: Math.round(canvasWidth / 2),
+          y1: 40,
+          x2: Math.round(canvasWidth / 2),
+          y2: canvasHeight - 40,
+          color: '#0f172a',
+          lineWidth: 3.0
+        };
+        elements.push(newEl);
+        selectedElementId = newEl.id;
+        selectedElementIds = [newEl.id];
         saveHistory();
         syncSelectedElementToUI(newEl);
         render();
@@ -2576,7 +2759,12 @@ window.LabelDesigner = (function () {
         const valMm = parseFloat(e.target.value) || 0;
         const valPx = mmToPx(valMm);
         if (el.type === 'rect') el.x = valPx;
-        else if (el.type === 'line') { const len = Math.abs(el.x2 - el.x1); el.x1 = valPx; el.x2 = valPx + len; }
+        else if (el.type === 'line') {
+          const minX = Math.min(el.x1, el.x2);
+          const shift = valPx - minX;
+          el.x1 += shift;
+          el.x2 += shift;
+        }
         else el.x = valPx + (el.w || 60) / 2;
         render();
       }
@@ -2589,7 +2777,12 @@ window.LabelDesigner = (function () {
         const valMm = parseFloat(e.target.value) || 0;
         const valPx = mmToPx(valMm, true);
         if (el.type === 'rect') el.y = valPx;
-        else if (el.type === 'line') { el.y1 = valPx; el.y2 = valPx; }
+        else if (el.type === 'line') {
+          const minY = Math.min(el.y1, el.y2);
+          const shift = valPx - minY;
+          el.y1 += shift;
+          el.y2 += shift;
+        }
         else el.y = valPx + (el.h || 30) / 2;
         render();
       }
@@ -2601,8 +2794,17 @@ window.LabelDesigner = (function () {
       if (el) {
         const valMm = Math.max(1, parseFloat(e.target.value) || 1);
         const valPx = mmToPx(valMm);
-        el.w = valPx;
-        if (el.type === 'line') { el.x2 = el.x1 + valPx; }
+        if (el.type === 'line') {
+          const isV = Math.abs(el.x2 - el.x1) < 4;
+          if (!isV) {
+            const minX = Math.min(el.x1, el.x2);
+            if (el.x2 >= el.x1) el.x2 = minX + valPx;
+            else el.x1 = minX + valPx;
+            el.w = valPx;
+          }
+        } else {
+          el.w = valPx;
+        }
         render();
       }
     });
@@ -2613,8 +2815,18 @@ window.LabelDesigner = (function () {
       if (el) {
         const valMm = Math.max(1, parseFloat(e.target.value) || 1);
         const valPx = mmToPx(valMm, true);
-        el.h = valPx;
-        if (el.type === 'text') el.fontSize = Math.round(valPx * 0.78);
+        if (el.type === 'line') {
+          const isV = Math.abs(el.x2 - el.x1) < 4;
+          if (isV) {
+            const minY = Math.min(el.y1, el.y2);
+            if (el.y2 >= el.y1) el.y2 = minY + valPx;
+            else el.y1 = minY + valPx;
+            el.h = valPx;
+          }
+        } else {
+          el.h = valPx;
+          if (el.type === 'text') el.fontSize = Math.round(valPx * 0.78);
+        }
         render();
       }
     });
@@ -2758,6 +2970,160 @@ window.LabelDesigner = (function () {
         render();
       }
     });
+
+    // ===== THUỘC TÍNH ĐƯỜNG KẺ (LINE) =====
+    const btnLineOrientH = document.getElementById('btn-line-orient-horizontal');
+    const btnLineOrientV = document.getElementById('btn-line-orient-vertical');
+    const btnLineRotate90 = document.getElementById('btn-line-rotate-90');
+    const inpLineLength = document.getElementById('inspector-line-length');
+    const inpLineThickness = document.getElementById('inspector-line-width');
+    const selLineStyle = document.getElementById('inspector-line-style');
+    const inpLineColor = document.getElementById('inspector-line-color');
+    const inpLineColorHex = document.getElementById('inspector-line-color-hex');
+
+    // Chuyển sang nằm ngang
+    btnLineOrientH?.addEventListener('click', () => {
+      const el = elements.find(item => item.id === selectedElementId);
+      if (el && el.type === 'line') {
+        const cx = Math.min(canvasWidth - 30, Math.max(30, (el.x1 + el.x2) / 2));
+        const cy = Math.min(canvasHeight - 30, Math.max(30, (el.y1 + el.y2) / 2));
+        const maxLen = canvasWidth - 60;
+        const curLen = Math.hypot(el.x2 - el.x1, el.y2 - el.y1) || 100;
+        const len = Math.min(curLen, maxLen);
+        el.x1 = Math.round(cx - len / 2);
+        el.x2 = Math.round(cx + len / 2);
+        el.y1 = Math.round(cy);
+        el.y2 = Math.round(cy);
+        el.w = Math.abs(el.x2 - el.x1);
+        el.h = 0;
+        saveHistory();
+        syncSelectedElementToUI(el);
+        render();
+      }
+    });
+
+    // Chuyển sang dựng đứng (dọc)
+    btnLineOrientV?.addEventListener('click', () => {
+      const el = elements.find(item => item.id === selectedElementId);
+      if (el && el.type === 'line') {
+        const cx = Math.min(canvasWidth - 30, Math.max(30, (el.x1 + el.x2) / 2));
+        const cy = Math.min(canvasHeight - 30, Math.max(30, (el.y1 + el.y2) / 2));
+        const maxLen = canvasHeight - 60;
+        const curLen = Math.hypot(el.x2 - el.x1, el.y2 - el.y1) || 100;
+        const len = Math.min(curLen, maxLen);
+        el.x1 = Math.round(cx);
+        el.x2 = Math.round(cx);
+        el.y1 = Math.round(cy - len / 2);
+        el.y2 = Math.round(cy + len / 2);
+        el.w = 0;
+        el.h = Math.abs(el.y2 - el.y1);
+        saveHistory();
+        syncSelectedElementToUI(el);
+        render();
+      }
+    });
+
+    // Xoay 90 độ quanh tâm
+    btnLineRotate90?.addEventListener('click', () => {
+      const el = elements.find(item => item.id === selectedElementId);
+      if (el && el.type === 'line') {
+        const cx = Math.min(canvasWidth - 30, Math.max(30, (el.x1 + el.x2) / 2));
+        const cy = Math.min(canvasHeight - 30, Math.max(30, (el.y1 + el.y2) / 2));
+        const isV = Math.abs(el.x2 - el.x1) < 4;
+        const curLen = Math.hypot(el.x2 - el.x1, el.y2 - el.y1) || 100;
+        if (isV) {
+          const maxLen = canvasWidth - 60;
+          const len = Math.min(curLen, maxLen);
+          el.x1 = Math.round(cx - len / 2);
+          el.x2 = Math.round(cx + len / 2);
+          el.y1 = Math.round(cy);
+          el.y2 = Math.round(cy);
+        } else {
+          const maxLen = canvasHeight - 60;
+          const len = Math.min(curLen, maxLen);
+          el.x1 = Math.round(cx);
+          el.x2 = Math.round(cx);
+          el.y1 = Math.round(cy - len / 2);
+          el.y2 = Math.round(cy + len / 2);
+        }
+        el.w = Math.abs(el.x2 - el.x1);
+        el.h = Math.abs(el.y2 - el.y1);
+        saveHistory();
+        syncSelectedElementToUI(el);
+        render();
+      }
+    });
+
+    // Chiều dài đường kẻ (mm)
+    inpLineLength?.addEventListener('input', (e) => {
+      const el = elements.find(item => item.id === selectedElementId);
+      if (el && el.type === 'line') {
+        const valMm = Math.max(1, parseFloat(e.target.value) || 1);
+        const isV = Math.abs(el.x2 - el.x1) < 4;
+        const valPx = mmToPx(valMm, isV);
+        const cx = (el.x1 + el.x2) / 2;
+        const cy = (el.y1 + el.y2) / 2;
+        if (isV) {
+          el.x1 = Math.round(cx);
+          el.x2 = Math.round(cx);
+          el.y1 = Math.round(cy - valPx / 2);
+          el.y2 = Math.round(cy + valPx / 2);
+        } else {
+          el.y1 = Math.round(cy);
+          el.y2 = Math.round(cy);
+          el.x1 = Math.round(cx - valPx / 2);
+          el.x2 = Math.round(cx + valPx / 2);
+        }
+        el.w = Math.abs(el.x2 - el.x1);
+        el.h = Math.abs(el.y2 - el.y1);
+        render();
+      }
+    });
+    inpLineLength?.addEventListener('change', () => saveHistory());
+
+    // Độ dày nét vẽ (px)
+    inpLineThickness?.addEventListener('input', (e) => {
+      const el = elements.find(item => item.id === selectedElementId);
+      if (el && el.type === 'line') {
+        el.lineWidth = Math.max(0.5, parseFloat(e.target.value) || 1);
+        render();
+      }
+    });
+    inpLineThickness?.addEventListener('change', () => saveHistory());
+
+    // Kiểu nét vẽ (solid, dashed, dotted)
+    selLineStyle?.addEventListener('change', (e) => {
+      const el = elements.find(item => item.id === selectedElementId);
+      if (el && el.type === 'line') {
+        const style = e.target.value;
+        if (style === 'dashed') el.dash = [8, 5];
+        else if (style === 'dotted') el.dash = [3, 4];
+        else el.dash = null;
+        saveHistory();
+        render();
+      }
+    });
+
+    // Màu nét kẻ
+    inpLineColor?.addEventListener('input', (e) => {
+      const el = elements.find(item => item.id === selectedElementId);
+      if (el && el.type === 'line') {
+        el.color = e.target.value;
+        if (inpLineColorHex) inpLineColorHex.value = e.target.value.toUpperCase();
+        render();
+      }
+    });
+    inpLineColor?.addEventListener('change', () => saveHistory());
+
+    inpLineColorHex?.addEventListener('input', (e) => {
+      const el = elements.find(item => item.id === selectedElementId);
+      if (el && el.type === 'line' && e.target.value.startsWith('#')) {
+        el.color = e.target.value;
+        if (inpLineColor) inpLineColor.value = e.target.value;
+        render();
+      }
+    });
+    inpLineColorHex?.addEventListener('change', () => saveHistory());
 
     // Cài đặt Loại Mã Vạch 1D (Symbology)
     const selBcFormat = document.getElementById('inspector-barcode-format');
@@ -3339,6 +3705,8 @@ window.LabelDesigner = (function () {
     const inpBorderColor = document.getElementById('inspector-border-color');
     const inpBorderColorHex = document.getElementById('inspector-border-color-hex');
 
+    const groupLine = document.getElementById('inspector-group-line-styling');
+
     const groupBarcode = document.getElementById('inspector-group-barcode-styling');
     const selBarcodeFormat = document.getElementById('inspector-barcode-format');
     const checkBarcodeShowText = document.getElementById('inspector-barcode-show-text');
@@ -3373,6 +3741,7 @@ window.LabelDesigner = (function () {
       if (liveCoords) liveCoords.textContent = 'Bấm vào đối tượng để kéo thả & co dãn 8 nút';
       if (groupText) groupText.classList.remove('hidden');
       if (groupBox) groupBox.classList.add('hidden');
+      if (groupLine) groupLine.classList.add('hidden');
       if (groupBarcode) groupBarcode.classList.add('hidden');
       if (groupQrcode) groupQrcode.classList.add('hidden');
       if (groupIcon) groupIcon.classList.add('hidden');
@@ -3404,18 +3773,21 @@ window.LabelDesigner = (function () {
       liveCoords.textContent = `Vị trí: X ${xMm}mm, Y ${yMm}mm | Kích thước: ${wMm} × ${hMm} mm`;
     }
 
+    // Ẩn tất cả các nhóm styling chuyên biệt trước khi bật lại nhóm tương ứng
+    if (groupText) groupText.classList.add('hidden');
+    if (groupBox) groupBox.classList.add('hidden');
+    if (groupLine) groupLine.classList.add('hidden');
+    if (groupBarcode) groupBarcode.classList.add('hidden');
+    if (groupQrcode) groupQrcode.classList.add('hidden');
+    if (groupIcon) groupIcon.classList.add('hidden');
+
     // Hiển thị theo từng loại đối tượng
     if (el.type === 'text') {
       if (typeBadge) typeBadge.textContent = 'Văn bản (Text)';
       if (groupContent) groupContent.classList.remove('hidden');
       if (contentLabel) contentLabel.textContent = 'Nội dung văn bản';
       if (editText) editText.value = el.text || '';
-
       if (groupText) groupText.classList.remove('hidden');
-      if (groupBox) groupBox.classList.add('hidden');
-      if (groupBarcode) groupBarcode.classList.add('hidden');
-      if (groupQrcode) groupQrcode.classList.add('hidden');
-      if (groupIcon) groupIcon.classList.add('hidden');
 
       if (inpFontFamily) inpFontFamily.value = el.fontFamily || "'Plus Jakarta Sans', sans-serif";
       if (ribbonFontFamily) ribbonFontFamily.value = el.fontFamily || "'Plus Jakarta Sans', sans-serif";
@@ -3558,11 +3930,7 @@ window.LabelDesigner = (function () {
     } else if (el.type === 'rect') {
       if (typeBadge) typeBadge.textContent = 'Khung Ô Trống [ ]';
       if (groupContent) groupContent.classList.add('hidden');
-      if (groupText) groupText.classList.add('hidden');
       if (groupBox) groupBox.classList.remove('hidden');
-      if (groupBarcode) groupBarcode.classList.add('hidden');
-      if (groupQrcode) groupQrcode.classList.add('hidden');
-      if (groupIcon) groupIcon.classList.add('hidden');
 
       if (inpBorderWidth) inpBorderWidth.value = el.lineWidth || 3.5;
       if (inpBorderRadius) inpBorderRadius.value = el.radius || 4;
@@ -3570,23 +3938,52 @@ window.LabelDesigner = (function () {
       if (inpBorderColorHex) inpBorderColorHex.value = (el.stroke || '#0F172A').toUpperCase();
 
     } else if (el.type === 'line') {
-      if (typeBadge) typeBadge.textContent = 'Đường Kẻ (Line)';
+      const isV = Math.abs(el.x2 - el.x1) < 4;
+      const isH = Math.abs(el.y2 - el.y1) < 4;
+      const lengthPx = Math.hypot(el.x2 - el.x1, el.y2 - el.y1);
+      const lengthMm = pxToMm(lengthPx, isV);
+
+      if (typeBadge) typeBadge.textContent = isV ? 'Đường Kẻ Dọc (Vertical)' : 'Đường Kẻ Ngang (Horizontal)';
       if (groupContent) groupContent.classList.add('hidden');
-      if (groupText) groupText.classList.add('hidden');
-      if (groupBox) groupBox.classList.remove('hidden');
-      if (groupBarcode) groupBarcode.classList.add('hidden');
-      if (groupQrcode) groupQrcode.classList.add('hidden');
-      if (groupIcon) groupIcon.classList.add('hidden');
-      if (inpBorderWidth) inpBorderWidth.value = el.lineWidth || 2.5;
+      if (groupLine) groupLine.classList.remove('hidden');
+
+      const btnOrientH = document.getElementById('btn-line-orient-horizontal');
+      const btnOrientV = document.getElementById('btn-line-orient-vertical');
+      if (btnOrientH) {
+        btnOrientH.className = isH
+          ? 'py-1 px-1.5 text-xs rounded bg-blue-600 text-white font-bold border border-blue-500 flex items-center justify-center gap-1 transition shadow-sm'
+          : 'py-1 px-1.5 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center justify-center gap-1 transition';
+      }
+      if (btnOrientV) {
+        btnOrientV.className = isV
+          ? 'py-1 px-1.5 text-xs rounded bg-blue-600 text-white font-bold border border-blue-500 flex items-center justify-center gap-1 transition shadow-sm'
+          : 'py-1 px-1.5 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center justify-center gap-1 transition';
+      }
+
+      const inpLineLen = document.getElementById('inspector-line-length');
+      if (inpLineLen) inpLineLen.value = lengthMm;
+
+      const inpLineW = document.getElementById('inspector-line-width');
+      if (inpLineW) inpLineW.value = el.lineWidth || 2.5;
+
+      const selLineStyle = document.getElementById('inspector-line-style');
+      if (selLineStyle) {
+        if (Array.isArray(el.dash) && el.dash.length > 0) {
+          selLineStyle.value = el.dash[0] <= 4 ? 'dotted' : 'dashed';
+        } else {
+          selLineStyle.value = 'solid';
+        }
+      }
+
+      const inpLineColor = document.getElementById('inspector-line-color');
+      const inpLineColorHex = document.getElementById('inspector-line-color-hex');
+      const colorVal = el.color || '#0f172a';
+      if (inpLineColor) inpLineColor.value = colorVal;
+      if (inpLineColorHex) inpLineColorHex.value = colorVal.toUpperCase();
 
     } else if (el.type === 'image') {
       if (typeBadge) typeBadge.textContent = 'Hình Ảnh / Logo';
       if (groupContent) groupContent.classList.add('hidden');
-      if (groupText) groupText.classList.add('hidden');
-      if (groupBox) groupBox.classList.add('hidden');
-      if (groupBarcode) groupBarcode.classList.add('hidden');
-      if (groupQrcode) groupQrcode.classList.add('hidden');
-      if (groupIcon) groupIcon.classList.add('hidden');
     }
   }
 

@@ -1048,11 +1048,15 @@
                 </button>
                 <button type="button" class="btn-action-add-line tool-item-btn" title="Thêm đường kẻ ngang ngăn cách">
                   <i class="fa-solid fa-minus text-slate-300 text-sm"></i>
-                  <span>+ Đường Kẻ</span>
+                  <span>+ Kẻ Ngang</span>
                 </button>
-                <label class="tool-item-btn cursor-pointer" title="Chèn ảnh Logo công ty hoặc tem">
+                <button type="button" class="btn-action-add-line-vertical tool-item-btn" title="Thêm đường kẻ dọc dựng đứng">
+                  <i class="fa-solid fa-grip-lines-vertical text-slate-300 text-sm"></i>
+                  <span>+ Kẻ Đứng</span>
+                </button>
+                <label class="tool-item-btn cursor-pointer col-span-2 justify-center" title="Chèn ảnh Logo công ty hoặc tem">
                   <i class="fa-solid fa-image text-emerald-400 text-sm"></i>
-                  <span>+ Tải Logo</span>
+                  <span>+ Tải Logo / Hình Ảnh</span>
                   <input type="file" id="input-upload-logo-designer" accept="image/*" class="hidden">
                 </label>
               </div>
@@ -1412,6 +1416,59 @@
                 <div class="flex items-center gap-2">
                   <input type="color" id="inspector-border-color" value="#0f172a" class="w-8 h-7 p-0 rounded border border-slate-700 bg-transparent cursor-pointer">
                   <input type="text" id="inspector-border-color-hex" value="#0F172A" class="inspector-input uppercase font-mono text-xs">
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION: ĐỊNH DẠNG ĐƯỜNG KẺ (CHỈ HIỆN KHI CHỌN LINE) -->
+            <div id="inspector-group-line-styling" class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 space-y-2.5 hidden">
+              <div class="text-[11px] font-bold text-sky-400 flex items-center justify-between">
+                <span>Thuộc tính Đường Kẻ</span>
+                <i class="fa-solid fa-grip-lines"></i>
+              </div>
+
+              <!-- Hướng đường kẻ & Xoay 90 độ -->
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1">Hướng & Xoay đường kẻ</label>
+                <div class="grid grid-cols-3 gap-1.5">
+                  <button type="button" id="btn-line-orient-horizontal" class="py-1 px-1.5 text-xs rounded bg-blue-600 text-white font-bold border border-blue-500 flex items-center justify-center gap-1 transition" title="Đặt đường kẻ nằm ngang">
+                    <i class="fa-solid fa-minus text-[10px]"></i> Ngang
+                  </button>
+                  <button type="button" id="btn-line-orient-vertical" class="py-1 px-1.5 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center justify-center gap-1 transition" title="Đặt đường kẻ dựng đứng (dọc)">
+                    <i class="fa-solid fa-grip-lines-vertical text-[10px]"></i> Đứng
+                  </button>
+                  <button type="button" id="btn-line-rotate-90" class="py-1 px-1.5 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center justify-center gap-1 transition" title="Xoay 90 độ xung quanh tâm">
+                    <i class="fa-solid fa-rotate text-[10px]"></i> Xoay 90°
+                  </button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-[10px] text-slate-400 block mb-0.5">Chiều dài (mm)</label>
+                  <input type="number" id="inspector-line-length" value="45" min="1" max="500" step="0.5" class="inspector-input font-mono font-bold text-sky-300">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-400 block mb-0.5">Độ dày nét (px)</label>
+                  <input type="number" id="inspector-line-width" value="2.5" min="0.5" max="20" step="0.5" class="inspector-input font-mono font-bold">
+                </div>
+              </div>
+
+              <!-- Kiểu nét vẽ -->
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-0.5">Kiểu nét vẽ</label>
+                <select id="inspector-line-style" class="inspector-input text-xs">
+                  <option value="solid">Nét liền (Solid)</option>
+                  <option value="dashed">Nét đứt (Dashed ---)</option>
+                  <option value="dotted">Nét chấm (Dotted ...)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-0.5">Màu nét kẻ</label>
+                <div class="flex items-center gap-2">
+                  <input type="color" id="inspector-line-color" value="#0f172a" class="w-8 h-7 p-0 rounded border border-slate-700 bg-transparent cursor-pointer">
+                  <input type="text" id="inspector-line-color-hex" value="#0F172A" class="inspector-input uppercase font-mono text-xs">
                 </div>
               </div>
             </div>
