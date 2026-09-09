@@ -12,8 +12,9 @@ window.Blueprint2D = (function () {
     if (!canvas) return;
     ctx = canvas.getContext('2d');
 
-    // Nút tải ảnh bản vẽ 2D
+    // Nút tải ảnh bản vẽ 2D (hỗ trợ cả 2 id)
     document.getElementById('btn-download-blueprint')?.addEventListener('click', downloadBlueprintImage);
+    document.getElementById('btn-download-blueprint-main')?.addEventListener('click', downloadBlueprintImage);
 
     render();
   }
@@ -24,12 +25,12 @@ window.Blueprint2D = (function () {
     ctx = canvas.getContext('2d');
 
     const S = window.AppState;
-    const cw = 700;
-    const ch = 720;
+    const cw = 740;
+    const ch = 740;
     canvas.width = cw;
     canvas.height = ch;
 
-    // 1. NỀN BẢN VẼ TRẮNG TINH KHIẾT KỸ THUẬT (CHUẨN HÌNH MẪU 2)
+    // 1. NỀN BẢN VẼ TRẮNG TINH KHIẾT KỸ THUẬT (CHUẨN BẢN VẼ ISO)
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, cw, ch);
 
@@ -52,73 +53,106 @@ window.Blueprint2D = (function () {
     // Tiêu đề bản vẽ
     ctx.fillStyle = '#0f172a';
     ctx.font = 'bold 15px "JetBrains Mono", monospace';
-    ctx.fillText('BẢN VẼ KỸ THUẬT QUY CÁCH BẾ TEM CUỘN', 30, 35);
+    ctx.fillText('BẢN VẼ KỸ THUẬT QUY CÁCH BẾ TEM CUỘN', 30, 36);
     ctx.fillStyle = '#64748b';
     ctx.font = '11px sans-serif';
-    ctx.fillText(`Tỷ lệ kỹ thuật: 1:1 | Khổ cuộn: ${S.webWidth.toFixed(1)}mm | Lõi: ${S.coreDiameter.toFixed(0)}mm (${S.coreName})`, 30, 52);
+    ctx.fillText(`Tỷ lệ kỹ thuật: 1:1 | Khổ cuộn: ${S.webWidth.toFixed(1)}mm | Lõi: ${S.coreDiameter.toFixed(0)}mm (${S.coreName || 'Chuẩn'})`, 30, 54);
 
     // ==========================================
-    // 2. VẼ MINH HỌA CUỘN TEM TRÒN & LÕI (NHƯ ẢNH MẪU 2)
+    // 2. TÍNH TOÁN TỶ LỆ SCALE CHUẨN XÁC ĐỂ VỪA VẶN BẢN VẼ
     // ==========================================
-    const rollTopY = 80;
-    const rollCenterX = 350;
-    const rollCenterY = 160;
-    const rollOuterRadiusX = 140;
-    const rollOuterRadiusY = 50;
+    const rollCx = 160;
+    const rollCy = 175;
+    const rollRx = 60;
+    const rollRy = 105;
 
     // Tính tỷ lệ elip cho lõi
-    const coreRatio = S.coreDiameter / Math.max(S.outerDiameter, 80);
-    const coreRadiusX = Math.max(25, rollOuterRadiusX * coreRatio);
-    const coreRadiusY = Math.max(10, rollOuterRadiusY * coreRatio);
+    const coreRatio = Math.max(0.3, Math.min(0.65, S.coreDiameter / Math.max(S.outerDiameter, 80)));
+    const coreRx = Math.round(rollRx * coreRatio);
+    const coreRy = Math.round(rollRy * coreRatio);
 
-    // Vẽ hình dáng cuộn elip nét vẽ kỹ thuật đen sắc nét
+    const stripStartX = 235;
+    const availMaxW = 340;
+    const availMaxH = 430;
+
+    // Mục tiêu hiển thị: ít nhất 2 hàng (nếu nhãn quá dài > 80mm thì hiển thị 1 hàng)
+    const targetRows = (S.labelHeight > 80) ? 1 : 2;
+    const neededHMm = targetRows * S.labelHeight + (targetRows - 1) * S.gapY + 12;
+
+    const scaleW = availMaxW / S.webWidth;
+    const scaleH = (availMaxH - 45) / neededHMm;
+    const scale = Math.min(scaleW, scaleH);
+
+    const stripWidth = Math.round(S.webWidth * scale);
+    const stripEndX = stripStartX + stripWidth;
+    const stripStartY = rollCy + 15;
+    const stripHeight = Math.round(neededHMm * scale) + 40;
+
+    const topY = rollCy - rollRy;
+    const bottomY = rollCy + rollRy;
+    const cornerR = Math.min(70, Math.round(stripWidth * 0.28));
+
+    // Thân trụ cuộn tem (Cylinder body nối sang mép dải giấy)
+    ctx.save();
+    ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 2;
-
-    // Vành ngoài cuộn tem
     ctx.beginPath();
-    ctx.ellipse(rollCenterX, rollCenterY, rollOuterRadiusX, rollOuterRadiusY, 0, 0, Math.PI * 2);
+    ctx.moveTo(rollCx, topY);
+    ctx.lineTo(stripEndX - cornerR, topY);
+    ctx.arc(stripEndX - cornerR, topY + cornerR, cornerR, -Math.PI / 2, 0, false);
+    ctx.lineTo(stripEndX, stripStartY);
+    ctx.lineTo(stripStartX, stripStartY);
+    ctx.lineTo(stripStartX, bottomY);
+    ctx.lineTo(rollCx, bottomY);
+    ctx.closePath();
+    ctx.fill();
     ctx.stroke();
+    ctx.restore();
 
-    // Lõi trong cuộn tem
+    // Mặt bên trái của cuộn tem (Elip và Lõi tròn chuẩn)
+    ctx.save();
+    ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 2;
+    // Vành ngoài
     ctx.beginPath();
-    ctx.ellipse(rollCenterX, rollCenterY, coreRadiusX, coreRadiusY, 0, 0, Math.PI * 2);
+    ctx.ellipse(rollCx, rollCy, rollRx, rollRy, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.stroke();
+    // Lỗ lõi
+    ctx.beginPath();
+    ctx.ellipse(rollCx, rollCy, coreRx, coreRy, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#f8fafc';
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
 
-    // Chữ chỉ lõi "Lõi 30mm" màu xanh đậm với mũi tên chỉ thẳng vào tâm lỗ lõi (Y HỆT ẢNH 2)
+    // Chữ chỉ lõi "Lõi 40mm" với mũi tên xanh chỉ thẳng vào tâm lõi (rõ ràng, không bị đè)
     ctx.fillStyle = '#1d4ed8';
-    ctx.font = 'bold 16px "Plus Jakarta Sans", sans-serif';
+    ctx.font = 'bold 15px "Plus Jakarta Sans", sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText(`Lõi ${S.coreDiameter.toFixed(0)}mm`, rollCenterX - coreRadiusX - 45, rollCenterY - 10);
-
-    // Mũi tên chỉ vào lỗ lõi
-    drawArrow(ctx, rollCenterX - coreRadiusX - 40, rollCenterY - 10, rollCenterX - 5, rollCenterY, '#1d4ed8', 2);
+    ctx.fillText(`Lõi ${S.coreDiameter.toFixed(0)}mm`, rollCx - coreRx - 25, rollCy - 8);
+    drawArrow(ctx, rollCx - coreRx - 20, rollCy - 8, rollCx - 5, rollCy, '#1d4ed8', 2);
 
     // ==========================================
     // 3. VẼ DẢI GIẤY CUỘN DUỖI THẲNG XUỐNG
     // ==========================================
-    const stripStartX = rollCenterX - rollOuterRadiusX;
-    const stripWidth = rollOuterRadiusX * 2;
-    const stripStartY = rollCenterY;
-    const stripHeight = 460;
-
-    // Đường bao biên đế giấy trắng
+    // Đường bao biên đế giấy trắng sắc nét
+    ctx.save();
+    ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 2;
-    ctx.fillStyle = '#ffffff';
     ctx.fillRect(stripStartX, stripStartY, stripWidth, stripHeight);
     ctx.strokeRect(stripStartX, stripStartY, stripWidth, stripHeight);
+    ctx.restore();
 
-    // Mũi tên hướng ra tem bên trái
-    drawBigWindingArrow(ctx, stripStartX - 45, stripStartY + 80, 220);
+    // Mũi tên hướng ra tem bên trái (dưới mặt bên cuộn tem, không va chạm)
+    drawBigWindingArrow(ctx, rollCx - 25, rollCy + rollRy + 35, 170);
 
     // ==========================================
     // 4. VẼ CÁC CON TEM & ĐƯỜNG BẾ DEMI (ĐỎ NÉT LIỀN)
     // ==========================================
-    // Tính toán tỷ lệ scale pixel / mm
-    const scale = stripWidth / S.webWidth;
     const labelW_px = S.labelWidth * scale;
     const labelH_px = S.labelHeight * scale;
     const gapX_px = S.gapX * scale;
@@ -126,59 +160,87 @@ window.Blueprint2D = (function () {
     const marginX_px = S.marginX * scale;
     const radius_px = S.cornerRadius * scale;
 
-    const numRows = Math.min(3, Math.floor((stripHeight - 30) / (labelH_px + gapY_px)));
+    const topLabelPadding = 32;
+    const numRows = targetRows;
+
+    // Lấy canvas sạch (không dính khung chọn / 8 tay cầm) từ Designer
+    const desCanvas = window.LabelDesigner?.getCleanCanvas
+      ? window.LabelDesigner.getCleanCanvas()
+      : window.LabelDesigner?.getCanvas();
 
     for (let r = 0; r < numRows; r++) {
-      const rowY = stripStartY + 30 + r * (labelH_px + gapY_px);
+      const rowY = stripStartY + topLabelPadding + r * (labelH_px + gapY_px);
 
       for (let col = 0; col < S.ups; col++) {
         const labelX = stripStartX + marginX_px + col * (labelW_px + gapX_px);
 
-        const isSilver = (S.materialType === 'silver' || S.materialFinish === 'metallic');
-        const fillCol = isSilver ? '#cbd5e1' : (S.labelColor || '#FFFFFF');
+        const fillCol = (S.labelColor && S.labelColor !== '#FFFFFF' && S.labelColor !== '#ffffff')
+          ? S.labelColor
+          : '#ffffff';
 
-        // Vẽ nền tem & đường bế demi đỏ (Die-cut line)
+        // Nền tem
         if (S.shape === 'circle') {
           const rad = Math.min(labelW_px, labelH_px) / 2;
           ctx.beginPath();
           ctx.arc(labelX + labelW_px / 2, rowY + labelH_px / 2, rad, 0, Math.PI * 2);
           ctx.fillStyle = fillCol;
           ctx.fill();
-          ctx.strokeStyle = '#ef4444';
-          ctx.lineWidth = 1.8;
-          ctx.stroke();
         } else if (S.shape === 'oval') {
           ctx.beginPath();
           ctx.ellipse(labelX + labelW_px / 2, rowY + labelH_px / 2, labelW_px / 2, labelH_px / 2, 0, 0, Math.PI * 2);
           ctx.fillStyle = fillCol;
           ctx.fill();
-          ctx.strokeStyle = '#ef4444';
-          ctx.lineWidth = 1.8;
-          ctx.stroke();
         } else {
           ctx.fillStyle = fillCol;
           drawRoundedRect(ctx, labelX, rowY, labelW_px, labelH_px, radius_px, true, false);
-          ctx.strokeStyle = '#ef4444';
-          ctx.lineWidth = 1.8;
-          drawRoundedRect(ctx, labelX, rowY, labelW_px, labelH_px, radius_px, false, true);
         }
 
-        // Vẽ nội dung maket tem thực tế từ Designer nếu có
-        const desCanvas = window.LabelDesigner?.getCanvas();
-        if (desCanvas && r === 0 && col === 0) {
+        // Vẽ nội dung maket tem thực tế từ Designer trên TẤT CẢ các tem (Tem 1, Tem 2,...)
+        if (desCanvas && desCanvas.width > 0 && desCanvas.height > 0) {
           ctx.save();
           if (S.shape === 'circle') {
             const rad = Math.min(labelW_px, labelH_px) / 2;
             ctx.beginPath();
             ctx.arc(labelX + labelW_px / 2, rowY + labelH_px / 2, rad, 0, Math.PI * 2);
             ctx.clip();
+          } else if (S.shape === 'oval') {
+            ctx.beginPath();
+            ctx.ellipse(labelX + labelW_px / 2, rowY + labelH_px / 2, labelW_px / 2, labelH_px / 2, 0, 0, Math.PI * 2);
+            ctx.clip();
+          } else if (radius_px > 0) {
+            drawRoundedRect(ctx, labelX, rowY, labelW_px, labelH_px, radius_px, false, false);
+            ctx.clip();
           }
           ctx.drawImage(desCanvas, labelX, rowY, labelW_px, labelH_px);
           ctx.restore();
+        } else {
+          // Placeholder chữ nếu chưa có canvas
+          ctx.save();
+          ctx.fillStyle = '#64748b';
+          ctx.font = '12px "JetBrains Mono", monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(`Tem ${r * S.ups + col + 1}`, labelX + labelW_px / 2, rowY + labelH_px / 2 + 4);
+          ctx.restore();
+        }
+
+        // Đường bế demi đỏ (Die-cut line) sắc nét
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 1.8;
+        if (S.shape === 'circle') {
+          const rad = Math.min(labelW_px, labelH_px) / 2;
+          ctx.beginPath();
+          ctx.arc(labelX + labelW_px / 2, rowY + labelH_px / 2, rad, 0, Math.PI * 2);
+          ctx.stroke();
+        } else if (S.shape === 'oval') {
+          ctx.beginPath();
+          ctx.ellipse(labelX + labelW_px / 2, rowY + labelH_px / 2, labelW_px / 2, labelH_px / 2, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          drawRoundedRect(ctx, labelX, rowY, labelW_px, labelH_px, radius_px, false, true);
         }
       }
 
-      // Đường răng cưa (Perforation line) đứt nét
+      // Đường răng cưa (Perforation line) nét đứt giữa các hàng
       if (S.hasPerforation && r < numRows - 1) {
         const perfY = rowY + labelH_px + gapY_px / 2;
         ctx.save();
@@ -194,39 +256,37 @@ window.Blueprint2D = (function () {
     }
 
     // ==========================================
-    // 5. CÁC ĐƯỜNG THƯỚC ĐO KÍCH THƯỚC CHI TIẾT (CHUẨN HÌNH 2)
+    // 5. CÁC ĐƯỜNG THƯỚC ĐO KÍCH THƯỚC CHI TIẾT (CHUẨN BẢN VẼ KỸ THUẬT)
     // ==========================================
-    const firstRowY = stripStartY + 30;
-    // Con tem góc trên bên phải (cột cuối cùng của hàng 0)
+    const firstRowY = stripStartY + topLabelPadding;
     const lastColIndex = S.ups - 1;
     const targetLabelX = stripStartX + marginX_px + lastColIndex * (labelW_px + gapX_px);
+    const firstLabelX = stripStartX + marginX_px;
 
     // A. Thước đo chiều rộng con tem / đường kính (Ø)
     const dimWText = S.shape === 'circle' ? `Ø${S.labelWidth}mm` : `${S.labelWidth}mm`;
-    drawDimensionH(ctx, targetLabelX, targetLabelX + labelW_px, firstRowY - 8, dimWText, '#1d4ed8');
+    drawDimensionH(ctx, targetLabelX, targetLabelX + labelW_px, firstRowY - 12, dimWText, '#1d4ed8');
 
-    // B. Thước đo chiều cao con tem (^ v 38mm) bên hông con tem bên phải
-    drawDimensionV(ctx, targetLabelX + labelW_px + 8, firstRowY, firstRowY + labelH_px, `${S.labelHeight}mm`, '#1d4ed8');
+    // B. Thước đo chiều cao con tem bên hông tem bên phải
+    drawDimensionV(ctx, targetLabelX + labelW_px + 12, firstRowY, firstRowY + labelH_px, `${S.labelHeight}mm`, '#1d4ed8');
 
-    // C. Thước đo khoảng cách giữa 2 con tem trên cùng hàng (Gap X: 3mm)
+    // C. Thước đo khoảng cách giữa 2 con tem trên cùng hàng (Gap X)
     if (S.ups > 1 && S.gapX > 0) {
-      const firstLabelX = stripStartX + marginX_px;
       const gapXStart = firstLabelX + labelW_px;
       const gapXEnd = gapXStart + gapX_px;
       drawDimensionH(ctx, gapXStart, gapXEnd, firstRowY + labelH_px / 2, `${S.gapX}mm`, '#059669', true);
     }
 
-    // D. Thước đo bước nhảy 2 hàng (Gap Y: 3mm)
+    // D. Thước đo bước nhảy 2 hàng (Gap Y)
     if (S.gapY > 0 && numRows > 1) {
-      const firstLabelX = stripStartX + marginX_px;
       const gapYStart = firstRowY + labelH_px;
-      const gapYEnd = gapYStart + gapY_px;
-      drawDimensionV(ctx, firstLabelX - 8, gapYStart, gapYEnd, `${S.gapY}mm`, '#059669', true);
+      const secondRowY = firstRowY + labelH_px + gapY_px;
+      drawDimensionV(ctx, firstLabelX - 12, gapYStart, secondRowY, `${S.gapY}mm`, '#059669', true);
     }
 
-    // E. Thước đo khổ cuộn giấy (Total Web Width: e.g. 107mm)
+    // E. Thước đo khổ cuộn giấy (Web Width)
     const bottomDimY = stripStartY + stripHeight + 20;
-    drawDimensionH(ctx, stripStartX, stripStartX + stripWidth, bottomDimY, `Khổ rộng cuộn: ${S.webWidth.toFixed(1)} mm`, '#ec4899');
+    drawDimensionH(ctx, stripStartX, stripEndX, bottomDimY, `Khổ rộng cuộn: ${S.webWidth.toFixed(1)} mm`, '#ec4899');
   }
 
   /**
