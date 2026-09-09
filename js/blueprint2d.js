@@ -51,30 +51,29 @@ window.Blueprint2D = (function () {
       ctx.stroke();
     }
 
-    // Tiêu đề bản vẽ
+    // Tiêu đề bản vẽ căn giữa chuẩn trang
+    ctx.textAlign = 'center';
     ctx.fillStyle = '#0f172a';
     ctx.font = 'bold 14px "JetBrains Mono", monospace';
-    ctx.fillText('BẢN VẼ KỸ THUẬT QUY CÁCH BẾ TEM CUỘN', 28, 28);
+    ctx.fillText('BẢN VẼ KỸ THUẬT QUY CÁCH BẾ TEM CUỘN', cw / 2, 28);
     ctx.fillStyle = '#64748b';
     ctx.font = '11px sans-serif';
-    ctx.fillText(`Tỷ lệ kỹ thuật: 1:1 | Khổ cuộn: ${S.webWidth.toFixed(1)}mm | Lõi: ${S.coreDiameter.toFixed(0)}mm (${S.coreName || 'Chuẩn'})`, 28, 44);
+    ctx.fillText(`Tỷ lệ kỹ thuật: 1:1 | Khổ cuộn: ${S.webWidth.toFixed(1)}mm | Lõi: ${S.coreDiameter.toFixed(0)}mm (${S.coreName || 'Chuẩn'})`, cw / 2, 44);
 
     // ==========================================
-    // 2. TÍNH TOÁN KÍCH THƯỚC VỪA ĐỦ, CÂN ĐỐI (KHÔNG BỊ QUÁ TO)
+    // 2. TÍNH TOÁN KÍCH THƯỚC VÀ CĂN GIỮA TOÀN BỘ HÌNH VẼ
     // ==========================================
-    const rollCx = 145;
-    const rollCy = 145;
     const rollRx = 48;
     const rollRy = 85;
+    const rollCy = 150;
 
     // Tính tỷ lệ elip cho lõi
     const coreRatio = Math.max(0.3, Math.min(0.65, S.coreDiameter / Math.max(S.outerDiameter, 80)));
     const coreRx = Math.round(rollRx * coreRatio);
     const coreRy = Math.round(rollRy * coreRatio);
 
-    const stripStartX = 205;
-    const availMaxW = 300;
-    const availMaxH = 295;
+    const availMaxW = 310;
+    const availMaxH = 290;
 
     // Hiển thị 2 hàng tem (nếu nhãn quá dài > 80mm thì hiển thị 1 hàng)
     const targetRows = (S.labelHeight > 80) ? 1 : 2;
@@ -85,9 +84,16 @@ window.Blueprint2D = (function () {
     const scale = Math.min(scaleW, scaleH);
 
     const stripWidth = Math.round(S.webWidth * scale);
+    const stripHeight = Math.round(neededHMm * scale) + 32;
+
+    // CĂN GIỮA TOÀN BỘ CỤM HÌNH VẼ (ROLL + DẢI GIẤY + CÁC THƯỚC ĐO) TRÊN CANVAS
+    const totalDrawingW = stripWidth + rollRx + 15 + 80 + 35;
+    const leftMargin = Math.max(35, Math.round((cw - totalDrawingW) / 2));
+
+    const rollCx = leftMargin + 80;
+    const stripStartX = rollCx + rollRx + 15;
     const stripEndX = stripStartX + stripWidth;
     const stripStartY = rollCy + 10;
-    const stripHeight = Math.round(neededHMm * scale) + 32;
 
     const topY = rollCy - rollRy;
     const bottomY = rollCy + rollRy;
@@ -149,7 +155,7 @@ window.Blueprint2D = (function () {
     ctx.restore();
 
     // Mũi tên hướng ra tem bên trái (dưới mặt bên cuộn tem, vừa vặn không va chạm)
-    drawBigWindingArrow(ctx, rollCx - 20, bottomY + 25, 140);
+    drawBigWindingArrow(ctx, rollCx - 18, bottomY + 25, 135);
 
     // ==========================================
     // 4. VẼ CÁC CON TEM & ĐƯỜNG BẾ DEMI (ĐỎ NÉT LIỀN)
@@ -278,11 +284,27 @@ window.Blueprint2D = (function () {
       drawDimensionH(ctx, gapXStart, gapXEnd, firstRowY + labelH_px / 2, `${S.gapX}mm`, '#059669', true);
     }
 
-    // D. Thước đo bước nhảy 2 hàng (Gap Y - side: left)
+    // D. Thước đo bước nhảy 2 hàng (Gap Y) - Đẩy ra ngoài dải giấy + có đường gióng kỹ thuật
     if (S.gapY > 0 && numRows > 1) {
       const gapYStart = firstRowY + labelH_px;
       const secondRowY = firstRowY + labelH_px + gapY_px;
-      drawDimensionV(ctx, firstLabelX - 8, gapYStart, secondRowY, `${S.gapY}mm`, '#059669', true, 'left');
+      const dimGapX = stripStartX - 24; // Dịch ra ngoài mép dải giấy 24px
+
+      // Đường gióng ngang từ mép tem/dải giấy ra thước đo
+      ctx.save();
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 2]);
+      ctx.beginPath();
+      ctx.moveTo(stripStartX, gapYStart);
+      ctx.lineTo(dimGapX - 2, gapYStart);
+      ctx.moveTo(stripStartX, secondRowY);
+      ctx.lineTo(dimGapX - 2, secondRowY);
+      ctx.stroke();
+      ctx.restore();
+
+      // Thước đo đứng hiển thị số nằm ngang cực kỳ dễ nhìn
+      drawDimensionV(ctx, dimGapX, gapYStart, secondRowY, `${S.gapY}mm`, '#059669', true, 'left', true);
     }
 
     // E. Thước đo khổ cuộn giấy (Web Width)
@@ -335,7 +357,7 @@ window.Blueprint2D = (function () {
   /**
    * VẼ ĐƯỜNG KÍCH THƯỚC DỌC (VERTICAL DIMENSION)
    */
-  function drawDimensionV(c, x, y1, y2, text, color, isSmall = false, side = 'right') {
+  function drawDimensionV(c, x, y1, y2, text, color, isSmall = false, side = 'right', horizontalText = false) {
     c.save();
     c.strokeStyle = color;
     c.fillStyle = color;
@@ -359,22 +381,39 @@ window.Blueprint2D = (function () {
     drawArrowHead(c, x, y1 + 5, x, y1, color);
     drawArrowHead(c, x, y2 - 5, x, y2, color);
 
-    // Text kích thước xoay 90 độ
     c.save();
-    const offsetX = side === 'right' ? 8 : -8;
-    c.translate(x + offsetX, (y1 + y2) / 2);
-    c.rotate(-Math.PI / 2);
-    c.font = `bold ${isSmall ? 10 : 11}px "JetBrains Mono", monospace`;
-    c.textAlign = 'center';
-    c.textBaseline = side === 'right' ? 'top' : 'bottom';
+    c.font = `bold ${isSmall ? 11 : 12}px "JetBrains Mono", monospace`;
 
-    // Nền trắng che mờ sau chữ
-    const textW = c.measureText(text).width;
-    c.fillStyle = '#ffffff';
-    c.fillRect(-textW / 2 - 2, side === 'right' ? -1 : -11, textW + 4, 11);
+    if (horizontalText) {
+      // Chữ hiển thị NẰM NGANG không cần nghiêng đầu
+      c.textAlign = side === 'left' ? 'right' : 'left';
+      c.textBaseline = 'middle';
+      const textX = side === 'left' ? x - 6 : x + 6;
+      const textY = (y1 + y2) / 2;
 
-    c.fillStyle = color;
-    c.fillText(text, 0, 0);
+      // Nền trắng che mờ sau chữ
+      const textW = c.measureText(text).width;
+      c.fillStyle = '#ffffff';
+      c.fillRect(side === 'left' ? textX - textW - 2 : textX - 1, textY - 7, textW + 4, 14);
+
+      c.fillStyle = color;
+      c.fillText(text, textX, textY);
+    } else {
+      // Text kích thước xoay 90 độ
+      const offsetX = side === 'right' ? 8 : -8;
+      c.translate(x + offsetX, (y1 + y2) / 2);
+      c.rotate(-Math.PI / 2);
+      c.textAlign = 'center';
+      c.textBaseline = side === 'right' ? 'top' : 'bottom';
+
+      // Nền trắng che mờ sau chữ
+      const textW = c.measureText(text).width;
+      c.fillStyle = '#ffffff';
+      c.fillRect(-textW / 2 - 2, side === 'right' ? -1 : -11, textW + 4, 11);
+
+      c.fillStyle = color;
+      c.fillText(text, 0, 0);
+    }
     c.restore();
 
     c.restore();
