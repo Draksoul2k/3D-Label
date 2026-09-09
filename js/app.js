@@ -2756,6 +2756,7 @@ function initEventListeners() {
     btn.addEventListener('click', () => {
       currentExportSource = btn.dataset.source || '3d';
       syncExportSourceUI();
+      scheduleUpdateExportPreview();
     });
   });
 
@@ -2801,10 +2802,15 @@ function initEventListeners() {
         customBtn.classList.remove('bg-slate-800', 'text-slate-300', 'border-slate-700');
       }
     }
+    scheduleUpdateExportPreview();
   }
 
   document.getElementById('input-export-width')?.addEventListener('input', onCustomDimInput);
   document.getElementById('input-export-height')?.addEventListener('input', onCustomDimInput);
+
+  // Tùy chọn nền & format ảnh
+  document.getElementById('select-export-bg')?.addEventListener('change', () => scheduleUpdateExportPreview());
+  document.getElementById('select-export-format')?.addEventListener('change', () => scheduleUpdateExportPreview());
 
   // Khóa tỷ lệ nhanh (1:1, 4:3, 16:9)
   document.querySelectorAll('.btn-quick-ratio').forEach(btn => {
@@ -2831,8 +2837,63 @@ function initEventListeners() {
     });
   });
 
-  document.getElementById('input-wm-line1')?.addEventListener('input', updateWatermarkDesc);
-  document.getElementById('input-wm-line2')?.addEventListener('input', updateWatermarkDesc);
+  document.getElementById('input-wm-line1')?.addEventListener('input', () => {
+    updateWatermarkDesc();
+    scheduleUpdateExportPreview();
+  });
+  document.getElementById('input-wm-line2')?.addEventListener('input', () => {
+    updateWatermarkDesc();
+    scheduleUpdateExportPreview();
+  });
+  document.getElementById('select-watermark-pos')?.addEventListener('change', () => scheduleUpdateExportPreview());
+  document.getElementById('select-watermark-style')?.addEventListener('change', () => scheduleUpdateExportPreview());
+
+  // Độ mờ Watermark (%)
+  const opSlider = document.getElementById('input-watermark-opacity');
+  const opLabel = document.getElementById('label-watermark-opacity');
+  if (opSlider) {
+    opSlider.addEventListener('input', () => {
+      if (opLabel) opLabel.textContent = `${opSlider.value}%`;
+      syncOpacityPresetButtons(parseInt(opSlider.value));
+      scheduleUpdateExportPreview();
+    });
+  }
+
+  document.querySelectorAll('.btn-wm-opacity-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val = parseInt(btn.dataset.op) || 80;
+      if (opSlider) opSlider.value = val;
+      if (opLabel) opLabel.textContent = `${val}%`;
+      syncOpacityPresetButtons(val);
+      scheduleUpdateExportPreview();
+    });
+  });
+
+  // Kích thước phóng to / thu nhỏ Watermark (%)
+  const scaleSlider = document.getElementById('input-watermark-scale');
+  const scaleLabel = document.getElementById('label-watermark-scale');
+  if (scaleSlider) {
+    scaleSlider.addEventListener('input', () => {
+      if (scaleLabel) scaleLabel.textContent = `${scaleSlider.value}%`;
+      syncScalePresetButtons(parseInt(scaleSlider.value));
+      scheduleUpdateExportPreview();
+    });
+  }
+
+  document.querySelectorAll('.btn-wm-scale-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val = parseInt(btn.dataset.scale) || 100;
+      if (scaleSlider) scaleSlider.value = val;
+      if (scaleLabel) scaleLabel.textContent = `${val}%`;
+      syncScalePresetButtons(val);
+      scheduleUpdateExportPreview();
+    });
+  });
+
+  // Nút Cập nhật xem trước thủ công
+  document.getElementById('btn-refresh-export-preview')?.addEventListener('click', () => {
+    updateExportModalLivePreview();
+  });
 }
 
 /**
@@ -3169,6 +3230,7 @@ function openCustomExportModal(source = null) {
   setExportPreset(800, 800); // Mặc định 800x800 chuẩn TMĐT
 
   modal.classList.remove('hidden');
+  scheduleUpdateExportPreview(120);
 }
 window.openCustomExportModal = openCustomExportModal;
 
@@ -3235,6 +3297,8 @@ function setExport3DMode(mode) {
       ? `Tải Kèm Thông Số (<span id="export-btn-dim-badge">${dimText}</span>)`
       : `Tải Nguyên Tem 3D (<span id="export-btn-dim-badge">${dimText}</span>)`;
   }
+
+  scheduleUpdateExportPreview();
 }
 window.setExport3DMode = setExport3DMode;
 
@@ -3259,6 +3323,8 @@ function setExportPreset(w, h) {
     btn.classList.toggle('text-slate-300', !isMatch);
     btn.classList.toggle('border-slate-700', !isMatch);
   });
+
+  scheduleUpdateExportPreview();
 }
 
 function updateExportDimensionsSummary(w, h) {
@@ -3294,6 +3360,7 @@ function setWatermarkOption(type) {
   }
 
   updateWatermarkDesc();
+  scheduleUpdateExportPreview();
 }
 
 function updateWatermarkDesc() {
@@ -3315,8 +3382,168 @@ function updateWatermarkDesc() {
   }
 }
 
+function getCurrentWatermarkConfig() {
+  const wmType = currentWatermarkType || 'none';
+  const wmPos = document.getElementById('select-watermark-pos')?.value || 'bottom-right';
+  const wmStyle = document.getElementById('select-watermark-style')?.value || 'badge';
+  const customL1 = document.getElementById('input-wm-line1')?.value?.trim() || 'hacode.vn';
+  const customL2 = document.getElementById('input-wm-line2')?.value?.trim() || '';
+  const opacity = parseInt(document.getElementById('input-watermark-opacity')?.value, 10) || 80;
+  const scale = parseInt(document.getElementById('input-watermark-scale')?.value, 10) || 100;
+  return {
+    type: wmType,
+    pos: wmPos,
+    style: wmStyle,
+    customText1: customL1,
+    customText2: customL2,
+    opacity,
+    scale
+  };
+}
+
+function syncOpacityPresetButtons(val) {
+  document.querySelectorAll('.btn-wm-opacity-preset').forEach(b => {
+    const isThis = parseInt(b.dataset.op) === val;
+    b.classList.toggle('active', isThis);
+    b.classList.toggle('bg-sky-600', isThis);
+    b.classList.toggle('text-white', isThis);
+    b.classList.toggle('font-bold', isThis);
+    b.classList.toggle('bg-slate-800', !isThis);
+    b.classList.toggle('text-slate-300', !isThis);
+  });
+}
+
+function syncScalePresetButtons(val) {
+  document.querySelectorAll('.btn-wm-scale-preset').forEach(b => {
+    const isThis = parseInt(b.dataset.scale) === val;
+    b.classList.toggle('active', isThis);
+    b.classList.toggle('bg-emerald-600', isThis);
+    b.classList.toggle('text-white', isThis);
+    b.classList.toggle('font-bold', isThis);
+    b.classList.toggle('bg-slate-800', !isThis);
+    b.classList.toggle('text-slate-300', !isThis);
+  });
+}
+
+let exportPreviewTimeout = null;
+
+function scheduleUpdateExportPreview(delay = 60) {
+  if (exportPreviewTimeout) clearTimeout(exportPreviewTimeout);
+  exportPreviewTimeout = setTimeout(() => {
+    updateExportModalLivePreview();
+  }, delay);
+}
+
+async function updateExportModalLivePreview() {
+  const modal = document.getElementById('modal-custom-export');
+  if (!modal || modal.classList.contains('hidden')) return;
+
+  const previewImg = document.getElementById('export-live-preview-img');
+  const spinner = document.getElementById('export-preview-spinner');
+  const badgeRes = document.getElementById('preview-res-badge');
+  const badgeRatio = document.getElementById('preview-info-ratio');
+  const badgeWm = document.getElementById('preview-info-wm');
+  const badgeWmMeta = document.getElementById('preview-info-wm-meta');
+  const badgeSpecs = document.getElementById('preview-info-specs');
+
+  const inpW = document.getElementById('input-export-width');
+  const inpH = document.getElementById('input-export-height');
+  const selectBg = document.getElementById('select-export-bg');
+  const selectFormat = document.getElementById('select-export-format');
+  const checkSpecs = document.getElementById('check-export-include-specs');
+
+  const w = Math.max(100, Math.min(4000, parseInt(inpW?.value) || 800));
+  const h = Math.max(100, Math.min(4000, parseInt(inpH?.value) || 800));
+  const bgOption = selectBg?.value || 'studio';
+  const format = selectFormat?.value || 'png';
+  const includeSpecs = checkSpecs ? checkSpecs.checked : true;
+  const watermark = getCurrentWatermarkConfig();
+
+  // Cập nhật thông tin badges
+  if (badgeRes) badgeRes.textContent = `${w} × ${h}`;
+  if (badgeRatio) {
+    const r = w === h ? '1:1 (Vuông)' : `${(w / h).toFixed(2)}:1`;
+    badgeRatio.textContent = r;
+  }
+  if (badgeWm) {
+    if (watermark.type === 'none') {
+      badgeWm.textContent = 'Không';
+    } else if (watermark.type === 'hacode') {
+      badgeWm.textContent = 'hacode.vn';
+    } else if (watermark.type === 'hacode_phone') {
+      badgeWm.textContent = 'hacode.vn • 0942...';
+    } else if (watermark.type === 'phone') {
+      badgeWm.textContent = '0942.85.82.86';
+    } else {
+      badgeWm.textContent = watermark.customText1 || 'Tự nhập';
+    }
+  }
+  if (badgeWmMeta) {
+    badgeWmMeta.textContent = `Mờ ${watermark.opacity}% • Cỡ ${watermark.scale}%`;
+  }
+  if (badgeSpecs) {
+    if (currentExportSource === '3d') {
+      badgeSpecs.textContent = includeSpecs ? 'Kèm bảng thông số' : 'Nguyên tem 3D';
+    } else {
+      badgeSpecs.textContent = 'Mặt tem 2D';
+    }
+  }
+
+  // Để live preview phản hồi nhanh, giới hạn kích thước tối đa 800px theo tỷ lệ
+  const maxPrevDim = 800;
+  let prevW = w;
+  let prevH = h;
+  if (prevW > maxPrevDim || prevH > maxPrevDim) {
+    if (prevW >= prevH) {
+      prevH = Math.round((prevH / prevW) * maxPrevDim);
+      prevW = maxPrevDim;
+    } else {
+      prevW = Math.round((prevW / prevH) * maxPrevDim);
+      prevH = maxPrevDim;
+    }
+  }
+
+  if (spinner) spinner.classList.remove('hidden');
+
+  try {
+    let dataUrl = null;
+    if (currentExportSource === '3d') {
+      if (window.Scene3D && typeof window.Scene3D.exportCustomImage === 'function') {
+        dataUrl = await window.Scene3D.exportCustomImage({
+          width: prevW,
+          height: prevH,
+          format,
+          bgOption,
+          includeSpecs,
+          watermark,
+          download: false
+        });
+      }
+    } else {
+      if (window.LabelDesigner && typeof window.LabelDesigner.exportCustomLabelImage === 'function') {
+        dataUrl = window.LabelDesigner.exportCustomLabelImage({
+          width: prevW,
+          height: prevH,
+          format,
+          bgOption,
+          watermark,
+          download: false
+        });
+      }
+    }
+
+    if (dataUrl && previewImg) {
+      previewImg.src = dataUrl;
+    }
+  } catch (err) {
+    console.error('Lỗi khi render live preview export:', err);
+  } finally {
+    if (spinner) spinner.classList.add('hidden');
+  }
+}
+
 /**
- * HÀM VẼ WATERMARK BẢN QUYỀN CHUẨN XÁC LÊN CANVAS
+ * HÀM VẼ WATERMARK BẢN QUYỀN CHUẨN XÁC LÊN CANVAS (HỖ TRỢ ĐỘ MỜ % VÀ PHÓNG TO / THU NHỎ %)
  */
 window.drawWatermarkOnCanvas = function(ctx, width, height, wmConfig, avoidRect = null) {
   if (!ctx || !wmConfig || wmConfig.type === 'none') return;
@@ -3341,13 +3568,17 @@ window.drawWatermarkOnCanvas = function(ctx, width, height, wmConfig, avoidRect 
   const pos = wmConfig.pos || 'bottom-right';
   const style = wmConfig.style || 'badge';
 
-  const baseScale = Math.max(0.6, Math.min(2.5, width / 800));
+  const opacityVal = (wmConfig.opacity !== undefined ? Number(wmConfig.opacity) : 80) / 100;
+  const scaleFactor = (wmConfig.scale !== undefined ? Number(wmConfig.scale) : 100) / 100;
+
+  const baseScale = Math.max(0.6, Math.min(2.5, width / 800)) * scaleFactor;
   const fontLine1 = Math.round(18 * baseScale);
   const fontLine2 = Math.round(14 * baseScale);
   const padX = Math.round(22 * baseScale);
   const padY = Math.round(20 * baseScale);
 
   ctx.save();
+  ctx.globalAlpha = Math.max(0.05, Math.min(1.0, opacityVal));
 
   if (pos === 'center') {
     // CHÍNH GIỮA ẢNH (BẢN QUYỀN MỜ NGHIÊNG 30 ĐỘ CHỐNG SAO CHÉP)
@@ -3358,8 +3589,8 @@ window.drawWatermarkOnCanvas = function(ctx, width, height, wmConfig, avoidRect 
 
     const bigFont = Math.round(36 * baseScale);
     ctx.font = `bold ${bigFont}px "Plus Jakarta Sans", sans-serif`;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
     ctx.shadowBlur = 4;
 
     if (line1 && line2) {
@@ -3411,8 +3642,8 @@ window.drawWatermarkOnCanvas = function(ctx, width, height, wmConfig, avoidRect 
       const bH = totalTextH + badgePadY * 2;
       const bR = Math.round(8 * baseScale);
 
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.5)';
       ctx.lineWidth = Math.max(1, Math.round(1.5 * baseScale));
 
       ctx.beginPath();
@@ -3489,20 +3720,8 @@ function confirmCustomExport(overrideIncludeSpecs = null) {
     ? Boolean(overrideIncludeSpecs) 
     : (checkEl ? checkEl.checked : true);
 
-  // Lấy cấu hình Watermark
-  const wmType = currentWatermarkType || 'none';
-  const wmPos = document.getElementById('select-watermark-pos')?.value || 'bottom-right';
-  const wmStyle = document.getElementById('select-watermark-style')?.value || 'badge';
-  const customL1 = document.getElementById('input-wm-line1')?.value?.trim() || 'hacode.vn';
-  const customL2 = document.getElementById('input-wm-line2')?.value?.trim() || '';
-
-  const watermark = {
-    type: wmType,
-    pos: wmPos,
-    style: wmStyle,
-    customText1: customL1,
-    customText2: customL2
-  };
+  // Lấy cấu hình Watermark đầy đủ (loại, vị trí, kiểu, dòng chữ, độ mờ %, cỡ chữ %)
+  const watermark = getCurrentWatermarkConfig();
 
   closeCustomExportModal();
 
@@ -3510,13 +3729,13 @@ function confirmCustomExport(overrideIncludeSpecs = null) {
     if (window.Scene3D && typeof window.Scene3D.exportCustomImage === 'function') {
       window.Scene3D.exportCustomImage({ width, height, format, bgOption, includeSpecs, watermark });
       const modeText = includeSpecs ? 'Kèm Bảng Thông Số' : 'Nguyên Tem 3D';
-      const wmText = wmType !== 'none' ? ' + Watermark' : '';
+      const wmText = watermark.type !== 'none' ? ' + Watermark' : '';
       showPresetToast(`Đã xuất ảnh 3D (${modeText}${wmText}, ${width}x${height} px) thành công!`);
     }
   } else {
     if (window.LabelDesigner && typeof window.LabelDesigner.exportCustomLabelImage === 'function') {
       window.LabelDesigner.exportCustomLabelImage({ width, height, format, bgOption, watermark });
-      const wmText = wmType !== 'none' ? ' + Watermark' : '';
+      const wmText = watermark.type !== 'none' ? ' + Watermark' : '';
       showPresetToast(`Đã xuất ảnh Tem 2D (${width}x${height} px${wmText}) thành công!`);
     }
   }

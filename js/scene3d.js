@@ -549,7 +549,7 @@ window.Scene3D = (function () {
     ctx.restore();
   }
 
-  async function exportCustomImage({ width = 800, height = 800, format = 'png', bgOption = 'studio', quality = 0.95, includeSpecs = null, watermark = null } = {}) {
+  async function exportCustomImage({ width = 800, height = 800, format = 'png', bgOption = 'studio', quality = 0.95, includeSpecs = null, watermark = null, download = true } = {}) {
     if (!renderer || !scene || !camera) return null;
 
     const S = window.AppState;
@@ -669,15 +669,17 @@ window.Scene3D = (function () {
       requestRender(30);
     }
 
-    // 5. Tải file về máy với tên gọi tương ứng chế độ
-    const ext = (format === 'jpeg' || format === 'jpg') ? 'jpg' : 'png';
-    const modeTag = shouldIncludeSpecs ? 'Kem-Thong-So' : 'Nguyen-Tem';
-    const filename = `3D-${modeTag}-${S?.labelWidth || 50}x${S?.labelHeight || 30}mm-${width}x${height}.${ext}`;
+    // 5. Tải file về máy với tên gọi tương ứng chế độ nếu download = true
+    if (download) {
+      const ext = (format === 'jpeg' || format === 'jpg') ? 'jpg' : 'png';
+      const modeTag = shouldIncludeSpecs ? 'Kem-Thong-So' : 'Nguyen-Tem';
+      const filename = `3D-${modeTag}-${S?.labelWidth || 50}x${S?.labelHeight || 30}mm-${width}x${height}.${ext}`;
 
-    const link = document.createElement('a');
-    link.download = filename;
-    link.href = dataURL;
-    link.click();
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = dataURL;
+      link.click();
+    }
 
     return dataURL;
   }

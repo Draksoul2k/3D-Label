@@ -4002,7 +4002,7 @@ window.LabelDesigner = (function () {
     render();
   }
 
-  function exportCustomLabelImage({ width = 800, height = 800, format = 'png', bgOption = 'white', quality = 0.95, watermark = null } = {}) {
+  function exportCustomLabelImage({ width = 800, height = 800, format = 'png', bgOption = 'white', quality = 0.95, watermark = null, download = true } = {}) {
     const offCanvas = document.createElement('canvas');
     offCanvas.width = width;
     offCanvas.height = height;
@@ -4051,14 +4051,16 @@ window.LabelDesigner = (function () {
     const mimeType = (format === 'jpeg' || format === 'jpg') ? 'image/jpeg' : 'image/png';
     const dataURL = offCanvas.toDataURL(mimeType, quality);
 
-    const S = window.AppState;
-    const ext = (format === 'jpeg' || format === 'jpg') ? 'jpg' : 'png';
-    const filename = `Thiet-Ke-Tem-${S?.labelWidth || 50}x${S?.labelHeight || 30}mm-${width}x${height}.${ext}`;
+    if (download) {
+      const S = window.AppState;
+      const ext = (format === 'jpeg' || format === 'jpg') ? 'jpg' : 'png';
+      const filename = `Thiet-Ke-Tem-${S?.labelWidth || 50}x${S?.labelHeight || 30}mm-${width}x${height}.${ext}`;
 
-    const link = document.createElement('a');
-    link.download = filename;
-    link.href = dataURL;
-    link.click();
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = dataURL;
+      link.click();
+    }
 
     return dataURL;
   }
