@@ -23,14 +23,16 @@ window.AppState = {
   coreName: '1 inch',
   rollLength: 50, // mét
   labelCount: 1515, // Tự tính cho 50m tem 30mm
+  lengthMode: 'meter', // 'meter' (chọn theo mét) | 'count' (chọn theo số tem/cuộn)
   webWidth: 54, // Khổ cuộn: 50 + 2*2 = 54mm
   outerDiameter: 98, // Đường kính ngoài cuộn (mm)
   windDirection: 'out_top', // Hướng ra tem
 
   // Màu sắc & Chất liệu & Đặt hàng
   materialType: 'paper_normal', // 'paper_normal', 'paper_thermal', 'pvc', 'silver'
-  leadTimeDays: 3,
-  colorMode: 'white', // 'white', 'blue', 'red', 'custom'
+  statusMode: 'order', // 'ready' (Sẵn hàng) | 'order' (Đặt SX)
+  leadTimeDays: '3 ngày',
+  colorMode: 'white', // 'white', 'yellow', 'blue', 'red', 'preprint', 'custom'
   isPreprint: false, // Bật/tắt tùy chọn in phôi sẵn
   labelColor: '#FFFFFF',
   linerColor: '#FFFFFF', // Trắng tinh sạch sẽ theo yêu cầu
@@ -53,18 +55,18 @@ window.AppState = {
 
   // Trạng thái hiển thị Bảng thông số đặt hàng trên 3D (HUD Spec Card)
   showSpecCard: true,
-  minOrder: 20,       // Đặt hàng tối thiểu (mặc định 20 cuộn, tùy chọn 20 - 30 - tự nhập)
+  minOrder: 20,       // Đặt hàng tối thiểu (mặc định 20 cuộn, tùy chọn None, 20, 30, tự nhập)
   minOrderPreset: '20',
   specToggles: {
-    material: true,   // 1. Chất liệu
-    dimensions: true, // 2. Kích thước
-    spec: true,       // 3. Quy cách (Bo góc & Số hàng)
+    material: true,   // 1. Chất liệu (mặc định luôn có)
+    dimensions: true, // 2. Kích thước (mặc định luôn có)
+    spec: true,       // 3. Quy cách (mặc định luôn có)
     rollLength: true, // 4. Chiều dài cuộn (m)
     count: true,      // 5. Số tem ước tính
     core: true,       // 6. Lõi cuộn
     color: true,      // 7. Màu nền
     minOrder: true,   // 8. Đặt hàng tối thiểu (MOQ)
-    leadTime: true    // 9. Thời gian SX
+    leadTime: true    // 9. Tình trạng hàng
   },
 
   // Cỡ chữ và tỉ lệ hiển thị tuỳ biến
@@ -468,23 +470,58 @@ function updateHUDAndBadges() {
 
   // 6. Màu nền preview
   const badgeColor = document.getElementById('badge-color-preview');
-  if (badgeColor) badgeColor.style.backgroundColor = S.labelColor;
-
-  // 7. Thời gian sản xuất
-  const badgeLeadTime = document.getElementById('badge-lead-time');
-  const ltStr = S.leadTimeDays ? String(S.leadTimeDays).trim() : '';
-  const leadTimeDisplay = ltStr ? (ltStr.toLowerCase().includes('ngày') ? ltStr : `${ltStr} ngày`) : '';
-
-  if (badgeLeadTime) {
-    badgeLeadTime.textContent = leadTimeDisplay || 'Chưa nhập';
+  if (badgeColor) {
+    if (S.isPreprint || S.colorMode === 'preprint') {
+      badgeColor.style.backgroundColor = '#fbbf24';
+      badgeColor.title = 'In phôi sẵn';
+    } else {
+      badgeColor.style.backgroundColor = S.labelColor || '#FFFFFF';
+      badgeColor.title = S.labelColor;
+    }
   }
 
-  // Cập nhật giá trị tính toán
+  // 7. Tình trạng hàng (Sẵn hàng vs Đặt SX)
+  const badgeLeadTime = document.getElementById('badge-lead-time');
+  const ltStr = S.leadTimeDays ? String(S.leadTimeDays).trim() : '3 ngày';
+  const hasUnit = /ngày|tuần|tháng|hôm/i.test(ltStr);
+  const ltDisplay = hasUnit ? ltStr : `${ltStr} ngày`;
+  const statusDisplay = (S.statusMode === 'ready') ? 'Sẵn hàng' : `Đặt SX: ${ltDisplay}`;
+
+  if (badgeLeadTime) {
+    badgeLeadTime.textContent = statusDisplay;
+    badgeLeadTime.className = S.statusMode === 'ready'
+      ? 'text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800'
+      : 'text-[11px] font-bold px-2 py-0.5 rounded bg-teal-950 text-teal-300 border border-teal-800';
+  }
+
+  // Cập nhật giá trị tính toán & tổng quan cuộn
   const calcWebWidth = document.getElementById('calc-web-width');
   if (calcWebWidth) calcWebWidth.textContent = `${S.webWidth.toFixed(1)} mm`;
 
   const calcOD = document.getElementById('calc-outer-diameter');
   if (calcOD) calcOD.textContent = `~${S.outerDiameter} mm`;
+
+  const badgeODEstCount = document.getElementById('badge-od-est-count');
+  if (badgeODEstCount) badgeODEstCount.textContent = `OD: ~${S.outerDiameter}mm`;
+
+  const badgeLenMode = document.getElementById('badge-length-mode');
+  if (badgeLenMode) badgeLenMode.textContent = S.lengthMode === 'count' ? 'Theo số tem' : 'Theo mét';
+
+  const countFormatted = S.labelCount ? S.labelCount.toLocaleString('vi-VN') : '0';
+  const textEstLabelCount = document.getElementById('text-est-label-count');
+  if (textEstLabelCount) textEstLabelCount.textContent = `~${countFormatted} tem`;
+
+  const textEstMeterLength = document.getElementById('text-est-meter-length');
+  if (textEstMeterLength) textEstMeterLength.textContent = `~${S.rollLength || 0} m / cuộn`;
+
+  const badgeLabelCountEst = document.getElementById('badge-label-count-est');
+  if (badgeLabelCountEst) {
+    if (S.lengthMode === 'count') {
+      badgeLabelCountEst.textContent = `${countFormatted} tem (~${S.rollLength || 0}m)`;
+    } else {
+      badgeLabelCountEst.textContent = `${S.rollLength || 0}m (~${countFormatted} tem)`;
+    }
+  }
 
   // =========================================================
   // CẬP NHẬT NỘI DUNG THẺ THÔNG SỐ ĐẶT HÀNG TRÊN 3D (#hud-spec-card)
@@ -493,7 +530,7 @@ function updateHUDAndBadges() {
   if (hudSpecBadgeDays) {
     if (shouldShowSpecRow('leadTime', S)) {
       hudSpecBadgeDays.style.display = '';
-      hudSpecBadgeDays.textContent = `SX: ${leadTimeDisplay}`;
+      hudSpecBadgeDays.textContent = statusDisplay;
     } else {
       hudSpecBadgeDays.style.display = 'none';
     }
@@ -509,10 +546,18 @@ function updateHUDAndBadges() {
   if (hudValSpec) hudValSpec.textContent = `${cornerStr} - ${S.ups} tem/hàng`;
 
   const hudValLength = document.getElementById('hud-val-length');
-  if (hudValLength) hudValLength.textContent = `${S.rollLength}m / cuộn`;
+  if (hudValLength) {
+    hudValLength.textContent = (S.lengthMode === 'count' && S.rollLength)
+      ? `~${S.rollLength}m / cuộn`
+      : `${S.rollLength}m / cuộn`;
+  }
 
   const hudValCount = document.getElementById('hud-val-count');
-  if (hudValCount) hudValCount.textContent = `khoảng ${S.labelCount ? S.labelCount.toLocaleString('vi-VN') : ''} tem`;
+  if (hudValCount) {
+    hudValCount.textContent = (S.lengthMode === 'count' && S.labelCount)
+      ? `${countFormatted} tem / cuộn`
+      : `khoảng ${countFormatted} tem`;
+  }
 
   const hudValCore = document.getElementById('hud-val-core');
   if (hudValCore) {
@@ -525,23 +570,40 @@ function updateHUDAndBadges() {
   const hudColorDot = document.getElementById('hud-color-dot');
   const hudTagPreprint = document.getElementById('hud-tag-preprint');
 
-  if (hudValColor) {
-    if (S.colorMode === 'white' || (S.labelColor && S.labelColor.toUpperCase() === '#FFFFFF')) {
-      hudValColor.textContent = 'Trắng';
-    } else if (S.colorMode === 'blue' || (S.labelColor && S.labelColor.toUpperCase() === '#2563EB')) {
-      hudValColor.textContent = 'Xanh';
-    } else if (S.colorMode === 'red' || (S.labelColor && S.labelColor.toUpperCase() === '#DC2626')) {
-      hudValColor.textContent = 'Đỏ';
-    } else {
-      hudValColor.textContent = S.labelColor;
+  if (S.isPreprint || S.colorMode === 'preprint') {
+    // KHI BẬT IN PHÔI SẴN: CHỈ HIỂN THỊ "In phôi sẵn", ẨN HOÀN TOÀN CHẤM MÀU VÀ KHÔNG HIỆN MÀU KHÁC
+    if (hudValColor) {
+      hudValColor.textContent = 'In phôi sẵn';
+      hudValColor.className = 'hud-value font-semibold text-amber-300 text-left';
     }
-  }
-  if (hudColorDot) {
-    hudColorDot.style.display = '';
-    hudColorDot.style.backgroundColor = S.labelColor || '#FFFFFF';
-  }
-  if (hudTagPreprint) {
-    hudTagPreprint.style.display = S.isPreprint ? 'inline-flex' : 'none';
+    if (hudColorDot) {
+      hudColorDot.style.display = 'none';
+    }
+    if (hudTagPreprint) {
+      hudTagPreprint.style.display = 'none';
+    }
+  } else {
+    if (hudColorDot) {
+      hudColorDot.style.display = 'inline-block';
+      hudColorDot.style.backgroundColor = S.labelColor || '#FFFFFF';
+    }
+    if (hudValColor) {
+      hudValColor.className = 'hud-value font-semibold text-pink-300 text-left';
+      if (S.colorMode === 'white' || (S.labelColor && S.labelColor.toUpperCase() === '#FFFFFF')) {
+        hudValColor.textContent = 'Trắng';
+      } else if (S.colorMode === 'yellow' || (S.labelColor && S.labelColor.toUpperCase() === '#FACC15')) {
+        hudValColor.textContent = 'Vàng';
+      } else if (S.colorMode === 'blue' || (S.labelColor && S.labelColor.toUpperCase() === '#2563EB')) {
+        hudValColor.textContent = 'Xanh';
+      } else if (S.colorMode === 'red' || (S.labelColor && S.labelColor.toUpperCase() === '#DC2626')) {
+        hudValColor.textContent = 'Đỏ';
+      } else {
+        hudValColor.textContent = S.labelColor;
+      }
+    }
+    if (hudTagPreprint) {
+      hudTagPreprint.style.display = 'none';
+    }
   }
 
   const hudValMinOrder = document.getElementById('hud-val-minorder');
@@ -549,11 +611,20 @@ function updateHUDAndBadges() {
 
   const badgeMinOrder = document.getElementById('badge-min-order');
   if (badgeMinOrder) {
-    badgeMinOrder.textContent = (S.minOrder && Number(S.minOrder) > 0) ? `${S.minOrder} cuộn` : 'Chưa nhập';
+    if (S.minOrder === null || S.minOrder === 'none' || Number(S.minOrder) <= 0) {
+      badgeMinOrder.textContent = 'None';
+    } else {
+      badgeMinOrder.textContent = `${S.minOrder} cuộn`;
+    }
   }
 
   const hudValLead = document.getElementById('hud-val-leadtime');
-  if (hudValLead) hudValLead.textContent = leadTimeDisplay || 'Chưa nhập';
+  if (hudValLead) {
+    hudValLead.textContent = statusDisplay || 'Sẵn hàng';
+    hudValLead.className = S.statusMode === 'ready'
+      ? 'hud-value font-semibold text-emerald-400 text-left'
+      : 'hud-value font-semibold text-teal-300 text-left';
+  }
 
   // HUD cũ (nếu còn tồn tại)
   const hudLabelSize = document.getElementById('hud-label-size');
@@ -574,7 +645,7 @@ function updateHUDAndBadges() {
  * KIỂM TRA MỘT HÀNG THÔNG SỐ CÓ ĐƯỢC HIỂN THỊ HAY KHÔNG
  * Điều kiện hiển thị:
  * 1. Không bị tắt trong menu tùy biến (S.specToggles[key] !== false)
- * 2. Người dùng ĐÃ NHẬP LIỆU (không bị rỗng, null, undefined hoặc <= 0)
+ * 2. Người dùng ĐÃ NHẬP LIỆU (nếu để trống hoặc = 0 hoặc None thì ẩn)
  * @param {string} key - Tên trường thông số
  * @param {object} [state] - Đối tượng AppState (mặc định lấy window.AppState)
  * @returns {boolean}
@@ -587,7 +658,7 @@ function shouldShowSpecRow(key, state) {
   const toggles = S.specToggles || {};
   if (toggles[key] === false) return false;
 
-  // 2. Kiểm tra dữ liệu thực tế người dùng nhập (nếu để trống hoặc = 0 thì ẩn)
+  // 2. Kiểm tra dữ liệu thực tế người dùng nhập (nếu để trống hoặc = 0 hoặc None thì ẩn)
   switch (key) {
     case 'material':
       return Boolean(S.materialType && S.materialType.trim() !== '');
@@ -602,10 +673,11 @@ function shouldShowSpecRow(key, state) {
     case 'core':
       return Boolean(S.coreDiameter && Number(S.coreDiameter) > 0 && S.coreName);
     case 'color':
-      return Boolean(S.labelColor && S.labelColor.trim() !== '');
+      return Boolean(S.isPreprint || S.colorMode === 'preprint' || (S.labelColor && S.labelColor.trim() !== ''));
     case 'minOrder':
-      return Boolean(S.minOrder !== null && S.minOrder !== undefined && S.minOrder !== '' && Number(S.minOrder) > 0);
+      return Boolean(S.minOrder !== null && S.minOrder !== undefined && S.minOrder !== '' && S.minOrder !== 'none' && Number(S.minOrder) > 0);
     case 'leadTime':
+      if (S.statusMode === 'ready') return true;
       return Boolean(S.leadTimeDays !== null && S.leadTimeDays !== undefined && String(S.leadTimeDays).trim() !== '' && String(S.leadTimeDays).trim() !== '0');
     default:
       return true;
@@ -1172,10 +1244,52 @@ function initEventListeners() {
   });
 
   // =========================================================
-  // SECTION 4: CHIỀU DÀI CUỘN & SỐ TEM (ĐỒNG BỘ 2 CHIỀU THÔNG MINH)
+  // SECTION 4: CHIỀU DÀI CUỘN & SỐ TEM (2 TÙY CHỌN: THEO MÉT HOẶC THEO SỐ TEM)
   // =========================================================
+  const btnModeMeter = document.getElementById('btn-mode-meter');
+  const btnModeCount = document.getElementById('btn-mode-count');
+  const wrapperModeMeter = document.getElementById('wrapper-mode-meter');
+  const wrapperModeCount = document.getElementById('wrapper-mode-count');
   const inputRollLength = document.getElementById('input-roll-length');
   const inputLabelCount = document.getElementById('input-label-count');
+
+  function setLengthMode(mode) {
+    S.lengthMode = mode; // 'meter' hoặc 'count'
+    const isMeter = mode === 'meter';
+
+    if (btnModeMeter) {
+      btnModeMeter.classList.toggle('active', isMeter);
+      btnModeMeter.classList.toggle('bg-amber-600', isMeter);
+      btnModeMeter.classList.toggle('text-white', isMeter);
+      btnModeMeter.classList.toggle('font-bold', isMeter);
+      btnModeMeter.classList.toggle('bg-transparent', !isMeter);
+      btnModeMeter.classList.toggle('text-slate-300', !isMeter);
+    }
+    if (btnModeCount) {
+      btnModeCount.classList.toggle('active', !isMeter);
+      btnModeCount.classList.toggle('bg-amber-600', !isMeter);
+      btnModeCount.classList.toggle('text-white', !isMeter);
+      btnModeCount.classList.toggle('font-bold', !isMeter);
+      btnModeCount.classList.toggle('bg-transparent', isMeter);
+      btnModeCount.classList.toggle('text-slate-300', isMeter);
+    }
+
+    if (wrapperModeMeter) wrapperModeMeter.classList.toggle('hidden', !isMeter);
+    if (wrapperModeCount) wrapperModeCount.classList.toggle('hidden', isMeter);
+
+    updateHUDAndBadges();
+  }
+
+  if (btnModeMeter) btnModeMeter.addEventListener('click', () => setLengthMode('meter'));
+  if (btnModeCount) {
+    btnModeCount.addEventListener('click', () => {
+      setLengthMode('count');
+      if (inputLabelCount) {
+        inputLabelCount.focus();
+        inputLabelCount.select();
+      }
+    });
+  }
 
   function syncRollLengthFromCount(count, fromInput = false) {
     if (count === '' || count === null || count === undefined) {
@@ -1199,18 +1313,7 @@ function initEventListeners() {
       }
     }
 
-    // Cập nhật active preset chiều dài
-    document.querySelectorAll('.length-btn').forEach(b => {
-      const isThis = S.rollLength !== null && parseInt(b.dataset.m) === S.rollLength;
-      b.classList.toggle('active', isThis);
-      b.classList.toggle('bg-amber-600', isThis);
-      b.classList.toggle('text-white', isThis);
-      b.classList.toggle('border-amber-500', isThis);
-      b.classList.toggle('font-bold', isThis);
-      b.classList.toggle('bg-slate-800', !isThis);
-      b.classList.toggle('text-slate-300', !isThis);
-    });
-
+    updateLengthButtonsUI();
     onParamsChanged();
   }
 
@@ -1236,9 +1339,19 @@ function initEventListeners() {
       }
     }
 
-    // Cập nhật active preset chiều dài
+    updateLengthButtonsUI();
+    onParamsChanged();
+  }
+
+  function updateLengthButtonsUI() {
     document.querySelectorAll('.length-btn').forEach(b => {
-      const isThis = S.rollLength !== null && parseInt(b.dataset.m) === S.rollLength;
+      const bM = b.dataset.m;
+      let isThis = false;
+      if (bM === 'custom') {
+        isThis = S.rollLength !== null && ![30, 50, 100, 150].includes(S.rollLength);
+      } else {
+        isThis = S.rollLength !== null && parseInt(bM) === S.rollLength;
+      }
       b.classList.toggle('active', isThis);
       b.classList.toggle('bg-amber-600', isThis);
       b.classList.toggle('text-white', isThis);
@@ -1247,8 +1360,6 @@ function initEventListeners() {
       b.classList.toggle('bg-slate-800', !isThis);
       b.classList.toggle('text-slate-300', !isThis);
     });
-
-    onParamsChanged();
   }
 
   if (inputRollLength) {
@@ -1263,12 +1374,21 @@ function initEventListeners() {
     });
   }
 
-  // Nút chọn nhanh chiều dài (30m, 50m, 100m)
+  // Nút chọn nhanh chiều dài (30m, 50m, 100m, 150m, Tự nhập)
   document.querySelectorAll('.length-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const m = parseInt(btn.dataset.m);
-      if (inputRollLength) inputRollLength.value = m;
-      syncCountFromRollLength(m, false);
+      const mVal = btn.dataset.m;
+      if (mVal === 'custom') {
+        if (inputRollLength) {
+          inputRollLength.focus();
+          inputRollLength.select();
+        }
+        updateLengthButtonsUI();
+      } else {
+        const m = parseInt(mVal);
+        if (inputRollLength) inputRollLength.value = m;
+        syncCountFromRollLength(m, false);
+      }
     });
   });
 
@@ -1312,38 +1432,53 @@ function initEventListeners() {
   }
 
   // =========================================================
-  // SECTION 6: MÀU NỀN CON TEM (TRẮNG, XANH, ĐỎ, PHÔI SẴN & HEX)
+  // SECTION 6: MÀU NỀN CON TEM (TRẮNG, VÀNG, XANH, ĐỎ, IN PHÔI SẴN & HEX)
   // =========================================================
   const pickerColor = document.getElementById('picker-label-color');
   const inputHex = document.getElementById('input-hex-color');
 
   function setLabelColor(hex, mode = null) {
-    if (!hex.startsWith('#')) hex = '#' + hex;
-    if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
-      S.labelColor = hex.toUpperCase();
-      if (mode) S.colorMode = mode;
-      else {
-        if (S.labelColor === '#FFFFFF') S.colorMode = 'white';
-        else if (S.labelColor === '#2563EB') S.colorMode = 'blue';
-        else if (S.labelColor === '#DC2626') S.colorMode = 'red';
-        else S.colorMode = 'custom';
+    if (mode === 'preprint') {
+      S.isPreprint = true;
+      S.colorMode = 'preprint';
+    } else {
+      S.isPreprint = false;
+      if (!hex.startsWith('#')) hex = '#' + hex;
+      if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+        S.labelColor = hex.toUpperCase();
+        if (mode) S.colorMode = mode;
+        else {
+          if (S.labelColor === '#FFFFFF') S.colorMode = 'white';
+          else if (S.labelColor === '#FACC15') S.colorMode = 'yellow';
+          else if (S.labelColor === '#2563EB') S.colorMode = 'blue';
+          else if (S.labelColor === '#DC2626') S.colorMode = 'red';
+          else S.colorMode = 'custom';
+        }
       }
-
-      if (pickerColor) pickerColor.value = S.labelColor;
-      if (inputHex) inputHex.value = S.labelColor.replace('#', '');
-
-      // Cập nhật active mode buttons
-      document.querySelectorAll('.color-mode-btn').forEach(b => {
-        const isMatch = b.dataset.mode === S.colorMode;
-        b.classList.toggle('ring-2', isMatch);
-        b.classList.toggle('ring-blue-400', isMatch);
-      });
-
-      updateHUDAndBadges();
-      if (window.LabelDesigner) window.LabelDesigner.setBaseColor(S.labelColor);
-      if (window.Roll3D) window.Roll3D.updateMaterials();
-      if (window.Blueprint2D) window.Blueprint2D.render();
     }
+
+    if (pickerColor && S.labelColor) pickerColor.value = S.labelColor;
+    if (inputHex && S.labelColor) inputHex.value = S.labelColor.replace('#', '');
+
+    // Cập nhật active mode buttons (5 nút: Trắng, Vàng, Xanh, Đỏ, In phôi sẵn)
+    document.querySelectorAll('.color-mode-btn').forEach(b => {
+      const isMatch = b.dataset.mode === S.colorMode;
+      b.classList.toggle('ring-2', isMatch);
+      b.classList.toggle('ring-blue-400', isMatch);
+      b.classList.toggle('scale-105', isMatch);
+      if (b.dataset.mode === 'preprint') {
+        b.classList.toggle('bg-amber-600', isMatch);
+        b.classList.toggle('text-white', isMatch);
+        b.classList.toggle('border-amber-400', isMatch);
+        b.classList.toggle('bg-slate-800', !isMatch);
+        b.classList.toggle('text-amber-300', !isMatch);
+      }
+    });
+
+    updateHUDAndBadges();
+    if (window.LabelDesigner) window.LabelDesigner.setBaseColor(S.labelColor);
+    if (window.Roll3D) window.Roll3D.updateMaterials();
+    if (window.Blueprint2D) window.Blueprint2D.render();
   }
   window.setLabelColor = setLabelColor;
 
@@ -1357,7 +1492,7 @@ function initEventListeners() {
     });
   }
 
-  // 3 Nút màu nhanh theo yêu cầu: Trắng, Xanh, Đỏ
+  // 5 Nút màu chọn nhanh: Trắng, Vàng, Xanh, Đỏ, In phôi sẵn
   document.querySelectorAll('.color-mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const mode = btn.dataset.mode;
@@ -1366,39 +1501,40 @@ function initEventListeners() {
     });
   });
 
-  // Nút Bật / Tắt Tùy chọn In phôi sẵn (Độc lập với màu nền)
-  const btnTogglePreprint = document.getElementById('btn-toggle-preprint');
-  function updatePreprintUI() {
-    if (!btnTogglePreprint) return;
-    const active = Boolean(S.isPreprint);
-    btnTogglePreprint.classList.toggle('active', active);
-    btnTogglePreprint.classList.toggle('bg-amber-600', active);
-    btnTogglePreprint.classList.toggle('text-white', active);
-    btnTogglePreprint.classList.toggle('border-amber-400', active);
-    btnTogglePreprint.classList.toggle('shadow-md', active);
-    btnTogglePreprint.classList.toggle('ring-1', active);
-    btnTogglePreprint.classList.toggle('ring-amber-300', active);
-
-    btnTogglePreprint.classList.toggle('bg-slate-800', !active);
-    btnTogglePreprint.classList.toggle('text-amber-300', !active);
-    btnTogglePreprint.classList.toggle('border-amber-500/60', !active);
-    btnTogglePreprint.classList.toggle('hover:bg-slate-700', !active);
-  }
-  window.updatePreprintUI = updatePreprintUI;
-
-  if (btnTogglePreprint) {
-    btnTogglePreprint.addEventListener('click', () => {
-      S.isPreprint = !S.isPreprint;
-      updatePreprintUI();
-      updateHUDAndBadges();
-      if (window.Blueprint2D) window.Blueprint2D.render();
-    });
-  }
-
   // =========================================================
-  // SECTION 7: THỜI GIAN SẢN XUẤT (1 NGÀY, 2 NGÀY, 3 NGÀY, 3-4 NGÀY, TỰ NHẬP TEXT)
+  // SECTION 7: TÌNH TRẠNG HÀNG (SẴN HÀNG / ĐẶT SX & SỐ NGÀY)
   // =========================================================
+  const wrapperLeadtimeDays = document.getElementById('wrapper-leadtime-days');
   const inputLeadTime = document.getElementById('input-lead-time');
+
+  function setStatusMode(mode) {
+    S.statusMode = mode; // 'ready' hoặc 'order'
+    const isReady = mode === 'ready';
+
+    document.querySelectorAll('.status-mode-btn').forEach(b => {
+      const isThis = b.dataset.mode === mode;
+      b.classList.toggle('active', isThis);
+      b.classList.toggle(isReady ? 'bg-emerald-600' : 'bg-teal-600', isThis);
+      b.classList.toggle('text-white', isThis);
+      b.classList.toggle('border-emerald-500', isThis && isReady);
+      b.classList.toggle('border-teal-500', isThis && !isReady);
+      b.classList.toggle('font-bold', isThis);
+      b.classList.toggle('bg-slate-800', !isThis);
+      b.classList.toggle('text-slate-300', !isThis);
+    });
+
+    if (wrapperLeadtimeDays) {
+      wrapperLeadtimeDays.classList.toggle('hidden', isReady);
+    }
+
+    updateHUDAndBadges();
+  }
+
+  document.querySelectorAll('.status-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setStatusMode(btn.dataset.mode);
+    });
+  });
 
   function setLeadTime(days, fromInput = false) {
     if (days === '' || days === null || days === undefined) {
@@ -1418,9 +1554,7 @@ function initEventListeners() {
     const currentVal = S.leadTimeDays ? String(S.leadTimeDays).trim().toLowerCase() : '';
     document.querySelectorAll('.leadtime-btn').forEach(b => {
       const bDays = (b.dataset.days || '').trim().toLowerCase();
-      const bDaysNoUnit = bDays.replace(/\s*ngày/g, '').trim();
-      const currentValNoUnit = currentVal.replace(/\s*ngày/g, '').trim();
-      const isThis = currentVal !== '' && (bDays === currentVal || bDaysNoUnit === currentValNoUnit);
+      const isThis = currentVal !== '' && (bDays === currentVal);
       b.classList.toggle('active', isThis);
       b.classList.toggle('bg-teal-600', isThis);
       b.classList.toggle('text-white', isThis);
@@ -1444,36 +1578,38 @@ function initEventListeners() {
     inputLeadTime.addEventListener('input', (e) => {
       setLeadTime(e.target.value, true);
     });
-    inputLeadTime.addEventListener('blur', (e) => {
-      let val = e.target.value.trim();
-      if (val && /^\d+(-\d+)?$/.test(val)) {
-        val = `${val} ngày`;
-        setLeadTime(val, false);
-      }
-    });
   }
 
-  // 8B. ĐẶT HÀNG TỐI THIỂU (MOQ)
+  // =========================================================
+  // SECTION 8: ĐẶT HÀNG TỐI THIỂU (NONE, 20, 30, TỰ NHẬP)
+  // =========================================================
   const inputMinOrder = document.getElementById('input-min-order');
+  const wrapperInputMinorder = document.getElementById('wrapper-input-minorder');
+
   function setMinOrder(val, isPresetClick = false, fromInput = false) {
-    if (val === '' || val === null || val === undefined) {
+    if (val === 'none' || val === null || val === undefined || val === '') {
       S.minOrder = null;
       if (inputMinOrder && !fromInput) inputMinOrder.value = '';
+      if (wrapperInputMinorder) wrapperInputMinorder.classList.add('opacity-40');
     } else {
       const num = parseInt(val);
       if (isNaN(num) || num <= 0) {
         S.minOrder = null;
         if (inputMinOrder && !fromInput) inputMinOrder.value = '';
+        if (wrapperInputMinorder) wrapperInputMinorder.classList.add('opacity-40');
       } else {
         S.minOrder = num;
         if (inputMinOrder && !fromInput && !isPresetClick) inputMinOrder.value = num;
+        if (wrapperInputMinorder) wrapperInputMinorder.classList.remove('opacity-40');
       }
     }
 
     document.querySelectorAll('.minorder-btn').forEach(b => {
       const bVal = b.dataset.val;
       let isThis = false;
-      if (S.minOrder !== null) {
+      if (bVal === 'none') {
+        isThis = S.minOrder === null;
+      } else if (S.minOrder !== null) {
         if (bVal === 'custom') {
           isThis = (S.minOrder !== 20 && S.minOrder !== 30);
         } else {
@@ -1496,7 +1632,10 @@ function initEventListeners() {
   document.querySelectorAll('.minorder-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const val = btn.dataset.val;
-      if (val === 'custom') {
+      if (val === 'none') {
+        setMinOrder('none', true, false);
+      } else if (val === 'custom') {
+        if (wrapperInputMinorder) wrapperInputMinorder.classList.remove('opacity-40');
         if (inputMinOrder) {
           inputMinOrder.focus();
           inputMinOrder.select();
@@ -1953,27 +2092,32 @@ function initEventListeners() {
       lines.push(`• Quy cách: ${cornerStr} - ${S.ups} tem/hàng`);
     }
     if (shouldShowSpecRow('rollLength', S)) {
-      lines.push(`• Chiều dài cuộn: ${S.rollLength}m / cuộn`);
+      const lenStr = (S.lengthMode === 'count' && S.rollLength) ? `~${S.rollLength}m / cuộn` : `${S.rollLength}m / cuộn`;
+      lines.push(`• Chiều dài cuộn: ${lenStr}`);
     }
     if (shouldShowSpecRow('count', S)) {
-      lines.push(`• Số tem ước tính: khoảng ${S.labelCount ? S.labelCount.toLocaleString('vi-VN') : ''} tem / cuộn`);
+      const countStr = S.labelCount ? S.labelCount.toLocaleString('vi-VN') : '';
+      const cLabel = (S.lengthMode === 'count') ? `• Số tem / cuộn: ${countStr} tem` : `• Số tem ước tính: khoảng ${countStr} tem / cuộn`;
+      lines.push(cLabel);
     }
     if (shouldShowSpecRow('core', S)) {
       const coreStr = S.coreName.includes('inch') ? `${S.coreName} (${S.coreDiameter.toFixed(1)}mm)` : `Lõi ${S.coreDiameter.toFixed(0)}mm`;
       lines.push(`• Lõi cuộn: ${coreStr}`);
     }
     if (shouldShowSpecRow('color', S)) {
-      const colName = S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : S.labelColor));
-      const fullColorText = S.isPreprint ? `${colName} (In phôi sẵn)` : colName;
-      lines.push(`• Màu nền: ${fullColorText}`);
+      if (S.isPreprint || S.colorMode === 'preprint') {
+        lines.push('• Màu nền: In phôi sẵn');
+      } else {
+        const colName = S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'yellow' ? 'Vàng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : S.labelColor)));
+        lines.push(`• Màu nền: ${colName}`);
+      }
     }
     if (shouldShowSpecRow('minOrder', S)) {
       lines.push(`• Đặt hàng tối thiểu: ${S.minOrder} cuộn`);
     }
     if (shouldShowSpecRow('leadTime', S)) {
-      const ltStr = S.leadTimeDays ? String(S.leadTimeDays).trim() : '';
-      const ltDisplay = ltStr.toLowerCase().includes('ngày') ? ltStr : `${ltStr} ngày`;
-      lines.push(`• Thời gian SX: ${ltDisplay}`);
+      const statusText = (S.statusMode === 'ready') ? 'Sẵn hàng' : `Đặt SX (${S.leadTimeDays || '3 ngày'})`;
+      lines.push(`• Tình trạng: ${statusText}`);
     }
 
     const fullText = lines.join('\n');

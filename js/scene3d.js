@@ -412,27 +412,39 @@ window.Scene3D = (function () {
       rows.push({ label: 'Quy cách:', val: `${cornerStr} - ${S.ups} tem/hàng`, valColor: '#a5b4fc' });
     }
     if (checkShow('rollLength')) {
-      rows.push({ label: 'Chiều dài cuộn:', val: `${S.rollLength}m / cuộn`, valColor: '#fbbf24', bold: true });
+      const lenStr = (S.lengthMode === 'count' && S.rollLength) ? `~${S.rollLength}m / cuộn` : `${S.rollLength}m / cuộn`;
+      rows.push({ label: 'Chiều dài cuộn:', val: lenStr, valColor: '#fbbf24', bold: true });
     }
     if (checkShow('count')) {
-      rows.push({ label: 'Số tem ước tính:', val: `khoảng ${S.labelCount?.toLocaleString('vi-VN') || ''} tem`, valColor: '#67e8f9', bold: true });
+      const countStr = S.labelCount?.toLocaleString('vi-VN') || '';
+      const cLabel = (S.lengthMode === 'count') ? 'Số tem / cuộn:' : 'Số tem ước tính:';
+      const cVal = (S.lengthMode === 'count') ? `${countStr} tem` : `khoảng ${countStr} tem`;
+      rows.push({ label: cLabel, val: cVal, valColor: '#67e8f9', bold: true });
     }
     if (checkShow('core')) {
       const coreStr = S.coreName?.includes('inch') ? `${S.coreName} (${S.coreDiameter?.toFixed(1)}mm)` : `Lõi ${S.coreDiameter?.toFixed(0)}mm`;
       rows.push({ label: 'Lõi cuộn:', val: coreStr, valColor: '#fbbf24' });
     }
     if (checkShow('color')) {
-      const colName = S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : S.labelColor));
-      const valStr = S.isPreprint ? `${colName} (In phôi sẵn)` : colName;
-      rows.push({ label: 'Màu nền:', val: valStr, valColor: '#f472b6', dot: S.labelColor || '#ffffff' });
+      if (S.isPreprint || S.colorMode === 'preprint') {
+        rows.push({ label: 'Màu nền:', val: 'In phôi sẵn', valColor: '#fbbf24', bold: true });
+      } else {
+        const colName = S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'yellow' ? 'Vàng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : S.labelColor)));
+        rows.push({ label: 'Màu nền:', val: colName, valColor: '#f472b6', dot: S.labelColor || '#ffffff' });
+      }
     }
     if (checkShow('minOrder')) {
       rows.push({ label: 'Đặt hàng tối thiểu:', val: `${S.minOrder} cuộn`, valColor: '#c084fc', bold: true });
     }
     if (checkShow('leadTime')) {
-      const str = String(S.leadTimeDays).trim();
-      const hasUnit = /ngày|tuần|tháng|hôm/i.test(str);
-      rows.push({ label: 'Thời gian SX:', val: hasUnit ? str : `${str} ngày`, valColor: '#5eead4' });
+      if (S.statusMode === 'ready') {
+        rows.push({ label: 'Tình trạng:', val: 'Sẵn hàng', valColor: '#34d399', bold: true });
+      } else {
+        const str = String(S.leadTimeDays || '3 ngày').trim();
+        const hasUnit = /ngày|tuần|tháng|hôm/i.test(str);
+        const dayStr = hasUnit ? str : `${str} ngày`;
+        rows.push({ label: 'Tình trạng:', val: `Đặt SX (${dayStr})`, valColor: '#5eead4' });
+      }
     }
 
     const rowCount = rows.length;

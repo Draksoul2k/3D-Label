@@ -58,13 +58,12 @@ window.ExportProof = (function () {
     if (windCell) windCell.textContent = getWindDirectionText(S.windDirection);
 
     const matName = getMaterialName(S.materialType || S.materialFinish);
-    const colName = S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : S.labelColor));
-    const colorText = S.isPreprint ? `${colName} (In phôi sẵn)` : colName;
+    const colName = S.colorMode === 'white' ? 'Trắng' : (S.colorMode === 'yellow' ? 'Vàng' : (S.colorMode === 'blue' ? 'Xanh' : (S.colorMode === 'red' ? 'Đỏ' : S.labelColor)));
+    const colorText = (S.isPreprint || S.colorMode === 'preprint') ? 'In phôi sẵn' : colName;
     const tableMaterial = document.getElementById('table-material');
     if (tableMaterial) {
-      const ltStr = S.leadTimeDays ? String(S.leadTimeDays).trim() : '3';
-      const ltDisplay = ltStr.toLowerCase().includes('ngày') ? ltStr : `${ltStr} ngày`;
-      tableMaterial.textContent = `${matName} | Màu nền: ${colorText} | Thời gian SX: ${ltDisplay}`;
+      const statusText = (S.statusMode === 'ready') ? 'Sẵn hàng' : `Đặt SX: ${S.leadTimeDays || '3 ngày'}`;
+      tableMaterial.textContent = `${matName} | Màu nền: ${colorText} | Tình trạng: ${statusText}`;
     }
 
     // Chụp hình 3D phối cảnh

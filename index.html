@@ -281,46 +281,75 @@
           </div>
         </div>
 
-        <!-- SECTION 4: CHIỀU DÀI CUỘN & SỐ TEM ƯỚC TÍNH (HAI CHIỀU THÔNG MINH) -->
+        <!-- SECTION 4: CHIỀU DÀI CUỘN & SỐ TEM (2 TÙY CHỌN: THEO MÉT HOẶC SỐ TEM) -->
         <div class="bg-slate-800/60 rounded-xl p-3 border border-slate-700/60 space-y-3">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-              <i class="fa-solid fa-tape"></i> 4. Chiều Dài & Số Tem Cuộn
+              <i class="fa-solid fa-tape"></i> 4. Chiều Dài Cuộn
             </span>
-            <span class="text-[9px] text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/60 font-semibold">Đặt theo mét hoặc theo tem</span>
+            <span id="badge-length-mode" class="text-[9px] text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/60 font-semibold">Theo mét</span>
           </div>
 
-          <!-- Nút chọn nhanh chiều dài -->
-          <div>
+          <!-- Segment switch: Chọn theo mét vs Số tem/cuộn -->
+          <div class="grid grid-cols-2 gap-1 bg-slate-900/90 p-1 rounded-lg border border-slate-700/80">
+            <button type="button" id="btn-mode-meter" class="length-mode-tab active py-1 rounded text-xs font-bold bg-amber-600 text-white transition flex items-center justify-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-ruler-horizontal text-[10px]"></i> Theo mét
+            </button>
+            <button type="button" id="btn-mode-count" class="length-mode-tab py-1 rounded text-xs font-medium bg-transparent text-slate-300 hover:text-white transition flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-calculator text-[10px]"></i> Số tem / cuộn
+            </button>
+          </div>
+
+          <!-- KHỐI 1: CHỌN THEO MÉT (30m, 50m, 100m, 150m, Tự nhập) -->
+          <div id="wrapper-mode-meter" class="space-y-2">
             <label class="text-[11px] text-slate-400 block mb-1">Chọn nhanh chiều dài:</label>
-            <div class="grid grid-cols-3 gap-1.5 text-xs" id="length-preset-selector">
-              <button type="button" class="length-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-semibold text-center" data-m="30">30m / cuộn</button>
-              <button type="button" class="length-btn active py-1.5 rounded bg-amber-600 text-white font-bold border border-amber-500 text-center" data-m="50">50m / cuộn</button>
-              <button type="button" class="length-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-semibold text-center" data-m="100">100m / cuộn</button>
+            <div class="grid grid-cols-5 gap-1 text-[11px]" id="length-preset-selector">
+              <button type="button" class="length-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-semibold text-center" data-m="30">30m</button>
+              <button type="button" class="length-btn active py-1.5 rounded bg-amber-600 text-white font-bold border border-amber-500 text-center" data-m="50">50m</button>
+              <button type="button" class="length-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-semibold text-center" data-m="100">100m</button>
+              <button type="button" class="length-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-semibold text-center" data-m="150">150m</button>
+              <button type="button" id="btn-length-custom" class="length-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-semibold text-center" data-m="custom">Tự nhập</button>
+            </div>
+
+            <!-- Ô nhập mét & tính ra số tem -->
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <div>
+                <label class="text-[11px] text-slate-300 font-medium block mb-1">Chiều dài cuộn (m)</label>
+                <input type="number" id="input-roll-length" value="50" min="5" max="500" step="5" class="font-mono font-bold text-amber-400">
+              </div>
+              <div>
+                <label class="text-[11px] text-slate-400 font-medium block mb-1">Số tem ước tính</label>
+                <div class="h-[34px] bg-slate-900 border border-slate-700 rounded-lg px-2.5 flex items-center">
+                  <span id="text-est-label-count" class="font-mono font-bold text-cyan-300 text-xs">~1.515 tem</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Nhập tay 2 chiều: số mét HOẶC số tem/cuộn -->
-          <div class="grid grid-cols-2 gap-2.5">
+          <!-- KHỐI 2: TÙY CHỌN SỐ TEM/CUỘN (NHẬP TAY) -->
+          <div id="wrapper-mode-count" class="space-y-2 hidden">
             <div>
-              <label class="text-[11px] text-slate-300 font-medium block mb-1">Chiều dài cuộn (m)</label>
-              <input type="number" id="input-roll-length" value="50" min="5" max="500" step="5" class="font-mono font-bold text-amber-400">
+              <label class="text-[11px] text-cyan-300 font-medium block mb-1"><i class="fa-solid fa-keyboard text-[10px]"></i> Nhập số tem / cuộn (tem):</label>
+              <input type="number" id="input-label-count" value="1515" min="50" max="100000" step="50" class="font-mono font-bold text-cyan-300 text-sm py-1.5" placeholder="VD: 1000, 2000...">
             </div>
             <div>
-              <label class="text-[11px] text-slate-300 font-medium block mb-1">Số tem / cuộn (tem)</label>
-              <input type="number" id="input-label-count" value="1515" min="50" max="100000" step="50" class="font-mono font-bold text-cyan-300">
+              <label class="text-[11px] text-slate-400 font-medium block mb-1">Chiều dài tương ứng</label>
+              <div class="h-[34px] bg-slate-900 border border-slate-700 rounded-lg px-2.5 flex items-center justify-between">
+                <span id="text-est-meter-length" class="font-mono font-bold text-amber-300 text-xs">~50 m / cuộn</span>
+                <span id="badge-od-est-count" class="text-[10px] font-mono text-slate-400">OD: ~98mm</span>
+              </div>
             </div>
           </div>
 
-          <!-- Hộp hiển thị số tem ước tính nổi bật -->
-          <div class="bg-slate-900/90 rounded-lg p-2.5 border border-amber-500/30 flex items-center justify-between">
+          <!-- Hộp hiển thị tổng quan -->
+          <div class="bg-slate-900/90 rounded-lg p-2 border border-amber-500/30 flex items-center justify-between">
             <div class="flex items-center gap-2">
               <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs shrink-0">
                 <i class="fa-solid fa-calculator"></i>
               </div>
               <div>
-                <span class="text-[10px] text-slate-400 block">Số tem ước tính:</span>
-                <span id="badge-label-count-est" class="text-xs font-bold text-emerald-400 font-mono">khoảng 1.515 tem / cuộn</span>
+                <span id="badge-label-count-est" class="text-xs font-bold text-emerald-400 font-mono block leading-tight">50m (~1.515 tem)</span>
+                <span class="text-[10px] text-slate-400 block leading-tight mt-0.5">Quy cách tính chuẩn theo bước bế</span>
               </div>
             </div>
             <span id="badge-od-est" class="text-[10px] font-mono text-slate-400 shrink-0">OD: ~98mm</span>
@@ -353,7 +382,7 @@
           </div>
         </div>
 
-        <!-- SECTION 6: MÀU NỀN CON TEM -->
+        <!-- SECTION 6: MÀU NỀN CON TEM (TRẮNG - VÀNG - XANH - ĐỎ - IN PHÔI SẴN) -->
         <div class="bg-slate-800/60 rounded-xl p-3 border border-slate-700/60 space-y-2.5">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold uppercase tracking-wider text-pink-400 flex items-center gap-1.5">
@@ -362,19 +391,22 @@
             <span id="badge-color-preview" class="w-4 h-4 rounded-full border border-white/40 inline-block shadow-sm" style="background-color: #FFFFFF;"></span>
           </div>
 
-          <!-- 3 nút màu chọn nhanh + Nút toggle In phôi sẵn -->
-          <div class="grid grid-cols-4 gap-1 text-[11px]" id="color-preset-selector">
-            <button type="button" class="color-mode-btn active py-1.5 px-1 rounded bg-white text-slate-900 font-bold border border-white text-center shadow-sm cursor-pointer" data-mode="white" data-hex="#FFFFFF">
+          <!-- 5 nút chọn nhanh bé lại theo yêu cầu: Trắng - Vàng - Xanh - Đỏ - In phôi sẵn -->
+          <div class="grid grid-cols-5 gap-1 text-[11px]" id="color-preset-selector">
+            <button type="button" class="color-mode-btn active py-1.5 px-0.5 rounded bg-white text-slate-900 font-bold border border-white text-center shadow-sm cursor-pointer" data-mode="white" data-hex="#FFFFFF" title="Trắng">
               ⚪ Trắng
             </button>
-            <button type="button" class="color-mode-btn py-1.5 px-1 rounded bg-blue-600 text-white font-bold border border-blue-500 text-center shadow-sm cursor-pointer" data-mode="blue" data-hex="#2563EB">
+            <button type="button" class="color-mode-btn py-1.5 px-0.5 rounded bg-yellow-400 text-slate-900 font-bold border border-yellow-300 text-center shadow-sm cursor-pointer" data-mode="yellow" data-hex="#FACC15" title="Vàng">
+              🟡 Vàng
+            </button>
+            <button type="button" class="color-mode-btn py-1.5 px-0.5 rounded bg-blue-600 text-white font-bold border border-blue-500 text-center shadow-sm cursor-pointer" data-mode="blue" data-hex="#2563EB" title="Xanh">
               🔵 Xanh
             </button>
-            <button type="button" class="color-mode-btn py-1.5 px-1 rounded bg-red-600 text-white font-bold border border-red-500 text-center shadow-sm cursor-pointer" data-mode="red" data-hex="#DC2626">
+            <button type="button" class="color-mode-btn py-1.5 px-0.5 rounded bg-red-600 text-white font-bold border border-red-500 text-center shadow-sm cursor-pointer" data-mode="red" data-hex="#DC2626" title="Đỏ">
               🔴 Đỏ
             </button>
-            <button type="button" id="btn-toggle-preprint" class="py-1.5 px-1 rounded bg-slate-800 text-amber-300 font-bold border border-amber-500/60 text-center shadow-sm hover:bg-slate-700 cursor-pointer transition select-none flex items-center justify-center gap-1" title="Bật / tắt tùy chọn In phôi sẵn">
-              <i class="fa-solid fa-file-lines text-amber-400"></i> In phôi sẵn
+            <button type="button" class="color-mode-btn py-1.5 px-0.5 rounded bg-slate-800 text-amber-300 font-bold border border-amber-500/60 text-center shadow-sm hover:bg-slate-700 cursor-pointer transition select-none flex items-center justify-center gap-0.5 text-[10px]" data-mode="preprint" data-hex="#FFFFFF" id="btn-toggle-preprint" title="In phôi sẵn">
+              <i class="fa-solid fa-file-lines text-amber-400 text-[10px]"></i> Phôi sẵn
             </button>
           </div>
 
@@ -391,29 +423,39 @@
           </div>
         </div>
 
-        <!-- SECTION 7: THỜI GIAN SẢN XUẤT (SX) -->
+        <!-- SECTION 7: TÌNH TRẠNG (SẴN HÀNG / ĐẶT SX) -->
         <div class="bg-slate-800/60 rounded-xl p-3 border border-slate-700/60 space-y-2.5">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold uppercase tracking-wider text-teal-400 flex items-center gap-1.5">
-              <i class="fa-solid fa-clock-rotate-left"></i> 7. Thời Gian Sản Xuất
+              <i class="fa-solid fa-box-archive"></i> 7. Tình Trạng
             </span>
-            <span id="badge-lead-time" class="text-[11px] font-bold px-2 py-0.5 rounded bg-teal-950 text-teal-300 border border-teal-800">3 ngày</span>
+            <span id="badge-lead-time" class="text-[11px] font-bold px-2 py-0.5 rounded bg-teal-950 text-teal-300 border border-teal-800">Đặt SX: 3 ngày</span>
           </div>
 
-          <!-- Nút chọn nhanh và ô nhập tay số ngày / nội dung text -->
-          <div class="space-y-1.5">
+          <!-- 2 Lựa chọn chính: Sẵn hàng vs Đặt SX -->
+          <div class="grid grid-cols-2 gap-1.5 text-xs" id="status-mode-selector">
+            <button type="button" class="status-mode-btn py-1.5 px-1 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-semibold text-center cursor-pointer transition flex items-center justify-center gap-1.5" data-mode="ready">
+              <i class="fa-solid fa-circle-check text-emerald-400 text-xs"></i> Sẵn hàng
+            </button>
+            <button type="button" class="status-mode-btn active py-1.5 px-1 rounded bg-teal-600 text-white font-bold border border-teal-500 text-center cursor-pointer transition flex items-center justify-center gap-1.5" data-mode="order">
+              <i class="fa-solid fa-industry text-teal-200 text-xs"></i> Đặt SX
+            </button>
+          </div>
+
+          <!-- Khối chọn số ngày khi chọn Đặt SX -->
+          <div id="wrapper-leadtime-days" class="space-y-1.5 pt-1">
             <div class="grid grid-cols-4 gap-1 text-xs" id="leadtime-preset-selector">
-              <button type="button" class="leadtime-btn py-1.5 px-0.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center cursor-pointer transition text-[11px]" data-days="1 ngày">1 ngày</button>
-              <button type="button" class="leadtime-btn py-1.5 px-0.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center cursor-pointer transition text-[11px]" data-days="2 ngày">2 ngày</button>
+              <button type="button" class="leadtime-btn py-1.5 px-0.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center cursor-pointer transition text-[11px]" data-days="1-2 ngày">1-2 ngày</button>
               <button type="button" class="leadtime-btn active py-1.5 px-0.5 rounded bg-teal-600 text-white font-bold border border-teal-500 text-center cursor-pointer transition text-[11px]" data-days="3 ngày">3 ngày</button>
-              <button type="button" class="leadtime-btn py-1.5 px-0.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center cursor-pointer transition text-[11px]" data-days="3-4 ngày">3-4 ngày</button>
+              <button type="button" class="leadtime-btn py-1.5 px-0.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center cursor-pointer transition text-[11px]" data-days="3-5 ngày">3-5 ngày</button>
+              <button type="button" class="leadtime-btn py-1.5 px-0.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center cursor-pointer transition text-[11px]" data-days="5-7 ngày">5-7 ngày</button>
             </div>
-            <!-- Ô tự nhập nội dung tùy biến (dạng text: nhập 3-4 ngày, 5-7 ngày, theo thỏa thuận...) -->
+            <!-- Ô tự nhập nội dung tùy biến (dạng text: nhập 3-5 ngày, 7 ngày, theo thỏa thuận...) -->
             <div class="flex items-center bg-slate-900 rounded-lg border border-slate-700 px-2.5 py-1.5">
               <span class="text-[11px] text-slate-400 mr-2 shrink-0 flex items-center gap-1">
                 <i class="fa-solid fa-pen text-[10px] text-teal-400"></i> Tự nhập:
               </span>
-              <input type="text" id="input-lead-time" value="3 ngày" placeholder="VD: 3-4 ngày, 5 ngày..." class="w-full font-sans font-bold text-teal-300 bg-transparent border-0 focus:outline-none text-xs">
+              <input type="text" id="input-lead-time" value="3 ngày" placeholder="VD: 3-5 ngày, 7 ngày..." class="w-full font-sans font-bold text-teal-300 bg-transparent border-0 focus:outline-none text-xs">
             </div>
           </div>
         </div>
@@ -427,16 +469,17 @@
             <span id="badge-min-order" class="text-[11px] font-bold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800">20 cuộn</span>
           </div>
 
-          <!-- Nút chọn nhanh 20 - 30 - Tự nhập -->
+          <!-- Nút chọn nhanh None - 20 - 30 - Tự nhập -->
           <div class="flex items-center gap-1.5">
-            <div class="grid grid-cols-3 gap-1 flex-1 text-xs" id="minorder-preset-selector">
-              <button type="button" class="minorder-btn active py-1.5 rounded bg-purple-600 text-white font-bold border border-purple-500 text-center cursor-pointer transition" data-val="20">20 cuộn</button>
-              <button type="button" class="minorder-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center cursor-pointer transition" data-val="30">30 cuộn</button>
-              <button type="button" id="btn-minorder-custom" class="minorder-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center cursor-pointer transition" data-val="custom">Tự nhập</button>
+            <div class="grid grid-cols-4 gap-1 flex-1 text-xs" id="minorder-preset-selector">
+              <button type="button" class="minorder-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center cursor-pointer transition text-[11px]" data-val="none" title="Không hiển thị đặt hàng tối thiểu">None</button>
+              <button type="button" class="minorder-btn active py-1.5 rounded bg-purple-600 text-white font-bold border border-purple-500 text-center cursor-pointer transition text-[11px]" data-val="20">20 cuộn</button>
+              <button type="button" class="minorder-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center cursor-pointer transition text-[11px]" data-val="30">30 cuộn</button>
+              <button type="button" id="btn-minorder-custom" class="minorder-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 font-medium text-center cursor-pointer transition text-[11px]" data-val="custom">Tự nhập</button>
             </div>
-            <div class="w-24 shrink-0 flex items-center bg-slate-900 rounded-lg border border-slate-700 px-2 py-1">
+            <div class="w-20 shrink-0 flex items-center bg-slate-900 rounded-lg border border-slate-700 px-1.5 py-1" id="wrapper-input-minorder">
               <input type="number" id="input-min-order" value="20" min="1" max="10000" step="5" class="w-full text-center font-mono font-bold text-purple-300 bg-transparent border-0 focus:outline-none text-xs">
-              <span class="text-[10px] text-slate-400 whitespace-nowrap ml-1">cuộn</span>
+              <span class="text-[10px] text-slate-400 whitespace-nowrap ml-0.5">c</span>
             </div>
           </div>
         </div>
@@ -615,11 +658,11 @@
                       <input type="checkbox" data-spec="minOrder" class="spec-checkbox rounded bg-slate-800 border-slate-600 text-purple-600 focus:ring-0 cursor-pointer" checked>
                     </label>
 
-                    <!-- 9. Thời gian SX -->
+                    <!-- 9. Tình trạng hàng -->
                     <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer transition">
                       <span class="flex items-center gap-2 text-slate-200 font-medium">
                         <span class="w-2.5 h-2.5 rounded-full bg-teal-500 shadow-sm shadow-teal-500/50"></span>
-                        <span>Thời gian SX</span>
+                        <span>Tình trạng hàng</span>
                       </span>
                       <input type="checkbox" data-spec="leadTime" class="spec-checkbox rounded bg-slate-800 border-slate-600 text-teal-600 focus:ring-0 cursor-pointer" checked>
                     </label>
@@ -827,10 +870,10 @@
                   <span id="hud-val-minorder" class="hud-value font-semibold text-purple-300 text-left">20 cuộn</span>
                 </div>
 
-                <!-- 9. Thời gian SX -->
+                <!-- 9. Tình trạng -->
                 <div id="spec-row-leadtime" class="flex items-center gap-2 py-0.5 text-left">
-                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-clock-rotate-left text-teal-400 w-3.5 text-center"></i> Thời gian SX:</span>
-                  <span id="hud-val-leadtime" class="hud-value font-semibold text-teal-300 text-left">3 ngày</span>
+                  <span class="hud-label text-slate-400 flex items-center gap-1.5 shrink-0 font-medium"><i class="fa-solid fa-box-archive text-teal-400 w-3.5 text-center"></i> Tình trạng:</span>
+                  <span id="hud-val-leadtime" class="hud-value font-semibold text-teal-300 text-left">Đặt SX (3 ngày)</span>
                 </div>
               </div>
             </div>
