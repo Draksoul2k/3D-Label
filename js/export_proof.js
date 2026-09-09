@@ -107,7 +107,8 @@ window.ExportProof = (function () {
     setElemText('out-proof-date', `Ngày lập: ${proofDate}`);
     setElemText('out-proof-designer', designerName);
     setElemText('out-proof-designer-header', designerName);
-    setElemText('out-proof-summary', `Tem cuộn ${S.labelWidth}x${S.labelHeight}mm, ${S.ups} tem/hàng, lõi ${S.coreName}`);
+    const prodSummary = S.invoiceName || `Tem cuộn ${S.labelWidth}x${S.labelHeight}mm, ${S.ups} tem/hàng, lõi ${S.coreName}`;
+    setElemText('out-proof-summary', prodSummary);
 
     // Đổ dữ liệu bảng thông số kỹ thuật
     document.getElementById('table-label-size').textContent = `${S.labelWidth} x ${S.labelHeight} mm`;

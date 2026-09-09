@@ -795,3 +795,24 @@ input[type="range"] {
   background-color: #0f172a !important;
 }
 
+/* KÉO THẢ VÀ HIỆU ỨNG CHO THẺ TÊN HÓA ĐƠN & BẢNG TÍNH GIÁ */
+#hud-invoice-header, #hud-pricing-header {
+  cursor: grab;
+  touch-action: none;
+}
+#hud-invoice-header:active, #hud-pricing-header:active {
+  cursor: grabbing;
+}
+#hud-invoice-card.is-dragging {
+  cursor: grabbing !important;
+  opacity: 0.95;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(56, 189, 248, 0.6) !important;
+  transition: none !important;
+}
+#hud-pricing-card.is-dragging {
+  cursor: grabbing !important;
+  opacity: 0.95;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(245, 158, 11, 0.6) !important;
+  transition: none !important;
+}
+

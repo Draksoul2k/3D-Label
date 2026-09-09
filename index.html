@@ -484,6 +484,64 @@
           </div>
         </div>
 
+        <!-- SECTION 9: TÊN HÓA ĐƠN & BÁO GIÁ THANH TOÁN (MỚI) -->
+        <div class="bg-slate-800/60 rounded-xl p-3 border border-slate-700/60 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-file-invoice-dollar text-amber-400"></i> 9. Tên Hóa Đơn & Báo Giá
+            </span>
+            <label class="flex items-center gap-1 text-[10px] cursor-pointer text-slate-300 font-medium" title="Bật/tắt hiển thị bảng tính giá & tên hóa đơn trên màn hình 3D">
+              <span>Hiện trên 3D</span>
+              <input type="checkbox" id="check-sidebar-pricing-bar" checked class="rounded bg-slate-800 border-slate-600 text-amber-500 focus:ring-0 cursor-pointer">
+            </label>
+          </div>
+
+          <!-- Tên sản phẩm / hóa đơn -->
+          <div class="space-y-1">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] text-sky-300 font-medium block">Tên sản phẩm / hóa đơn:</label>
+              <button type="button" id="btn-sidebar-reset-invoice" class="text-[10px] text-slate-400 hover:text-sky-300 flex items-center gap-1 transition cursor-pointer" title="Đặt lại theo quy tắc chuẩn tự động">
+                <i class="fa-solid fa-rotate-left text-[9px]"></i> Tự động
+              </button>
+            </div>
+            <input type="text" id="input-sidebar-invoice-name" value="Giấy decal (50x30)mm x 50m" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-sky-300 font-sans outline-none focus:border-sky-500 tracking-wide">
+            <p class="text-[9.5px] text-slate-400 italic leading-tight">Quy tắc: [Chất liệu] ([Ngang]x[Cao])mm x [Dài]m</p>
+          </div>
+
+          <!-- Bảng tính giá: Số lượng & Đơn giá -->
+          <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+            <div>
+              <label class="text-[11px] text-slate-300 block mb-1">Số lượng (cuộn):</label>
+              <input type="number" id="input-sidebar-pricing-qty" value="20" min="1" max="100000" step="1" class="font-mono font-bold text-white text-xs py-1">
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-300 block mb-1">Đơn giá (đ/cuộn):</label>
+              <input type="text" id="input-sidebar-pricing-price" value="65.000" class="font-mono font-bold text-emerald-300 text-xs py-1">
+            </div>
+          </div>
+
+          <!-- Bảng tóm tắt số tiền -->
+          <div class="bg-slate-900/90 rounded-lg p-2.5 border border-slate-700 space-y-1.5 text-xs">
+            <div class="flex justify-between items-center text-slate-400 text-[11px]">
+              <span>Thành tiền:</span>
+              <span id="sidebar-pricing-subtotal" class="font-mono font-bold text-white">1.300.000 đ</span>
+            </div>
+            <div class="flex justify-between items-center text-slate-400 text-[11px]">
+              <span>VAT (8%):</span>
+              <span id="sidebar-pricing-vat" class="font-mono text-amber-300">104.000 đ</span>
+            </div>
+            <div class="flex justify-between items-center text-amber-400 font-bold border-t border-slate-800 pt-1.5 text-xs">
+              <span class="text-amber-300">Tổng thanh toán:</span>
+              <span id="sidebar-pricing-total" class="font-mono font-black text-amber-400 text-sm">1.404.000 đ</span>
+            </div>
+          </div>
+
+          <!-- Nút Copy Báo Giá 1 chạm -->
+          <button type="button" id="btn-sidebar-copy-quote" class="w-full bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 hover:text-white border border-amber-500/50 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-95" title="Sao chép toàn bộ thông tin báo giá để gửi khách Zalo/Facebook">
+            <i class="fa-regular fa-copy"></i> Sao chép báo giá gửi khách
+          </button>
+        </div>
+
       </div>
     </aside>
 
@@ -666,6 +724,15 @@
                       </span>
                       <input type="checkbox" data-spec="leadTime" class="spec-checkbox rounded bg-slate-800 border-slate-600 text-teal-600 focus:ring-0 cursor-pointer" checked>
                     </label>
+
+                    <!-- 10. Tên hóa đơn & Báo giá thanh toán -->
+                    <label class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer transition">
+                      <span class="flex items-center gap-2 text-slate-200 font-medium">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50"></span>
+                        <span>Tên hóa đơn & Bảng tính giá</span>
+                      </span>
+                      <input type="checkbox" id="check-toggle-pricing-bar" class="rounded bg-slate-800 border-slate-600 text-amber-500 focus:ring-0 cursor-pointer" checked>
+                    </label>
                   </div>
 
                   <!-- PHẦN 2: ĐƯỜNG KÍCH THƯỚC ĐO TRÊN 3D -->
@@ -780,8 +847,8 @@
             <span>Chỉnh Thông Số</span>
           </button>
 
-          <!-- FLOATING BOTTOM HINT -->
-          <div class="absolute bottom-3 left-3 z-10 pointer-events-none">
+          <!-- FLOATING BOTTOM HINT (TỰ ĐỘNG DỜI LÊN KHI CÓ THẺ TÊN HÓA ĐƠN) -->
+          <div id="floating-bottom-hint" class="absolute bottom-[128px] left-3 z-10 pointer-events-none transition-all duration-300">
             <div class="bg-slate-900/85 backdrop-blur border border-slate-800 text-slate-400 text-[10px] sm:text-[11px] px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg flex items-center gap-2">
               <i class="fa-regular fa-hand-pointer text-blue-400"></i>
               <span class="hidden md:inline">Chuột trái: <b>Xoay 360°</b> | Chuột phải: <b>Dịch chuyển</b> | <b>Kéo thả chú thích 3D tự do</b></span>
@@ -789,8 +856,109 @@
             </div>
           </div>
 
+          <!-- THẺ 1 (BÊN TRÁI): TÊN HÓA ĐƠN / TÊN SẢN PHẨM THEO QUY TẮC CHUẨN -->
+          <div id="hud-invoice-card" class="absolute bottom-3 left-3 z-20 pointer-events-auto select-none transition-all duration-300 w-[370px] max-w-[calc(100vw-24px)] md:w-[420px]">
+            <div class="bg-slate-900/95 backdrop-blur-md border border-slate-700/90 text-slate-200 rounded-2xl shadow-2xl p-2.5 sm:p-3 space-y-1.5 font-sans" style="background-color: #0f172a !important;">
+              <!-- Header -->
+              <div id="hud-invoice-header" class="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-800 text-xs cursor-grab active:cursor-grabbing select-none" title="Nhấn giữ để kéo di chuyển thẻ tên hóa đơn">
+                <span class="font-bold text-sky-400 flex items-center gap-1.5 pointer-events-none text-xs shrink-0">
+                  <i class="fa-solid fa-grip-vertical text-slate-500 mr-0.5"></i>
+                  <i class="fa-solid fa-file-invoice text-sky-400"></i> TÊN HÓA ĐƠN (SẢN PHẨM)
+                </span>
+                <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation();">
+                  <button type="button" id="btn-copy-invoice-name" class="flex items-center gap-1 bg-sky-600/30 hover:bg-sky-600/60 text-sky-300 hover:text-white border border-sky-500/50 px-2 py-0.5 rounded-lg text-[11px] font-semibold transition cursor-pointer active:scale-95 shadow-sm" title="Sao chép tên sản phẩm / hóa đơn">
+                    <i class="fa-regular fa-copy text-[10px]" id="icon-copy-invoice"></i>
+                    <span id="text-copy-invoice">Copy</span>
+                  </button>
+                  <button type="button" id="btn-reset-invoice-name" class="text-slate-400 hover:text-sky-300 px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 transition cursor-pointer text-[11px]" title="Đặt lại tên theo quy tắc chuẩn tự động">
+                    <i class="fa-solid fa-rotate-left text-[10px]"></i>
+                  </button>
+                  <button type="button" id="btn-close-invoice-card" class="text-slate-400 hover:text-white px-1.5 py-0.5 rounded hover:bg-slate-800 transition cursor-pointer text-xs" title="Ẩn thẻ tên hóa đơn">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+              </div>
+              <!-- Input / Display tên chuẩn -->
+              <div class="relative">
+                <input type="text" id="input-hud-invoice-name" value="Giấy decal (50x30)mm x 50m" class="w-full bg-slate-950/90 border border-slate-700 focus:border-sky-500 rounded-lg px-2.5 py-1 text-xs font-bold text-sky-300 font-sans tracking-wide outline-none transition" placeholder="Tên sản phẩm / hóa đơn...">
+              </div>
+              <div class="flex items-center justify-between text-[10px] text-slate-400">
+                <span>Quy tắc: <i>[Chất liệu] ([W]x[H])mm x [Dài]m</i></span>
+                <span id="badge-invoice-status" class="text-emerald-400 font-medium flex items-center gap-1">
+                  <i class="fa-solid fa-circle-check text-[9px]"></i> Tự động
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- THẺ 2 (BÊN PHẢI): BẢNG TÍNH GIÁ THANH TOÁN (SỐ LƯỢNG - ĐƠN GIÁ - THÀNH TIỀN - VAT 8% - TỔNG) -->
+          <div id="hud-pricing-card" class="absolute bottom-3 right-3 z-20 pointer-events-auto select-none transition-all duration-300 w-[295px] max-w-[calc(100vw-24px)] sm:w-[325px]">
+            <div class="bg-slate-900/95 backdrop-blur-md border border-slate-700/90 text-slate-200 rounded-2xl shadow-2xl p-2.5 sm:p-3 space-y-1.5 font-sans" style="background-color: #0f172a !important;">
+              <!-- Header -->
+              <div id="hud-pricing-header" class="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-800 text-xs cursor-grab active:cursor-grabbing select-none" title="Nhấn giữ để kéo di chuyển bảng tính giá">
+                <span class="font-bold text-amber-400 flex items-center gap-1.5 pointer-events-none text-xs shrink-0">
+                  <i class="fa-solid fa-grip-vertical text-slate-500 mr-0.5"></i>
+                  <i class="fa-solid fa-coins text-amber-400"></i> BẢNG TÍNH GIÁ THANH TOÁN
+                </span>
+                <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation();">
+                  <button type="button" id="btn-copy-pricing-quote" class="flex items-center gap-1 bg-amber-600/30 hover:bg-amber-600/60 text-amber-300 hover:text-white border border-amber-500/50 px-2 py-0.5 rounded-lg text-[11px] font-semibold transition cursor-pointer active:scale-95 shadow-sm" title="Sao chép toàn bộ báo giá và số tiền để gửi khách">
+                    <i class="fa-regular fa-copy text-[10px]" id="icon-copy-pricing"></i>
+                    <span id="text-copy-pricing">Copy</span>
+                  </button>
+                  <button type="button" id="btn-close-pricing-card" class="text-slate-400 hover:text-white px-1.5 py-0.5 rounded hover:bg-slate-800 transition cursor-pointer text-xs" title="Ẩn bảng tính giá">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+              </div>
+              <!-- Rows tính giá -->
+              <div class="space-y-1 text-xs">
+                <!-- 1. Số lượng -->
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-slate-400 font-medium flex items-center gap-1.5 shrink-0">
+                    <i class="fa-solid fa-boxes-stacked text-purple-400 w-3.5 text-center"></i> Số lượng:
+                  </span>
+                  <div class="flex items-center gap-1 w-32 shrink-0">
+                    <input type="number" id="input-hud-pricing-qty" value="20" min="1" max="100000" step="1" class="w-full text-right font-mono font-bold text-white bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs focus:border-amber-400 outline-none">
+                    <span class="text-[11px] text-slate-400 font-medium shrink-0">cuộn</span>
+                  </div>
+                </div>
+                <!-- 2. Đơn giá -->
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-slate-400 font-medium flex items-center gap-1.5 shrink-0">
+                    <i class="fa-solid fa-tag text-emerald-400 w-3.5 text-center"></i> Đơn giá:
+                  </span>
+                  <div class="flex items-center gap-1 w-32 shrink-0">
+                    <input type="text" id="input-hud-pricing-price" value="65.000" class="w-full text-right font-mono font-bold text-emerald-300 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs focus:border-emerald-400 outline-none">
+                    <span class="text-[11px] text-slate-400 font-medium shrink-0">đ</span>
+                  </div>
+                </div>
+                <!-- 3. Thành tiền -->
+                <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-800/80">
+                  <span class="text-slate-400 font-medium flex items-center gap-1.5 shrink-0">
+                    <i class="fa-solid fa-calculator text-blue-400 w-3.5 text-center"></i> Thành tiền:
+                  </span>
+                  <span id="hud-pricing-subtotal" class="font-mono font-bold text-white text-xs">1.300.000 đ</span>
+                </div>
+                <!-- 4. Cột VAT = 8% của thành tiền -->
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-slate-400 font-medium flex items-center gap-1.5 shrink-0">
+                    <i class="fa-solid fa-receipt text-amber-400 w-3.5 text-center"></i> VAT (8%):
+                  </span>
+                  <span id="hud-pricing-vat" class="font-mono text-amber-300 text-xs font-semibold">104.000 đ</span>
+                </div>
+                <!-- 5. Cột = Tổng thanh toán -->
+                <div class="flex items-center justify-between gap-2 p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                  <span class="text-amber-300 font-bold flex items-center gap-1.5 shrink-0 text-xs">
+                    <i class="fa-solid fa-money-bill-wave text-amber-400 w-3.5 text-center"></i> TỔNG THANH TOÁN:
+                  </span>
+                  <span id="hud-pricing-total" class="font-mono font-black text-amber-400 text-sm">1.404.000 đ</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- FLOATING BOTTOM-RIGHT TECH SPECS & ORDER SUMMARY CARD (ÔM SÁT NỘI DUNG, CHỈ DÃN RA KHI NHIỀU CHỮ) -->
-          <div id="hud-spec-card" class="absolute bottom-3 right-3 z-20 pointer-events-auto select-none transition-all duration-300 w-fit max-w-[420px] hidden md:block" style="font-size: 12px;">
+          <div id="hud-spec-card" class="absolute bottom-[215px] right-3 z-20 pointer-events-auto select-none transition-all duration-300 w-fit max-w-[420px] hidden md:block" style="font-size: 12px;">
             <div class="bg-slate-900/95 backdrop-blur-md border border-slate-700/90 text-slate-200 rounded-2xl shadow-2xl p-3 sm:p-3.5 space-y-2 font-sans" style="background-color: #0f172a !important;">
               <!-- Header (Nhấn giữ để kéo di chuyển vị trí & Nút Copy) -->
               <div id="hud-card-header" class="flex items-center justify-between gap-2.5 pb-2 border-b border-slate-800 cursor-grab active:cursor-grabbing select-none" title="Nhấn giữ và kéo để di chuyển bảng thông số đến bất cứ đâu trên màn hình">

@@ -73,6 +73,18 @@ window.AppState = {
   dimTextScale: 1.35,  // Cỡ số đo 3D (mặc định 135% to rõ ràng, điều chỉnh được 70% - 230%)
   specCardScale: 1.0, // Cỡ chữ bảng thông số đặt hàng (mặc định 100%, điều chỉnh được 80% - 170%)
 
+  // Tên hóa đơn (Tên sản phẩm) & Bảng tính giá thanh toán (MỚI)
+  showPricingBar: true,        // Master toggle hiển thị
+  showInvoiceCard: true,       // Hiển thị thẻ Tên hóa đơn bên trái
+  showPricingCard: true,       // Hiển thị thẻ Bảng tính giá bên phải
+  invoiceName: '',             // Tên sản phẩm / hóa đơn chuẩn theo quy tắc
+  isInvoiceNameCustom: false,  // Đánh dấu người dùng có tự gõ tên không
+  pricingQty: 20,              // Số lượng (mặc định 20 cuộn)
+  pricingUnitPrice: 65000,     // Đơn giá (đ/cuộn, mặc định 65.000đ)
+  pricingSubtotal: 1300000,    // Thành tiền = Qty * UnitPrice
+  pricingVat: 104000,          // VAT 8% = Math.round(Thành tiền * 0.08)
+  pricingTotal: 1404000,       // Tổng thanh toán = Thành tiền + VAT
+
   autoSpin: false,
   studioBg: 'dark', // Nền đen Studio sang trọng mặc định
 };
@@ -642,6 +654,9 @@ function updateHUDAndBadges() {
   if (hudRollInfo) hudRollInfo.textContent = `${S.webWidth.toFixed(1)}mm x Lõi ${S.coreName}`;
 
   syncSpecCardUI();
+  if (typeof updateInvoiceName === 'function') updateInvoiceName();
+  if (typeof updatePricingCalculations === 'function') updatePricingCalculations();
+  if (typeof syncPricingBarUI === 'function') syncPricingBarUI();
 }
 
 /**
@@ -935,6 +950,448 @@ function makeHudSpecCardDraggable() {
     card.style.bottom = '';
   });
 }
+
+/**
+ * =========================================================================
+ * TÍNH NĂNG TÊN HÓA ĐƠN (TÊN SẢN PHẨM) & BẢNG TÍNH GIÁ THANH TOÁN
+ * Theo quy tắc:
+ * - Giấy thường = Giấy decal
+ * - Giấy nhiệt = Giấy decal nhiệt
+ * - PVC = Giấy decal PVC
+ * - Xi bạc = Decal xi bạc
+ * Kích thước: (W x H)mm
+ * Chiều dài: x Lm
+ * Ví dụ: Giấy decal nhiệt (70x30)mm x 100m
+ * =========================================================================
+ */
+function computeStandardInvoiceName() {
+  const S = window.AppState;
+  const mat = S.materialType || 'paper_normal';
+  let matPrefix = 'Giấy decal';
+  if (mat === 'paper_normal') {
+    matPrefix = 'Giấy decal';
+  } else if (mat === 'paper_thermal') {
+    matPrefix = 'Giấy decal nhiệt';
+  } else if (mat === 'pvc') {
+    matPrefix = 'Giấy decal PVC';
+  } else if (mat === 'silver') {
+    matPrefix = 'Decal xi bạc';
+  }
+
+  const w = S.labelWidth || 50;
+  const h = S.labelHeight || 30;
+  const len = S.rollLength || 50;
+
+  return `${matPrefix} (${w}x${h})mm x ${len}m`;
+}
+window.computeStandardInvoiceName = computeStandardInvoiceName;
+
+function updateInvoiceName(forceRecompute = false) {
+  const S = window.AppState;
+  if (!S) return;
+
+  if (forceRecompute) {
+    S.isInvoiceNameCustom = false;
+  }
+  if (!S.isInvoiceNameCustom || !S.invoiceName) {
+    S.invoiceName = computeStandardInvoiceName();
+  }
+
+  // 1. Cập nhật thẻ HUD bên trái
+  const hudInput = document.getElementById('input-hud-invoice-name');
+  if (hudInput && document.activeElement !== hudInput) {
+    hudInput.value = S.invoiceName;
+  }
+
+  // 2. Cập nhật Sidebar mục 9
+  const sideInput = document.getElementById('input-sidebar-invoice-name');
+  if (sideInput && document.activeElement !== sideInput) {
+    sideInput.value = S.invoiceName;
+  }
+
+  // 3. Cập nhật nhãn trạng thái Tự động / Tùy biến
+  const badgeStatus = document.getElementById('badge-invoice-status');
+  if (badgeStatus) {
+    if (S.isInvoiceNameCustom) {
+      badgeStatus.innerHTML = '<i class="fa-solid fa-pen text-[9px] text-amber-400"></i> <span class="text-amber-300">Tùy biến</span>';
+    } else {
+      badgeStatus.innerHTML = '<i class="fa-solid fa-circle-check text-[9px] text-emerald-400"></i> <span class="text-emerald-300">Tự động</span>';
+    }
+  }
+
+  // 4. Đồng bộ vào Phiếu duyệt Bước 4
+  const proofSummary = document.getElementById('out-proof-summary');
+  if (proofSummary && S.invoiceName) {
+    proofSummary.textContent = S.invoiceName;
+  }
+}
+window.updateInvoiceName = updateInvoiceName;
+
+function parseCurrencyInput(val) {
+  if (typeof val === 'number') return Math.max(0, val);
+  if (!val) return 0;
+  const clean = String(val).replace(/[^0-9]/g, '');
+  return parseInt(clean, 10) || 0;
+}
+
+function formatVND(num) {
+  return Number(num || 0).toLocaleString('vi-VN') + ' đ';
+}
+
+function updatePricingCalculations() {
+  const S = window.AppState;
+  if (!S) return;
+
+  const qty = Math.max(1, S.pricingQty || 1);
+  const unitPrice = Math.max(0, S.pricingUnitPrice || 0);
+
+  const subtotal = qty * unitPrice;
+  const vat = Math.round(subtotal * 0.08); // 8% của thành tiền
+  const total = subtotal + vat;
+
+  S.pricingSubtotal = subtotal;
+  S.pricingVat = vat;
+  S.pricingTotal = total;
+
+  const formattedSubtotal = formatVND(subtotal);
+  const formattedVat = formatVND(vat);
+  const formattedTotal = formatVND(total);
+
+  // HUD card bên phải
+  const hudSubtotal = document.getElementById('hud-pricing-subtotal');
+  if (hudSubtotal) hudSubtotal.textContent = formattedSubtotal;
+  const hudVat = document.getElementById('hud-pricing-vat');
+  if (hudVat) hudVat.textContent = formattedVat;
+  const hudTotal = document.getElementById('hud-pricing-total');
+  if (hudTotal) hudTotal.textContent = formattedTotal;
+
+  // Sidebar mục 9
+  const sideSubtotal = document.getElementById('sidebar-pricing-subtotal');
+  if (sideSubtotal) sideSubtotal.textContent = formattedSubtotal;
+  const sideVat = document.getElementById('sidebar-pricing-vat');
+  if (sideVat) sideVat.textContent = formattedVat;
+  const sideTotal = document.getElementById('sidebar-pricing-total');
+  if (sideTotal) sideTotal.textContent = formattedTotal;
+}
+window.updatePricingCalculations = updatePricingCalculations;
+
+function syncPricingBarUI() {
+  const S = window.AppState;
+  if (!S) return;
+
+  const invoiceCard = document.getElementById('hud-invoice-card');
+  const pricingCard = document.getElementById('hud-pricing-card');
+  const bottomHint = document.getElementById('floating-bottom-hint');
+  const specCard = document.getElementById('hud-spec-card');
+
+  const isMasterOn = S.showPricingBar !== false;
+  const isInvoiceOn = isMasterOn && S.showInvoiceCard !== false;
+  const isPricingOn = isMasterOn && S.showPricingCard !== false;
+
+  // 1. Thẻ Tên hóa đơn bên trái
+  if (invoiceCard) {
+    invoiceCard.style.display = isInvoiceOn ? 'block' : 'none';
+  }
+
+  // 2. Thẻ Bảng tính giá bên phải
+  if (pricingCard) {
+    pricingCard.style.display = isPricingOn ? 'block' : 'none';
+  }
+
+  // 3. Dời vị trí Floating Hint để không đè lên thẻ tên hóa đơn
+  if (bottomHint) {
+    if (isInvoiceOn) {
+      bottomHint.style.bottom = '128px';
+    } else {
+      bottomHint.style.bottom = '12px';
+    }
+  }
+
+  // 4. Dời vị trí Spec Card (Bảng thông số đặt hàng) để không đè lên bảng tính giá
+  if (specCard && !specCard.dataset.userDragged) {
+    if (isPricingOn) {
+      specCard.style.bottom = '215px';
+    } else {
+      specCard.style.bottom = '12px';
+    }
+  }
+
+  // 5. Đồng bộ các nút toggle
+  const checkSidebar = document.getElementById('check-sidebar-pricing-bar');
+  if (checkSidebar) checkSidebar.checked = isMasterOn;
+  const checkToggle = document.getElementById('check-toggle-pricing-bar');
+  if (checkToggle) checkToggle.checked = isMasterOn;
+}
+window.syncPricingBarUI = syncPricingBarUI;
+
+function copyPricingQuoteToClipboard() {
+  const S = window.AppState;
+  const invName = S.invoiceName || computeStandardInvoiceName();
+  const qty = S.pricingQty || 20;
+  const unitPrice = S.pricingUnitPrice || 65000;
+  const subtotal = S.pricingSubtotal || (qty * unitPrice);
+  const vat = S.pricingVat || Math.round(subtotal * 0.08);
+  const total = S.pricingTotal || (subtotal + vat);
+
+  const lines = [
+    '🧾 BÁO GIÁ & THÔNG TIN THANH TOÁN:',
+    `• Tên hàng: ${invName}`,
+    `• Số lượng: ${qty.toLocaleString('vi-VN')} cuộn`,
+    `• Đơn giá: ${unitPrice.toLocaleString('vi-VN')} đ/cuộn`,
+    `• Thành tiền: ${subtotal.toLocaleString('vi-VN')} đ`,
+    `• Thuế VAT (8%): ${vat.toLocaleString('vi-VN')} đ`,
+    `💰 TỔNG THANH TOÁN: ${total.toLocaleString('vi-VN')} đ`
+  ];
+
+  const text = lines.join('\n');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      const icon = document.getElementById('icon-copy-pricing');
+      const txt = document.getElementById('text-copy-pricing');
+      if (icon) icon.className = 'fa-solid fa-check text-emerald-400 text-[10px]';
+      if (txt) txt.textContent = 'Đã chép!';
+      setTimeout(() => {
+        if (icon) icon.className = 'fa-regular fa-copy text-[10px]';
+        if (txt) txt.textContent = 'Copy';
+      }, 1800);
+      showPresetToast('Đã sao chép báo giá & thông tin thanh toán vào bộ nhớ tạm!');
+    }).catch(() => {
+      prompt('Sao chép báo giá:', text);
+    });
+  } else {
+    prompt('Sao chép báo giá:', text);
+  }
+}
+window.copyPricingQuoteToClipboard = copyPricingQuoteToClipboard;
+
+function makeElementDraggable(cardEl, headerEl) {
+  const container = document.getElementById('viewport-3d');
+  if (!cardEl || !container || !headerEl) return;
+
+  let isDragging = false;
+  let startX = 0, startY = 0;
+  let startLeft = 0, startTop = 0;
+
+  function onPointerDown(e) {
+    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('a')) {
+      return;
+    }
+    isDragging = true;
+    cardEl.classList.add('is-dragging');
+    cardEl.style.transition = 'none';
+
+    startX = e.clientX;
+    startY = e.clientY;
+
+    const cardRect = cardEl.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    startLeft = cardRect.left - containerRect.left;
+    startTop = cardRect.top - containerRect.top;
+
+    cardEl.style.right = 'auto';
+    cardEl.style.bottom = 'auto';
+    cardEl.style.left = `${startLeft}px`;
+    cardEl.style.top = `${startTop}px`;
+
+    try {
+      headerEl.setPointerCapture?.(e.pointerId);
+    } catch (err) {}
+
+    window.addEventListener('pointermove', onPointerMove, { passive: false });
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+    e.preventDefault();
+  }
+
+  function onPointerMove(e) {
+    if (!isDragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    let newLeft = startLeft + dx;
+    let newTop = startTop + dy;
+
+    const maxLeft = Math.max(10, container.clientWidth - cardEl.offsetWidth - 10);
+    const maxTop = Math.max(10, container.clientHeight - cardEl.offsetHeight - 10);
+
+    newLeft = Math.max(10, Math.min(maxLeft, newLeft));
+    newTop = Math.max(10, Math.min(maxTop, newTop));
+
+    cardEl.style.left = `${newLeft}px`;
+    cardEl.style.top = `${newTop}px`;
+  }
+
+  function onPointerUp(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    cardEl.classList.remove('is-dragging');
+    cardEl.style.transition = '';
+
+    const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
+    if (dist > 6) {
+      cardEl.dataset.userDragged = 'true';
+    }
+
+    try {
+      headerEl.releasePointerCapture?.(e.pointerId);
+    } catch (err) {}
+
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup', onPointerUp);
+    window.removeEventListener('pointercancel', onPointerUp);
+  }
+
+  headerEl.addEventListener('pointerdown', onPointerDown);
+
+  headerEl.addEventListener('dblclick', (e) => {
+    if (e.target.closest('button')) return;
+    delete cardEl.dataset.userDragged;
+    cardEl.style.left = '';
+    cardEl.style.top = '';
+    cardEl.style.right = '';
+    cardEl.style.bottom = '';
+    syncPricingBarUI();
+  });
+}
+
+function initPricingAndInvoiceModule() {
+  const S = window.AppState;
+
+  // 1. Cho phép kéo thả bảng tính giá và thẻ tên hóa đơn
+  const pricingCard = document.getElementById('hud-pricing-card');
+  const pricingHeader = document.getElementById('hud-pricing-header');
+  if (pricingCard && pricingHeader) {
+    makeElementDraggable(pricingCard, pricingHeader);
+  }
+
+  const invoiceCard = document.getElementById('hud-invoice-card');
+  const invoiceHeader = document.getElementById('hud-invoice-header');
+  if (invoiceCard && invoiceHeader) {
+    makeElementDraggable(invoiceCard, invoiceHeader);
+  }
+
+  // 2. Lắng nghe ô nhập tên hóa đơn (HUD & Sidebar)
+  const hudInvInput = document.getElementById('input-hud-invoice-name');
+  const sideInvInput = document.getElementById('input-sidebar-invoice-name');
+
+  function onInvoiceInput(val) {
+    S.invoiceName = val;
+    S.isInvoiceNameCustom = true;
+    if (hudInvInput && hudInvInput !== document.activeElement) hudInvInput.value = val;
+    if (sideInvInput && sideInvInput !== document.activeElement) sideInvInput.value = val;
+    const badgeStatus = document.getElementById('badge-invoice-status');
+    if (badgeStatus) {
+      badgeStatus.innerHTML = '<i class="fa-solid fa-pen text-[9px] text-amber-400"></i> <span class="text-amber-300">Tùy biến</span>';
+    }
+  }
+
+  hudInvInput?.addEventListener('input', (e) => onInvoiceInput(e.target.value));
+  sideInvInput?.addEventListener('input', (e) => onInvoiceInput(e.target.value));
+
+  // Nút đặt lại tên chuẩn theo quy tắc
+  const btnResetHUD = document.getElementById('btn-reset-invoice-name');
+  const btnResetSide = document.getElementById('btn-sidebar-reset-invoice');
+  const doReset = () => {
+    updateInvoiceName(true);
+    showPresetToast('Đã đặt lại tên sản phẩm theo quy tắc chuẩn!');
+  };
+  btnResetHUD?.addEventListener('click', doReset);
+  btnResetSide?.addEventListener('click', doReset);
+
+  // Nút copy tên hóa đơn
+  const btnCopyInv = document.getElementById('btn-copy-invoice-name');
+  btnCopyInv?.addEventListener('click', () => {
+    const name = S.invoiceName || computeStandardInvoiceName();
+    navigator.clipboard.writeText(name).then(() => {
+      const icon = document.getElementById('icon-copy-invoice');
+      const text = document.getElementById('text-copy-invoice');
+      if (icon) icon.className = 'fa-solid fa-check text-emerald-400 text-[10px]';
+      if (text) text.textContent = 'Đã chép!';
+      setTimeout(() => {
+        if (icon) icon.className = 'fa-regular fa-copy text-[10px]';
+        if (text) text.textContent = 'Copy';
+      }, 1800);
+      showPresetToast('Đã sao chép tên hóa đơn!');
+    });
+  });
+
+  // 3. Lắng nghe ô nhập số lượng (HUD & Sidebar)
+  const hudQty = document.getElementById('input-hud-pricing-qty');
+  const sideQty = document.getElementById('input-sidebar-pricing-qty');
+
+  function onQtyChange(val) {
+    const q = Math.max(1, parseInt(val, 10) || 1);
+    S.pricingQty = q;
+    if (hudQty && hudQty !== document.activeElement) hudQty.value = q;
+    if (sideQty && sideQty !== document.activeElement) sideQty.value = q;
+    updatePricingCalculations();
+  }
+
+  hudQty?.addEventListener('input', (e) => onQtyChange(e.target.value));
+  sideQty?.addEventListener('input', (e) => onQtyChange(e.target.value));
+
+  // 4. Lắng nghe ô nhập đơn giá (HUD & Sidebar)
+  const hudPrice = document.getElementById('input-hud-pricing-price');
+  const sidePrice = document.getElementById('input-sidebar-pricing-price');
+
+  function onPriceChange(rawVal) {
+    const p = parseCurrencyInput(rawVal);
+    S.pricingUnitPrice = p;
+    updatePricingCalculations();
+  }
+
+  function formatPriceField(inputEl) {
+    if (!inputEl) return;
+    const p = parseCurrencyInput(inputEl.value);
+    inputEl.value = p.toLocaleString('vi-VN');
+    if (hudPrice && hudPrice !== inputEl) hudPrice.value = p.toLocaleString('vi-VN');
+    if (sidePrice && sidePrice !== inputEl) sidePrice.value = p.toLocaleString('vi-VN');
+  }
+
+  hudPrice?.addEventListener('input', (e) => onPriceChange(e.target.value));
+  sidePrice?.addEventListener('input', (e) => onPriceChange(e.target.value));
+
+  hudPrice?.addEventListener('blur', (e) => formatPriceField(e.target));
+  sidePrice?.addEventListener('blur', (e) => formatPriceField(e.target));
+
+  // 5. Nút Copy Báo Giá
+  document.getElementById('btn-copy-pricing-quote')?.addEventListener('click', copyPricingQuoteToClipboard);
+  document.getElementById('btn-sidebar-copy-quote')?.addEventListener('click', copyPricingQuoteToClipboard);
+
+  // 6. Nút tắt / đóng từng thẻ
+  document.getElementById('btn-close-invoice-card')?.addEventListener('click', () => {
+    S.showInvoiceCard = false;
+    syncPricingBarUI();
+  });
+
+  document.getElementById('btn-close-pricing-card')?.addEventListener('click', () => {
+    S.showPricingCard = false;
+    syncPricingBarUI();
+  });
+
+  // 7. Master checkbox bật/tắt (Sidebar & Menu tùy biến)
+  function toggleMasterPricing(enabled) {
+    S.showPricingBar = enabled;
+    S.showInvoiceCard = enabled;
+    S.showPricingCard = enabled;
+    syncPricingBarUI();
+  }
+
+  document.getElementById('check-sidebar-pricing-bar')?.addEventListener('change', (e) => {
+    toggleMasterPricing(e.target.checked);
+  });
+
+  document.getElementById('check-toggle-pricing-bar')?.addEventListener('change', (e) => {
+    toggleMasterPricing(e.target.checked);
+  });
+
+  // Khởi tạo tính toán lần đầu
+  updateInvoiceName();
+  updatePricingCalculations();
+  syncPricingBarUI();
+}
+window.initPricingAndInvoiceModule = initPricingAndInvoiceModule;
 
 /**
  * ĐIỀU KHIỂN GIAO DIỆN DI ĐỘNG (MOBILE RESPONSIVE HANDLERS)
@@ -2149,6 +2606,20 @@ function initEventListeners() {
       lines.push(`• Tình trạng: ${statusText}`);
     }
 
+    if (S.showPricingBar !== false) {
+      if (S.invoiceName) {
+        lines.push(`• Tên sản phẩm: ${S.invoiceName}`);
+      }
+      const qty = S.pricingQty || 20;
+      const unitPrice = S.pricingUnitPrice || 65000;
+      const subtotal = S.pricingSubtotal || (qty * unitPrice);
+      const vat = S.pricingVat || Math.round(subtotal * 0.08);
+      const total = S.pricingTotal || (subtotal + vat);
+      lines.push(`• Báo giá: ${qty.toLocaleString('vi-VN')} cuộn x ${unitPrice.toLocaleString('vi-VN')} đ = ${subtotal.toLocaleString('vi-VN')} đ`);
+      lines.push(`• VAT (8%): ${vat.toLocaleString('vi-VN')} đ`);
+      lines.push(`• Tổng thanh toán: ${total.toLocaleString('vi-VN')} đ`);
+    }
+
     const fullText = lines.join('\n');
 
     const onSuccess = () => {
@@ -2232,6 +2703,7 @@ function initEventListeners() {
   applySpecCardScale(S.specCardScale || 1.0, false);
   applyDimTextScale(S.dimTextScale || 1.35, false);
   makeHudSpecCardDraggable();
+  initPricingAndInvoiceModule();
 
   const btnToggleBg = document.getElementById('btn-toggle-bg');
   if (btnToggleBg) {
