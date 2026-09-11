@@ -2,14 +2,23 @@
 @echo off
 title WEB TEM MAKET 3D - DANG CHAY TAI CONG 8888
 cd /d "%~dp0"
-powershell -NoProfile -ExecutionPolicy Bypass -Command "iex ((Get-Content -LiteralPath '%~f0' -Raw))"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$scriptDir='%~dp0'.TrimEnd('\'); iex ((Get-Content -LiteralPath '%~f0' -Raw))"
 pause
 exit /b
 #>
 
 $Port = 8888
-$root = $PSScriptRoot
-if (-not $root) { $root = Get-Location }
+$root = if ($scriptDir -and (Test-Path $scriptDir)) { $scriptDir } else { (Get-Location).Path }
+
+# Tự động tìm thư mục chứa file index.html nếu file CHAY-WEB.bat đặt ở thư mục cha
+if (-not (Test-Path (Join-Path $root "index.html"))) {
+    $found = Get-ChildItem -Path $root -Filter "index.html" -Recurse -Depth 3 -File -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($found) {
+        $root = $found.DirectoryName
+    }
+}
+
+$hasIndex = Test-Path (Join-Path $root "index.html")
 
 $listener = New-Object System.Net.HttpListener
 $bindAll = $false
@@ -32,13 +41,18 @@ try {
 
 Write-Host "==========================================================" -ForegroundColor Green
 Write-Host "  WEB THIET KE TEM MAKET 3D DANG CHAY TAI CONG: $Port" -ForegroundColor Green
-Write-Host "  * Chay doc lap 100%, KHONG anh huong den website khac!" -ForegroundColor Cyan
+Write-Host "  Thu muc Web: $root" -ForegroundColor Cyan
+if ($hasIndex) {
+    Write-Host "  Trang chu:   index.html [DA TIM THAY OK]" -ForegroundColor Green
+} else {
+    Write-Host "  [CANH BAO] Khong tim thay file index.html trong thu muc nay!" -ForegroundColor Red
+}
 Write-Host "----------------------------------------------------------" -ForegroundColor Gray
 Write-Host "  [1] Mo ngay tren VPS:   http://localhost:$Port" -ForegroundColor White
 if ($bindAll) {
     Write-Host "  [2] Mo tu may ngoai:    http://103.177.111.102:$Port" -ForegroundColor Yellow
 } else {
-    Write-Host "  [2] De mo tu xa: Chuot phai file nay -> chon 'Run as administrator'" -ForegroundColor Yellow
+    Write-Host "  [2] De mo tu ngoai: Chuot phai file nay -> 'Run as administrator'" -ForegroundColor Yellow
 }
 Write-Host "  [De tat web, ban chi can dong cua so nay lai]" -ForegroundColor Gray
 Write-Host "==========================================================" -ForegroundColor Green
@@ -69,13 +83,15 @@ while ($listener.IsListening) {
         $request = $context.Request
         $response = $context.Response
 
-        $urlPath = $request.Url.LocalPath.TrimStart('/')
-        if ([string]::IsNullOrEmpty($urlPath) -or $urlPath -eq "/") {
-            $urlPath = "index.html"
+        $rawPath = $request.Url.LocalPath.TrimStart('/')
+        if ([string]::IsNullOrEmpty($rawPath) -or $rawPath -eq "/") {
+            $rawPath = "index.html"
         }
 
-        $fullPath = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($root, $urlPath))
-        if (-not $fullPath.StartsWith([System.IO.Path]::GetFullPath($root))) {
+        $decodedPath = [System.Uri]::UnescapeDataString($rawPath).Replace('/', '\')
+        $fullPath = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($root, $decodedPath))
+
+        if (-not $fullPath.StartsWith([System.IO.Path]::GetFullPath($root), [System.StringComparison]::OrdinalIgnoreCase)) {
             $response.StatusCode = 403
             $response.Close()
             continue
@@ -93,7 +109,9 @@ while ($listener.IsListening) {
             $response.StatusCode = 200
         } else {
             $response.StatusCode = 404
-            $notFoundBytes = [System.Text.Encoding]::UTF8.GetBytes("404 Not Found")
+            $notFoundHtml = "<html><body><h2>404 Not Found</h2><p>File khong ton tai: <code>$decodedPath</code> trong thu muc: <code>$root</code></p></body></html>"
+            $notFoundBytes = [System.Text.Encoding]::UTF8.GetBytes($notFoundHtml)
+            $response.ContentType = "text/html; charset=utf-8"
             $response.OutputStream.Write($notFoundBytes, 0, $notFoundBytes.Length)
         }
         $response.Close()
