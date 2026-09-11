@@ -40,6 +40,145 @@
 <body class="bg-slate-950 text-slate-100 flex flex-col h-screen overflow-hidden">
   <div id="debug-err-banner" style="display:none; background:#dc2626; color:#ffffff; padding:8px 16px; font-size:12px; font-family:monospace; z-index:999999; text-align:center; position:fixed; top:0; left:0; right:0;"></div>
 
+  <!-- ========================================================= -->
+  <!-- 1. LOADING SCREEN: XÁC THỰC PHIÊN ĐĂNG NHẬP              -->
+  <!-- ========================================================= -->
+  <div id="auth-loading-overlay" class="fixed inset-0 z-[120] bg-slate-950 flex flex-col items-center justify-center gap-3 select-none">
+    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white text-2xl shadow-xl shadow-blue-500/30 animate-pulse border border-white/10">
+      <i class="fa-solid fa-scroll"></i>
+    </div>
+    <div class="flex items-center gap-2 text-xs text-slate-400 font-medium">
+      <i class="fa-solid fa-spinner fa-spin text-blue-400"></i>
+      <span>Đang kết nối hệ thống 3D Studio...</span>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- 2. FULLSCREEN AUTH GATEWAY: BẮT BUỘC ĐĂNG NHẬP MỚI VÀO WEB-->
+  <!-- ========================================================= -->
+  <div id="auth-portal-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950 px-4 py-6 overflow-y-auto hidden">
+    <!-- Hiệu ứng nền ánh sáng công nghệ mờ ảo -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden">
+      <div class="absolute -top-40 -left-40 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl"></div>
+      <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl"></div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-3xl"></div>
+    </div>
+
+    <div class="relative w-full max-w-md bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-3xl shadow-2xl shadow-black/90 overflow-hidden flex flex-col my-auto animate-in fade-in zoom-in-95 duration-300">
+      <!-- Portal Brand Header -->
+      <div class="bg-gradient-to-br from-slate-900 via-blue-950/70 to-slate-900 p-6 sm:p-7 border-b border-slate-800 text-center relative">
+        <div class="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white text-2xl shadow-xl shadow-blue-500/30 mb-3 border border-white/10">
+          <i class="fa-solid fa-scroll"></i>
+        </div>
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-[10px] font-bold uppercase tracking-wider mb-1.5">
+          <i class="fa-solid fa-shield-halved text-[9px]"></i> Cổng Truy Cập Hệ Thống
+        </div>
+        <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">3D ROLL STUDIO</h2>
+        <p class="text-xs text-slate-400 mt-1">Đăng nhập tài khoản để vào không gian thiết kế tem cuộn 3D</p>
+      </div>
+
+      <!-- Segmented Tabs: Đăng Nhập vs Đăng Ký -->
+      <div class="p-5 pb-0">
+        <div class="grid grid-cols-2 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+          <button type="button" id="tab-portal-login" class="portal-tab-btn active py-2.5 rounded-lg transition text-center bg-blue-600 text-white shadow-md shadow-blue-600/20 flex items-center justify-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Đăng Nhập
+          </button>
+          <button type="button" id="tab-portal-register" class="portal-tab-btn py-2.5 rounded-lg transition text-center text-slate-400 hover:text-white flex items-center justify-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-user-plus"></i> Đăng Ký Tài Khoản
+          </button>
+        </div>
+      </div>
+
+      <!-- Forms Body -->
+      <div class="p-5 sm:p-6 space-y-4">
+        <!-- FORM ĐĂNG NHẬP -->
+        <form id="form-portal-login" class="space-y-3.5 text-xs">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Email đăng nhập:</label>
+            <div class="flex items-center bg-slate-950 px-3.5 py-2.5 rounded-xl border border-slate-700 focus-within:border-blue-500 transition">
+              <i class="fa-solid fa-envelope text-slate-400 mr-2.5 text-xs"></i>
+              <input type="email" id="portal-login-email" required placeholder="admin@hacode.vn" class="w-full bg-transparent text-white text-xs focus:outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Mật khẩu:</label>
+            <div class="flex items-center bg-slate-950 px-3.5 py-2.5 rounded-xl border border-slate-700 focus-within:border-blue-500 transition">
+              <i class="fa-solid fa-lock text-slate-400 mr-2.5 text-xs"></i>
+              <input type="password" id="portal-login-password" required placeholder="Nhập mật khẩu..." class="w-full bg-transparent text-white text-xs focus:outline-none">
+            </div>
+          </div>
+
+          <!-- Alert box đăng nhập -->
+          <div id="portal-login-msg" class="hidden p-3 rounded-xl text-xs leading-relaxed border"></div>
+
+          <button type="submit" id="btn-portal-submit-login" class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold rounded-xl transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 text-xs mt-2">
+            <span>Đăng Nhập Vào Hệ Thống</span> <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </form>
+
+        <!-- FORM ĐĂNG KÝ -->
+        <form id="form-portal-register" class="hidden space-y-3 text-xs">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Họ và tên:</label>
+            <div class="flex items-center bg-slate-950 px-3.5 py-2.5 rounded-xl border border-slate-700 focus-within:border-blue-500 transition">
+              <i class="fa-solid fa-id-card text-slate-400 mr-2 text-xs"></i>
+              <input type="text" id="portal-reg-fullname" required placeholder="Nguyễn Văn A" class="w-full bg-transparent text-white text-xs focus:outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Số điện thoại:</label>
+            <div class="flex items-center bg-slate-950 px-3.5 py-2.5 rounded-xl border border-slate-700 focus-within:border-blue-500 transition">
+              <i class="fa-solid fa-phone text-slate-400 mr-2 text-xs"></i>
+              <input type="tel" id="portal-reg-phone" placeholder="0942.xxx.xxx" class="w-full bg-transparent text-white text-xs focus:outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Email:</label>
+            <div class="flex items-center bg-slate-950 px-3.5 py-2.5 rounded-xl border border-slate-700 focus-within:border-blue-500 transition">
+              <i class="fa-solid fa-envelope text-slate-400 mr-2.5 text-xs"></i>
+              <input type="email" id="portal-reg-email" required placeholder="nhanvien@hacode.vn" class="w-full bg-transparent text-white text-xs focus:outline-none">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">Mật khẩu:</label>
+              <div class="flex items-center bg-slate-950 px-3 py-2 rounded-xl border border-slate-700 focus-within:border-blue-500 transition">
+                <input type="password" id="portal-reg-password" required minlength="6" placeholder="Tối thiểu 6 ký tự" class="w-full bg-transparent text-white text-xs focus:outline-none">
+              </div>
+            </div>
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">Xác nhận:</label>
+              <div class="flex items-center bg-slate-950 px-3 py-2 rounded-xl border border-slate-700 focus-within:border-blue-500 transition">
+                <input type="password" id="portal-reg-repassword" required minlength="6" placeholder="Nhập lại" class="w-full bg-transparent text-white text-xs focus:outline-none">
+              </div>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded-xl bg-amber-950/40 border border-amber-800/60 text-amber-300 text-[11px] leading-relaxed flex items-start gap-2">
+            <i class="fa-solid fa-circle-info text-amber-400 text-xs shrink-0 mt-0.5"></i>
+            <span>Tài khoản mới sẽ ở trạng thái <b>Chờ Admin phê duyệt</b>. Sau khi gửi, bạn hãy báo Admin kích hoạt nhé.</span>
+          </div>
+
+          <!-- Alert box đăng ký -->
+          <div id="portal-reg-msg" class="hidden p-3 rounded-xl text-xs leading-relaxed border"></div>
+
+          <button type="submit" id="btn-portal-submit-reg" class="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl transition shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 text-xs mt-2">
+            <i class="fa-solid fa-paper-plane"></i> <span>Gửi Đăng Ký Tài Khoản</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Portal Footer -->
+      <div class="px-6 py-3 bg-slate-950/70 border-t border-slate-800 text-center text-[11px] text-slate-500">
+        Bản quyền thuộc <b>Hacode</b> © 2026 • Bảo mật thông tin & Thiết kế
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- 3. KHÔNG GIAN THIẾT KẾ TEM 3D (CHỈ HIỂN THỊ KHI ĐÃ ĐĂNG NHẬP)-->
+  <!-- ========================================================= -->
+  <div id="app-workspace" class="flex flex-col h-screen overflow-hidden hidden">
   <!-- TOP NAVBAR -->
   <!-- TOP NAVBAR WITH SEGMENTED TABS & ACTIONS -->
   <header class="h-14 bg-slate-900/95 backdrop-blur border-b border-slate-800 flex items-center justify-between px-2.5 sm:px-4 z-30 shrink-0 select-none">
@@ -129,14 +268,8 @@
 
       <!-- PHÂN ĐOÀN TÀI KHOẢN & QUẢN TRỊ (SUPABASE AUTH) -->
       <div id="auth-header-container" class="flex items-center gap-1.5 sm:gap-2 shrink-0 border-l border-slate-700/80 pl-2 sm:pl-3">
-        <!-- Nút khi chưa đăng nhập -->
-        <button id="btn-open-auth-modal" type="button" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-2.5 sm:px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-bold transition shadow-md shadow-blue-600/30 cursor-pointer">
-          <i class="fa-solid fa-user-lock text-blue-200"></i>
-          <span class="hidden sm:inline">Đăng Nhập</span>
-        </button>
-
         <!-- Khối khi đã đăng nhập -->
-        <div id="user-logged-in-bar" class="hidden flex items-center gap-1.5 sm:gap-2">
+        <div id="user-logged-in-bar" class="flex items-center gap-1.5 sm:gap-2">
           <!-- Chuông thông báo dành riêng cho Admin có thành viên chờ duyệt -->
           <button id="btn-admin-notifications" type="button" class="hidden relative p-1.5 sm:px-2 sm:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition cursor-pointer" title="Quản lý thành viên chờ duyệt">
             <i class="fa-solid fa-bell text-amber-400 text-xs sm:text-sm"></i>
@@ -154,15 +287,16 @@
             <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white text-[10px] font-bold shadow-xs">
               <i class="fa-solid fa-user"></i>
             </div>
-            <div class="flex flex-col text-left leading-none max-w-[80px] sm:max-w-[120px]">
+            <div class="flex flex-col text-left leading-none max-w-[90px] sm:max-w-[130px]">
               <span id="nav-user-name" class="text-[11px] font-bold text-white truncate">Tài khoản</span>
               <span id="nav-user-role" class="text-[8px] sm:text-[9px] text-emerald-400 font-semibold uppercase mt-0.5">Thành viên</span>
             </div>
           </div>
 
           <!-- Nút Đăng Xuất -->
-          <button id="btn-user-signout" type="button" class="p-1.5 bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 rounded-lg border border-slate-700 hover:border-rose-600/60 transition cursor-pointer" title="Đăng xuất">
-            <i class="fa-solid fa-right-from-bracket text-xs"></i>
+          <button id="btn-user-signout" type="button" class="flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-rose-950/70 text-slate-300 hover:text-rose-300 rounded-lg border border-slate-700 hover:border-rose-600/60 transition cursor-pointer text-xs font-semibold" title="Đăng xuất khỏi hệ thống">
+            <i class="fa-solid fa-right-from-bracket text-xs text-rose-400"></i>
+            <span class="hidden sm:inline">Đăng Xuất</span>
           </button>
         </div>
       </div>
@@ -2694,117 +2828,7 @@
       <span class="text-[10px] font-semibold">Phiếu Duyệt</span>
     </button>
   </nav>
-
-  <!-- ========================================================= -->
-  <!-- MODAL: ĐĂNG NHẬP / ĐĂNG KÝ TÀI KHOẢN (SUPABASE AUTH)       -->
-  <!-- ========================================================= -->
-  <div id="modal-auth" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 hidden animate-in fade-in zoom-in-95 duration-200">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl shadow-black/80 flex flex-col">
-      <!-- Header -->
-      <div class="bg-gradient-to-r from-slate-900 via-blue-950/60 to-slate-900 px-5 py-4 border-b border-slate-800 flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-xl bg-blue-600/30 text-blue-400 flex items-center justify-center text-sm border border-blue-500/30 shadow-sm">
-            <i class="fa-solid fa-user-shield"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-sm text-white" id="auth-modal-title">Tài Khoản Hệ Thống</h3>
-            <p class="text-[11px] text-slate-400">Đăng nhập để đồng bộ & lưu trữ mẫu tem 3D</p>
-          </div>
-        </div>
-        <button type="button" id="btn-close-auth-modal" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
-          <i class="fa-solid fa-xmark text-sm"></i>
-        </button>
-      </div>
-
-      <!-- Segmented Tabs: Đăng Nhập vs Đăng Ký -->
-      <div class="p-4 pb-0">
-        <div class="grid grid-cols-2 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
-          <button type="button" id="tab-auth-login" class="auth-tab-btn active py-2 rounded-lg font-bold transition text-center bg-blue-600 text-white shadow-sm">
-            <i class="fa-solid fa-arrow-right-to-bracket mr-1"></i> Đăng Nhập
-          </button>
-          <button type="button" id="tab-auth-register" class="auth-tab-btn py-2 rounded-lg font-bold transition text-center text-slate-400 hover:text-white">
-            <i class="fa-solid fa-user-plus mr-1"></i> Đăng Ký
-          </button>
-        </div>
-      </div>
-
-      <div class="p-4 sm:p-5">
-        <!-- FORM ĐĂNG NHẬP -->
-        <form id="form-auth-login" class="space-y-3.5 text-xs">
-          <div>
-            <label class="block text-slate-300 font-semibold mb-1">Email đăng nhập:</label>
-            <div class="flex items-center bg-slate-950 px-3 py-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
-              <i class="fa-solid fa-envelope text-slate-400 mr-2 text-xs"></i>
-              <input type="email" id="login-email" required placeholder="admin@hacode.vn" class="w-full bg-transparent text-white text-xs focus:outline-none">
-            </div>
-          </div>
-          <div>
-            <label class="block text-slate-300 font-semibold mb-1">Mật khẩu:</label>
-            <div class="flex items-center bg-slate-950 px-3 py-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
-              <i class="fa-solid fa-lock text-slate-400 mr-2 text-xs"></i>
-              <input type="password" id="login-password" required placeholder="••••••••" class="w-full bg-transparent text-white text-xs focus:outline-none">
-            </div>
-          </div>
-
-          <div id="login-error-msg" class="hidden p-2.5 rounded-lg bg-rose-950/70 border border-rose-700 text-rose-300 text-xs leading-relaxed"></div>
-
-          <button type="submit" id="btn-submit-login" class="w-full py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer mt-2">
-            <span>Đăng Nhập Ngay</span> <i class="fa-solid fa-arrow-right"></i>
-          </button>
-        </form>
-
-        <!-- FORM ĐĂNG KÝ -->
-        <form id="form-auth-register" class="hidden space-y-3 text-xs">
-          <div>
-            <label class="block text-slate-300 font-semibold mb-1">Họ và tên:</label>
-            <div class="flex items-center bg-slate-950 px-3 py-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
-              <i class="fa-solid fa-id-card text-slate-400 mr-2 text-xs"></i>
-              <input type="text" id="reg-fullname" required placeholder="Nguyễn Văn A" class="w-full bg-transparent text-white text-xs focus:outline-none">
-            </div>
-          </div>
-          <div>
-            <label class="block text-slate-300 font-semibold mb-1">Số điện thoại:</label>
-            <div class="flex items-center bg-slate-950 px-3 py-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
-              <i class="fa-solid fa-phone text-slate-400 mr-2 text-xs"></i>
-              <input type="tel" id="reg-phone" placeholder="0942.xxx.xxx" class="w-full bg-transparent text-white text-xs focus:outline-none">
-            </div>
-          </div>
-          <div>
-            <label class="block text-slate-300 font-semibold mb-1">Email:</label>
-            <div class="flex items-center bg-slate-950 px-3 py-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
-              <i class="fa-solid fa-envelope text-slate-400 mr-2 text-xs"></i>
-              <input type="email" id="reg-email" required placeholder="nhanvien@hacode.vn" class="w-full bg-transparent text-white text-xs focus:outline-none">
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-slate-300 font-semibold mb-1">Mật khẩu:</label>
-              <div class="flex items-center bg-slate-950 px-2.5 py-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
-                <input type="password" id="reg-password" required minlength="6" placeholder="Tối thiểu 6 ký tự" class="w-full bg-transparent text-white text-xs focus:outline-none">
-              </div>
-            </div>
-            <div>
-              <label class="block text-slate-300 font-semibold mb-1">Xác nhận:</label>
-              <div class="flex items-center bg-slate-950 px-2.5 py-2 rounded-xl border border-slate-700 focus-within:border-blue-500">
-                <input type="password" id="reg-repassword" required minlength="6" placeholder="Nhập lại mật khẩu" class="w-full bg-transparent text-white text-xs focus:outline-none">
-              </div>
-            </div>
-          </div>
-
-          <div class="p-2.5 rounded-lg bg-amber-950/40 border border-amber-800/60 text-amber-300 text-[11px] leading-relaxed flex items-start gap-2">
-            <i class="fa-solid fa-circle-info text-amber-400 text-xs shrink-0 mt-0.5"></i>
-            <span>Tài khoản mới đăng ký sẽ ở trạng thái <b>Chờ Admin phê duyệt</b>. Bạn chỉ cần liên hệ Admin duyệt là bắt đầu sử dụng được.</span>
-          </div>
-
-          <div id="reg-msg" class="hidden p-2.5 rounded-lg text-xs leading-relaxed"></div>
-
-          <button type="submit" id="btn-submit-reg" class="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl transition shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer mt-2">
-            <i class="fa-solid fa-paper-plane"></i> <span>Gửi Đăng Ký & Chờ Duyệt</span>
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
+  </div> <!-- END #app-workspace -->
 
   <!-- ========================================================= -->
   <!-- MODAL: QUẢN LÝ THÀNH VIÊN & PHÊ DUYỆT (ADMIN ONLY)       -->

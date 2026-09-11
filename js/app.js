@@ -3816,32 +3816,20 @@ function showPresetToast(msg) {
 function initSupabaseAuthIntegration() {
   if (!window.SupabaseAuth) return;
 
-  // Lắng nghe thay đổi trạng thái đăng nhập
-  window.SupabaseAuth.onStateChanged((user, profile) => {
-    updateAuthUI(user, profile);
-    loadAndRenderCustomPresets();
-  });
-
-  // Khởi tạo Auth
-  window.SupabaseAuth.init();
-
-  // Nút mở Modal Auth
-  document.getElementById('btn-open-auth-modal')?.addEventListener('click', () => openAuthModal('login'));
-  document.getElementById('btn-close-auth-modal')?.addEventListener('click', closeAuthModal);
-
-  // Tabs chuyển Đăng nhập / Đăng ký
-  document.getElementById('tab-auth-login')?.addEventListener('click', () => switchAuthTab('login'));
-  document.getElementById('tab-auth-register')?.addEventListener('click', () => switchAuthTab('register'));
+  // Tabs chuyển Đăng nhập / Đăng ký trên Cổng Portal
+  document.getElementById('tab-portal-login')?.addEventListener('click', () => switchPortalTab('login'));
+  document.getElementById('tab-portal-register')?.addEventListener('click', () => switchPortalTab('register'));
 
   // Form Đăng nhập submit
-  document.getElementById('form-auth-login')?.addEventListener('submit', handleLoginSubmit);
+  document.getElementById('form-portal-login')?.addEventListener('submit', handlePortalLoginSubmit);
 
   // Form Đăng ký submit
-  document.getElementById('form-auth-register')?.addEventListener('submit', handleRegisterSubmit);
+  document.getElementById('form-portal-register')?.addEventListener('submit', handlePortalRegisterSubmit);
 
-  // Nút Đăng xuất
+  // Nút Đăng xuất ở Top Navbar
   document.getElementById('btn-user-signout')?.addEventListener('click', async () => {
     await window.SupabaseAuth.signOut();
+    updateAuthUI(null, null);
     showPresetToast('Đã đăng xuất tài khoản thành công!');
   });
 
@@ -3854,6 +3842,20 @@ function initSupabaseAuthIntegration() {
   // Tabs trong Admin Panel
   document.getElementById('tab-admin-pending')?.addEventListener('click', () => switchAdminTab('pending'));
   document.getElementById('tab-admin-all')?.addEventListener('click', () => switchAdminTab('all'));
+
+  // Lắng nghe thay đổi trạng thái đăng nhập
+  window.SupabaseAuth.onStateChanged((user, profile) => {
+    updateAuthUI(user, profile);
+    if (user && (profile?.is_approved || profile?.role === 'admin')) {
+      loadAndRenderCustomPresets();
+    }
+  });
+
+  // Khởi tạo Auth
+  window.SupabaseAuth.init().finally(() => {
+    const overlay = document.getElementById('auth-loading-overlay');
+    if (overlay) overlay.classList.add('hidden');
+  });
 
   // Lắng nghe sự kiện Realtime từ Supabase
   window.onSupabaseRealtimeEvent = () => {
@@ -3868,16 +3870,22 @@ function initSupabaseAuthIntegration() {
 }
 
 function updateAuthUI(user, profile) {
-  const btnOpenAuth = document.getElementById('btn-open-auth-modal');
-  const loggedInBar = document.getElementById('user-logged-in-bar');
+  const portalScreen = document.getElementById('auth-portal-screen');
+  const appWorkspace = document.getElementById('app-workspace');
   const navName = document.getElementById('nav-user-name');
   const navRole = document.getElementById('nav-user-role');
   const btnAdminPanel = document.getElementById('btn-open-admin-panel');
   const btnAdminBell = document.getElementById('btn-admin-notifications');
+  const loadingOverlay = document.getElementById('auth-loading-overlay');
 
-  if (user && profile) {
-    if (btnOpenAuth) btnOpenAuth.classList.add('hidden');
-    if (loggedInBar) loggedInBar.classList.remove('hidden');
+  if (loadingOverlay) loadingOverlay.classList.add('hidden');
+
+  const isApprovedUser = Boolean(user && profile && (profile.is_approved === true || profile.role === 'admin'));
+
+  if (isApprovedUser) {
+    // ẨN CỔNG ĐĂNG NHẬP, HIỂN THỊ KHÔNG GIAN THIẾT KẾ TEM 3D
+    portalScreen?.classList.add('hidden');
+    appWorkspace?.classList.remove('hidden');
 
     const displayName = profile.full_name || user.email.split('@')[0];
     if (navName) navName.textContent = displayName;
@@ -3896,11 +3904,19 @@ function updateAuthUI(user, profile) {
     if (isAdmin) {
       refreshPendingAdminCount();
     }
+
+    // Three.js tính toán lại kích thước khung hình sau khi container workspace hiển thị
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+      if (window.Scene3D && typeof window.Scene3D.onWindowResize === 'function') {
+        window.Scene3D.onWindowResize();
+      }
+    }, 150);
+
   } else {
-    if (btnOpenAuth) btnOpenAuth.classList.remove('hidden');
-    if (loggedInBar) loggedInBar.classList.add('hidden');
-    if (btnAdminPanel) btnAdminPanel.classList.add('hidden');
-    if (btnAdminBell) btnAdminBell.classList.add('hidden');
+    // CHƯA ĐĂNG NHẬP HOẶC CHƯA DUYỆT -> HIỂN THỊ CỔNG ĐĂNG NHẬP, KHÓA HOÀN TOÀN TEM 3D
+    portalScreen?.classList.remove('hidden');
+    appWorkspace?.classList.add('hidden');
   }
 }
 
@@ -3930,94 +3946,85 @@ async function refreshPendingAdminCount() {
   }
 }
 
-function openAuthModal(defaultTab = 'login') {
-  const modal = document.getElementById('modal-auth');
-  if (!modal) return;
-  switchAuthTab(defaultTab);
-  modal.classList.remove('hidden');
-}
+function switchPortalTab(tab) {
+  const tabLogin = document.getElementById('tab-portal-login');
+  const tabRegister = document.getElementById('tab-portal-register');
+  const formLogin = document.getElementById('form-portal-login');
+  const formRegister = document.getElementById('form-portal-register');
+  const loginMsg = document.getElementById('portal-login-msg');
+  const regMsg = document.getElementById('portal-reg-msg');
 
-function closeAuthModal() {
-  const modal = document.getElementById('modal-auth');
-  if (modal) modal.classList.add('hidden');
-  const errLogin = document.getElementById('login-error-msg');
-  if (errLogin) errLogin.classList.add('hidden');
-  const regMsg = document.getElementById('reg-msg');
+  if (loginMsg) loginMsg.classList.add('hidden');
   if (regMsg) regMsg.classList.add('hidden');
-}
-
-function switchAuthTab(tab) {
-  const tabLogin = document.getElementById('tab-auth-login');
-  const tabRegister = document.getElementById('tab-auth-register');
-  const formLogin = document.getElementById('form-auth-login');
-  const formRegister = document.getElementById('form-auth-register');
-  const title = document.getElementById('auth-modal-title');
 
   if (tab === 'login') {
-    tabLogin?.classList.add('active', 'bg-blue-600', 'text-white');
+    tabLogin?.classList.add('active', 'bg-blue-600', 'text-white', 'shadow-md', 'shadow-blue-600/20');
     tabLogin?.classList.remove('text-slate-400');
-    tabRegister?.classList.remove('active', 'bg-blue-600', 'text-white');
+    tabRegister?.classList.remove('active', 'bg-blue-600', 'text-white', 'shadow-md', 'shadow-blue-600/20');
     tabRegister?.classList.add('text-slate-400');
 
     formLogin?.classList.remove('hidden');
     formRegister?.classList.add('hidden');
-    if (title) title.textContent = 'Đăng Nhập Tài Khoản';
   } else {
-    tabRegister?.classList.add('active', 'bg-blue-600', 'text-white');
+    tabRegister?.classList.add('active', 'bg-blue-600', 'text-white', 'shadow-md', 'shadow-blue-600/20');
     tabRegister?.classList.remove('text-slate-400');
-    tabLogin?.classList.remove('active', 'bg-blue-600', 'text-white');
+    tabLogin?.classList.remove('active', 'bg-blue-600', 'text-white', 'shadow-md', 'shadow-blue-600/20');
     tabLogin?.classList.add('text-slate-400');
 
     formRegister?.classList.remove('hidden');
     formLogin?.classList.add('hidden');
-    if (title) title.textContent = 'Đăng Ký Tài Khoản Mới';
   }
 }
 
-async function handleLoginSubmit(e) {
+async function handlePortalLoginSubmit(e) {
   e.preventDefault();
-  const emailInput = document.getElementById('login-email');
-  const passInput = document.getElementById('login-password');
-  const btnSubmit = document.getElementById('btn-submit-login');
-  const errBox = document.getElementById('login-error-msg');
+  const emailInput = document.getElementById('portal-login-email');
+  const passInput = document.getElementById('portal-login-password');
+  const btnSubmit = document.getElementById('btn-portal-submit-login');
+  const msgBox = document.getElementById('portal-login-msg');
 
   if (!emailInput || !passInput) return;
-
   const email = emailInput.value.trim();
   const password = passInput.value;
 
-  if (errBox) errBox.classList.add('hidden');
+  if (msgBox) msgBox.classList.add('hidden');
   if (btnSubmit) {
     btnSubmit.disabled = true;
-    btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang đăng nhập...';
+    btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang xác thực...';
   }
 
   try {
     await window.SupabaseAuth.signIn({ email, password });
-    closeAuthModal();
     showPresetToast(`Đăng nhập thành công! Chào mừng ${window.SupabaseAuth.currentProfile?.full_name || email}`);
   } catch (err) {
-    if (errBox) {
-      errBox.classList.remove('hidden');
-      errBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-400 mr-1.5"></i> ${err.message || 'Email hoặc mật khẩu không chính xác.'}`;
+    if (msgBox) {
+      msgBox.classList.remove('hidden');
+      const isPending = err.message && err.message.includes('chờ Admin phê duyệt');
+      if (isPending) {
+        msgBox.className = 'p-3 rounded-xl bg-amber-950/70 border border-amber-700 text-amber-300 text-xs leading-relaxed';
+        msgBox.innerHTML = `<i class="fa-solid fa-circle-exclamation text-amber-400 mr-1.5 text-sm"></i> <b>Tài khoản chưa được kích hoạt:</b><br>${err.message}`;
+      } else {
+        msgBox.className = 'p-3 rounded-xl bg-rose-950/70 border border-rose-700 text-rose-300 text-xs leading-relaxed';
+        msgBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-400 mr-1.5"></i> ${err.message || 'Email hoặc mật khẩu không chính xác.'}`;
+      }
     }
   } finally {
     if (btnSubmit) {
       btnSubmit.disabled = false;
-      btnSubmit.innerHTML = '<span>Đăng Nhập Ngay</span> <i class="fa-solid fa-arrow-right"></i>';
+      btnSubmit.innerHTML = '<span>Đăng Nhập Vào Hệ Thống</span> <i class="fa-solid fa-arrow-right"></i>';
     }
   }
 }
 
-async function handleRegisterSubmit(e) {
+async function handlePortalRegisterSubmit(e) {
   e.preventDefault();
-  const nameInput = document.getElementById('reg-fullname');
-  const phoneInput = document.getElementById('reg-phone');
-  const emailInput = document.getElementById('reg-email');
-  const passInput = document.getElementById('reg-password');
-  const repassInput = document.getElementById('reg-repassword');
-  const btnSubmit = document.getElementById('btn-submit-reg');
-  const msgBox = document.getElementById('reg-msg');
+  const nameInput = document.getElementById('portal-reg-fullname');
+  const phoneInput = document.getElementById('portal-reg-phone');
+  const emailInput = document.getElementById('portal-reg-email');
+  const passInput = document.getElementById('portal-reg-password');
+  const repassInput = document.getElementById('portal-reg-repassword');
+  const btnSubmit = document.getElementById('btn-portal-submit-reg');
+  const msgBox = document.getElementById('portal-reg-msg');
 
   const fullName = nameInput?.value.trim();
   const phone = phoneInput?.value.trim();
@@ -4027,7 +4034,7 @@ async function handleRegisterSubmit(e) {
 
   if (password !== repassword) {
     if (msgBox) {
-      msgBox.className = 'p-2.5 rounded-lg bg-rose-950/70 border border-rose-700 text-rose-300 text-xs leading-relaxed';
+      msgBox.className = 'p-3 rounded-xl bg-rose-950/70 border border-rose-700 text-rose-300 text-xs leading-relaxed';
       msgBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Mật khẩu xác nhận không khớp!';
       msgBox.classList.remove('hidden');
     }
@@ -4042,11 +4049,10 @@ async function handleRegisterSubmit(e) {
   try {
     await window.SupabaseAuth.signUp({ email, password, fullName, phone });
     if (msgBox) {
-      msgBox.className = 'p-3 rounded-xl bg-emerald-950/80 border border-emerald-600 text-emerald-300 text-xs leading-relaxed';
-      msgBox.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400 mr-1.5 text-sm"></i> <b>Đăng ký thành công!</b><br>Hệ thống đã ghi nhận tài khoản. Bạn vui lòng thông báo Admin phê duyệt để bắt đầu sử dụng nhé.';
+      msgBox.className = 'p-3.5 rounded-xl bg-emerald-950/80 border border-emerald-600 text-emerald-300 text-xs leading-relaxed';
+      msgBox.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400 mr-1.5 text-base align-middle"></i> <b>Đăng ký thành công!</b><br>Hệ thống đã chuyển thông tin tới Admin. Bạn vui lòng liên hệ Admin để duyệt kích hoạt tài khoản nhé.';
       msgBox.classList.remove('hidden');
     }
-    // Xóa form
     if (nameInput) nameInput.value = '';
     if (phoneInput) phoneInput.value = '';
     if (emailInput) emailInput.value = '';
@@ -4054,14 +4060,14 @@ async function handleRegisterSubmit(e) {
     if (repassInput) repassInput.value = '';
   } catch (err) {
     if (msgBox) {
-      msgBox.className = 'p-2.5 rounded-lg bg-rose-950/70 border border-rose-700 text-rose-300 text-xs leading-relaxed';
+      msgBox.className = 'p-3 rounded-xl bg-rose-950/70 border border-rose-700 text-rose-300 text-xs leading-relaxed';
       msgBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1.5"></i> ${err.message || 'Lỗi khi đăng ký tài khoản.'}`;
       msgBox.classList.remove('hidden');
     }
   } finally {
     if (btnSubmit) {
       btnSubmit.disabled = false;
-      btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>Gửi Đăng Ký & Chờ Duyệt</span>';
+      btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>Gửi Đăng Ký Tài Khoản</span>';
     }
   }
 }
