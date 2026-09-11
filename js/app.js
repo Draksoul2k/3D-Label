@@ -3084,26 +3084,61 @@ function saveCustomPresetsToStorage(list) {
   }
 }
 
-function loadAndRenderCustomPresets(selectIdToActive = null) {
+async function loadAndRenderCustomPresets(selectIdToActive = null) {
   const customPresets = getCustomPresets();
   const optgroup = document.getElementById('optgroup-custom-presets');
   const selector = document.getElementById('preset-selector');
   if (!optgroup) return;
 
   optgroup.innerHTML = '';
-  if (customPresets.length === 0) {
+
+  // Kết hợp mẫu cục bộ và mẫu Cloud (nếu đã đăng nhập)
+  let allPresets = [...customPresets];
+
+  if (window.SupabaseAuth && window.SupabaseAuth.isLoggedIn()) {
+    try {
+      const cloudPresets = await window.SupabaseAuth.getCloudPresets();
+      if (cloudPresets && cloudPresets.length > 0) {
+        cloudPresets.forEach(cp => {
+          // Tránh trùng lặp ID
+          if (!allPresets.some(p => p.id === cp.id)) {
+            const pData = cp.data || {};
+            pData.id = cp.id;
+            pData.name = cp.name;
+            pData.author_name = cp.author_name;
+            pData.author_email = cp.author_email;
+            pData.isCloud = true;
+            allPresets.push(pData);
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Không thể tải mẫu tem từ Cloud:', e);
+    }
+  }
+
+  if (allPresets.length === 0) {
     optgroup.classList.add('hidden');
     optgroup.style.display = 'none';
   } else {
     optgroup.classList.remove('hidden');
     optgroup.style.display = '';
-    customPresets.forEach(p => {
+
+    const isAdmin = window.SupabaseAuth && window.SupabaseAuth.isAdmin();
+
+    allPresets.forEach(p => {
       // Đăng ký vào bảng tra cứu LABEL_PRESETS
       LABEL_PRESETS[p.id] = p;
 
       const opt = document.createElement('option');
       opt.value = p.id;
-      opt.textContent = `⭐ ${p.name}`;
+
+      if (isAdmin && p.author_name) {
+        opt.textContent = `⭐ ${p.name} (${p.author_name})`;
+      } else {
+        opt.textContent = `⭐ ${p.name}`;
+      }
+
       opt.style.backgroundColor = '#0f172a';
       opt.style.color = '#fbbf24';
       opt.style.fontWeight = '600';
@@ -3163,7 +3198,7 @@ function closeSavePresetModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-function confirmSavePreset() {
+async function confirmSavePreset() {
   const S = window.AppState;
   const inputName = document.getElementById('input-save-preset-name');
   let name = inputName ? inputName.value.trim() : '';
@@ -3198,11 +3233,26 @@ function confirmSavePreset() {
       : null
   };
 
+  // Lưu cục bộ (LocalStorage)
   const list = getCustomPresets();
   list.unshift(newPreset);
   saveCustomPresetsToStorage(list);
 
   LABEL_PRESETS[newId] = newPreset;
+
+  // Nếu đã đăng nhập, lưu đồng thời lên Supabase Cloud
+  if (window.SupabaseAuth && window.SupabaseAuth.isLoggedIn()) {
+    try {
+      const savedCloud = await window.SupabaseAuth.saveCloudPreset(name, newPreset);
+      if (savedCloud && savedCloud.id) {
+        newPreset.id = savedCloud.id;
+        LABEL_PRESETS[savedCloud.id] = newPreset;
+      }
+    } catch (err) {
+      console.warn('Lỗi lưu Cloud:', err);
+    }
+  }
+
   loadAndRenderCustomPresets(newId);
 
   closeSavePresetModal();
@@ -3759,6 +3809,433 @@ function showPresetToast(msg) {
 }
 
 /**
+ * =========================================================================
+ * SUPABASE AUTH & ADMIN USER MANAGEMENT
+ * =========================================================================
+ */
+function initSupabaseAuthIntegration() {
+  if (!window.SupabaseAuth) return;
+
+  // Lắng nghe thay đổi trạng thái đăng nhập
+  window.SupabaseAuth.onStateChanged((user, profile) => {
+    updateAuthUI(user, profile);
+    loadAndRenderCustomPresets();
+  });
+
+  // Khởi tạo Auth
+  window.SupabaseAuth.init();
+
+  // Nút mở Modal Auth
+  document.getElementById('btn-open-auth-modal')?.addEventListener('click', () => openAuthModal('login'));
+  document.getElementById('btn-close-auth-modal')?.addEventListener('click', closeAuthModal);
+
+  // Tabs chuyển Đăng nhập / Đăng ký
+  document.getElementById('tab-auth-login')?.addEventListener('click', () => switchAuthTab('login'));
+  document.getElementById('tab-auth-register')?.addEventListener('click', () => switchAuthTab('register'));
+
+  // Form Đăng nhập submit
+  document.getElementById('form-auth-login')?.addEventListener('submit', handleLoginSubmit);
+
+  // Form Đăng ký submit
+  document.getElementById('form-auth-register')?.addEventListener('submit', handleRegisterSubmit);
+
+  // Nút Đăng xuất
+  document.getElementById('btn-user-signout')?.addEventListener('click', async () => {
+    await window.SupabaseAuth.signOut();
+    showPresetToast('Đã đăng xuất tài khoản thành công!');
+  });
+
+  // Nút mở Admin Panel & Chuông thông báo
+  document.getElementById('btn-open-admin-panel')?.addEventListener('click', openAdminUsersModal);
+  document.getElementById('btn-admin-notifications')?.addEventListener('click', openAdminUsersModal);
+  document.getElementById('btn-close-admin-modal')?.addEventListener('click', closeAdminUsersModal);
+  document.getElementById('btn-refresh-admin-users')?.addEventListener('click', renderAdminUsersList);
+
+  // Tabs trong Admin Panel
+  document.getElementById('tab-admin-pending')?.addEventListener('click', () => switchAdminTab('pending'));
+  document.getElementById('tab-admin-all')?.addEventListener('click', () => switchAdminTab('all'));
+
+  // Lắng nghe sự kiện Realtime từ Supabase
+  window.onSupabaseRealtimeEvent = () => {
+    if (window.SupabaseAuth.isAdmin()) {
+      refreshPendingAdminCount();
+      const adminModal = document.getElementById('modal-admin-users');
+      if (adminModal && !adminModal.classList.contains('hidden')) {
+        renderAdminUsersList();
+      }
+    }
+  };
+}
+
+function updateAuthUI(user, profile) {
+  const btnOpenAuth = document.getElementById('btn-open-auth-modal');
+  const loggedInBar = document.getElementById('user-logged-in-bar');
+  const navName = document.getElementById('nav-user-name');
+  const navRole = document.getElementById('nav-user-role');
+  const btnAdminPanel = document.getElementById('btn-open-admin-panel');
+  const btnAdminBell = document.getElementById('btn-admin-notifications');
+
+  if (user && profile) {
+    if (btnOpenAuth) btnOpenAuth.classList.add('hidden');
+    if (loggedInBar) loggedInBar.classList.remove('hidden');
+
+    const displayName = profile.full_name || user.email.split('@')[0];
+    if (navName) navName.textContent = displayName;
+
+    const isAdmin = (profile.role === 'admin');
+    if (navRole) {
+      navRole.textContent = isAdmin ? 'Admin' : 'Thành viên';
+      navRole.className = isAdmin 
+        ? 'text-[8px] sm:text-[9px] text-amber-400 font-bold uppercase mt-0.5'
+        : 'text-[8px] sm:text-[9px] text-emerald-400 font-semibold uppercase mt-0.5';
+    }
+
+    if (btnAdminPanel) btnAdminPanel.classList.toggle('hidden', !isAdmin);
+    if (btnAdminBell) btnAdminBell.classList.toggle('hidden', !isAdmin);
+
+    if (isAdmin) {
+      refreshPendingAdminCount();
+    }
+  } else {
+    if (btnOpenAuth) btnOpenAuth.classList.remove('hidden');
+    if (loggedInBar) loggedInBar.classList.add('hidden');
+    if (btnAdminPanel) btnAdminPanel.classList.add('hidden');
+    if (btnAdminBell) btnAdminBell.classList.add('hidden');
+  }
+}
+
+async function refreshPendingAdminCount() {
+  if (!window.SupabaseAuth || !window.SupabaseAuth.isAdmin()) return;
+  try {
+    const pendingList = await window.SupabaseAuth.getPendingUsers();
+    const count = pendingList.length;
+
+    const badgeBell = document.getElementById('badge-pending-count');
+    const badgeTotal = document.getElementById('badge-total-pending');
+    const tabBadge = document.getElementById('tab-pending-badge');
+
+    if (badgeBell) {
+      badgeBell.textContent = count;
+      badgeBell.classList.toggle('hidden', count === 0);
+    }
+    if (badgeTotal) {
+      badgeTotal.textContent = `${count} chờ duyệt`;
+      badgeTotal.classList.toggle('hidden', count === 0);
+    }
+    if (tabBadge) {
+      tabBadge.textContent = count;
+    }
+  } catch (err) {
+    console.error('Lỗi cập nhật số lượng chờ duyệt:', err);
+  }
+}
+
+function openAuthModal(defaultTab = 'login') {
+  const modal = document.getElementById('modal-auth');
+  if (!modal) return;
+  switchAuthTab(defaultTab);
+  modal.classList.remove('hidden');
+}
+
+function closeAuthModal() {
+  const modal = document.getElementById('modal-auth');
+  if (modal) modal.classList.add('hidden');
+  const errLogin = document.getElementById('login-error-msg');
+  if (errLogin) errLogin.classList.add('hidden');
+  const regMsg = document.getElementById('reg-msg');
+  if (regMsg) regMsg.classList.add('hidden');
+}
+
+function switchAuthTab(tab) {
+  const tabLogin = document.getElementById('tab-auth-login');
+  const tabRegister = document.getElementById('tab-auth-register');
+  const formLogin = document.getElementById('form-auth-login');
+  const formRegister = document.getElementById('form-auth-register');
+  const title = document.getElementById('auth-modal-title');
+
+  if (tab === 'login') {
+    tabLogin?.classList.add('active', 'bg-blue-600', 'text-white');
+    tabLogin?.classList.remove('text-slate-400');
+    tabRegister?.classList.remove('active', 'bg-blue-600', 'text-white');
+    tabRegister?.classList.add('text-slate-400');
+
+    formLogin?.classList.remove('hidden');
+    formRegister?.classList.add('hidden');
+    if (title) title.textContent = 'Đăng Nhập Tài Khoản';
+  } else {
+    tabRegister?.classList.add('active', 'bg-blue-600', 'text-white');
+    tabRegister?.classList.remove('text-slate-400');
+    tabLogin?.classList.remove('active', 'bg-blue-600', 'text-white');
+    tabLogin?.classList.add('text-slate-400');
+
+    formRegister?.classList.remove('hidden');
+    formLogin?.classList.add('hidden');
+    if (title) title.textContent = 'Đăng Ký Tài Khoản Mới';
+  }
+}
+
+async function handleLoginSubmit(e) {
+  e.preventDefault();
+  const emailInput = document.getElementById('login-email');
+  const passInput = document.getElementById('login-password');
+  const btnSubmit = document.getElementById('btn-submit-login');
+  const errBox = document.getElementById('login-error-msg');
+
+  if (!emailInput || !passInput) return;
+
+  const email = emailInput.value.trim();
+  const password = passInput.value;
+
+  if (errBox) errBox.classList.add('hidden');
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang đăng nhập...';
+  }
+
+  try {
+    await window.SupabaseAuth.signIn({ email, password });
+    closeAuthModal();
+    showPresetToast(`Đăng nhập thành công! Chào mừng ${window.SupabaseAuth.currentProfile?.full_name || email}`);
+  } catch (err) {
+    if (errBox) {
+      errBox.classList.remove('hidden');
+      errBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-400 mr-1.5"></i> ${err.message || 'Email hoặc mật khẩu không chính xác.'}`;
+    }
+  } finally {
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = '<span>Đăng Nhập Ngay</span> <i class="fa-solid fa-arrow-right"></i>';
+    }
+  }
+}
+
+async function handleRegisterSubmit(e) {
+  e.preventDefault();
+  const nameInput = document.getElementById('reg-fullname');
+  const phoneInput = document.getElementById('reg-phone');
+  const emailInput = document.getElementById('reg-email');
+  const passInput = document.getElementById('reg-password');
+  const repassInput = document.getElementById('reg-repassword');
+  const btnSubmit = document.getElementById('btn-submit-reg');
+  const msgBox = document.getElementById('reg-msg');
+
+  const fullName = nameInput?.value.trim();
+  const phone = phoneInput?.value.trim();
+  const email = emailInput?.value.trim();
+  const password = passInput?.value;
+  const repassword = repassInput?.value;
+
+  if (password !== repassword) {
+    if (msgBox) {
+      msgBox.className = 'p-2.5 rounded-lg bg-rose-950/70 border border-rose-700 text-rose-300 text-xs leading-relaxed';
+      msgBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Mật khẩu xác nhận không khớp!';
+      msgBox.classList.remove('hidden');
+    }
+    return;
+  }
+
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang gửi đăng ký...';
+  }
+
+  try {
+    await window.SupabaseAuth.signUp({ email, password, fullName, phone });
+    if (msgBox) {
+      msgBox.className = 'p-3 rounded-xl bg-emerald-950/80 border border-emerald-600 text-emerald-300 text-xs leading-relaxed';
+      msgBox.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400 mr-1.5 text-sm"></i> <b>Đăng ký thành công!</b><br>Hệ thống đã ghi nhận tài khoản. Bạn vui lòng thông báo Admin phê duyệt để bắt đầu sử dụng nhé.';
+      msgBox.classList.remove('hidden');
+    }
+    // Xóa form
+    if (nameInput) nameInput.value = '';
+    if (phoneInput) phoneInput.value = '';
+    if (emailInput) emailInput.value = '';
+    if (passInput) passInput.value = '';
+    if (repassInput) repassInput.value = '';
+  } catch (err) {
+    if (msgBox) {
+      msgBox.className = 'p-2.5 rounded-lg bg-rose-950/70 border border-rose-700 text-rose-300 text-xs leading-relaxed';
+      msgBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1.5"></i> ${err.message || 'Lỗi khi đăng ký tài khoản.'}`;
+      msgBox.classList.remove('hidden');
+    }
+  } finally {
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>Gửi Đăng Ký & Chờ Duyệt</span>';
+    }
+  }
+}
+
+/**
+ * MODAL QUẢN LÝ THÀNH VIÊN (ADMIN)
+ */
+let currentAdminTab = 'pending';
+
+function openAdminUsersModal() {
+  const modal = document.getElementById('modal-admin-users');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  switchAdminTab('pending');
+}
+
+function closeAdminUsersModal() {
+  const modal = document.getElementById('modal-admin-users');
+  if (modal) modal.classList.add('hidden');
+}
+
+function switchAdminTab(tab) {
+  currentAdminTab = tab;
+  const tabPending = document.getElementById('tab-admin-pending');
+  const tabAll = document.getElementById('tab-admin-all');
+
+  if (tab === 'pending') {
+    tabPending?.classList.add('active', 'bg-purple-600', 'text-white');
+    tabPending?.classList.remove('text-slate-400');
+    tabAll?.classList.remove('active', 'bg-purple-600', 'text-white');
+    tabAll?.classList.add('text-slate-400');
+  } else {
+    tabAll?.classList.add('active', 'bg-purple-600', 'text-white');
+    tabAll?.classList.remove('text-slate-400');
+    tabPending?.classList.remove('active', 'bg-purple-600', 'text-white');
+    tabPending?.classList.add('text-slate-400');
+  }
+
+  renderAdminUsersList();
+}
+
+async function renderAdminUsersList() {
+  const container = document.getElementById('admin-users-list-container');
+  if (!container || !window.SupabaseAuth || !window.SupabaseAuth.isAdmin()) return;
+
+  container.innerHTML = `
+    <div class="text-center py-8 text-slate-400 text-xs">
+      <i class="fa-solid fa-spinner fa-spin text-base text-purple-400 mb-2"></i>
+      <p>Đang tải danh sách thành viên...</p>
+    </div>
+  `;
+
+  try {
+    let list = [];
+    if (currentAdminTab === 'pending') {
+      list = await window.SupabaseAuth.getPendingUsers();
+    } else {
+      list = await window.SupabaseAuth.getAllUsers();
+    }
+
+    refreshPendingAdminCount();
+
+    if (!list || list.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-10 text-slate-400 space-y-2">
+          <i class="fa-solid ${currentAdminTab === 'pending' ? 'fa-user-check text-emerald-400' : 'fa-users text-slate-500'} text-3xl"></i>
+          <p class="font-semibold text-xs text-slate-300">
+            ${currentAdminTab === 'pending' ? 'Không có tài khoản nào đang chờ duyệt!' : 'Chưa có thành viên nào.'}
+          </p>
+          <p class="text-[11px] text-slate-500">Mọi tài khoản mới đăng ký sẽ xuất hiện ở đây để bạn phê duyệt.</p>
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+    list.forEach(u => {
+      const isApproved = Boolean(u.is_approved);
+      const isUserAdmin = (u.role === 'admin');
+      const dateStr = u.created_at ? new Date(u.created_at).toLocaleString('vi-VN') : 'Mới';
+
+      html += `
+        <div class="p-3.5 bg-slate-950/70 border border-slate-800 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs transition hover:border-slate-700">
+          <div class="flex items-start gap-3">
+            <div class="w-9 h-9 rounded-xl ${isUserAdmin ? 'bg-amber-600/30 text-amber-400 border border-amber-500/30' : (isApproved ? 'bg-emerald-600/30 text-emerald-400 border border-emerald-500/30' : 'bg-rose-600/30 text-rose-400 border border-rose-500/30')} flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+              <i class="fa-solid ${isUserAdmin ? 'fa-crown' : (isApproved ? 'fa-user-check' : 'fa-user-clock')}"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-bold text-white text-sm">${escapeHtml(u.full_name || 'Chưa đặt tên')}</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isUserAdmin ? 'bg-amber-950 text-amber-300 border border-amber-700' : (isApproved ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-rose-950 text-rose-300 border border-red-700')}">
+                  ${isUserAdmin ? 'ADMIN' : (isApproved ? 'ĐÃ DUYỆT' : 'CHỜ DUYỆT')}
+                </span>
+              </div>
+              <div class="flex items-center gap-3 text-slate-400 text-[11px] mt-1 flex-wrap">
+                <span><i class="fa-solid fa-envelope mr-1 text-slate-500"></i> ${escapeHtml(u.email || '')}</span>
+                ${u.phone ? `<span><i class="fa-solid fa-phone mr-1 text-slate-500"></i> ${escapeHtml(u.phone)}</span>` : ''}
+                <span><i class="fa-solid fa-clock mr-1 text-slate-500"></i> ${dateStr}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+            ${!isApproved ? `
+              <button type="button" class="btn-approve-user px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold transition flex items-center gap-1 shadow-sm active:scale-95 cursor-pointer" data-id="${u.id}">
+                <i class="fa-solid fa-check"></i> Duyệt Kích Hoạt
+              </button>
+              <button type="button" class="btn-reject-user px-2.5 py-1.5 bg-slate-800 hover:bg-rose-900/60 text-slate-400 hover:text-rose-300 rounded-lg border border-slate-700 transition cursor-pointer" title="Từ chối" data-id="${u.id}">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            ` : (isUserAdmin ? `
+              <span class="text-amber-400 text-[11px] font-semibold italic"><i class="fa-solid fa-shield-halved mr-1"></i> Quản trị viên tối cao</span>
+            ` : `
+              <button type="button" class="btn-reject-user px-3 py-1.5 bg-slate-800 hover:bg-rose-950 text-slate-300 hover:text-rose-300 rounded-lg border border-slate-700 transition flex items-center gap-1 font-semibold cursor-pointer" data-id="${u.id}">
+                <i class="fa-solid fa-ban text-rose-400"></i> Khóa Tài Khoản
+              </button>
+            `)}
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+
+    // Gán sự kiện Duyệt
+    container.querySelectorAll('.btn-approve-user').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const uid = btn.dataset.id;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang duyệt...';
+        try {
+          await window.SupabaseAuth.approveUser(uid);
+          showPresetToast('Đã kích hoạt tài khoản thành công!');
+          renderAdminUsersList();
+        } catch (e) {
+          alert('Lỗi: ' + e.message);
+          renderAdminUsersList();
+        }
+      });
+    });
+
+    // Gán sự kiện Khóa / Từ chối
+    container.querySelectorAll('.btn-reject-user').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const uid = btn.dataset.id;
+        if (!confirm('Bạn có chắc chắn muốn khóa/từ chối tài khoản này không?')) return;
+        btn.disabled = true;
+        try {
+          await window.SupabaseAuth.rejectUser(uid);
+          showPresetToast('Đã cập nhật trạng thái tài khoản!');
+          renderAdminUsersList();
+        } catch (e) {
+          alert('Lỗi: ' + e.message);
+          renderAdminUsersList();
+        }
+      });
+    });
+
+  } catch (err) {
+    container.innerHTML = `<div class="p-4 bg-rose-950/60 text-rose-300 rounded-xl text-xs">Lỗi khi tải danh sách: ${err.message}</div>`;
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
  * KHI THÔNG SỐ THAY ĐỔI
  */
 function onParamsChanged() {
@@ -3779,4 +4256,6 @@ document.addEventListener('DOMContentLoaded', () => {
   recalculatePhysics();
   initEventListeners();
   loadAndRenderCustomPresets();
+  initSupabaseAuthIntegration();
 });
+
