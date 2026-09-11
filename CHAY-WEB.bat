@@ -1,55 +1,102 @@
+Ôªø<# :
 @echo off
-chcp 65001 >nul
-title WEB TEM MAKET 3D (PORT 8888)
+title WEB TEM MAKET 3D - DANG CHAY TAI CONG 8888
 cd /d "%~dp0"
-
-echo ======================================================================
-echo    KH?I CH?Y WEB THI?T K? TEM MAKET 3D - C?NG 8888
-echo    * Ch?y d?c l?p hoÖn toÖn, KHONG ?NH HU?NG d?n website kh†c tràn VPS
-echo ======================================================================
-echo.
-
-where python >nul 2>nul
-if %errorlevel% equ 0 (
-    echo [OK] Tçm th?y Python, dang kh?i ch?y web server qua Python...
-    echo M? tràn VPS:    http://localhost:8888
-    echo M? t? xa:       http://^<IP_VPS^>:8888
-    echo.
-    echo (D? t?t web, b?n ch? c?n b?m d?u X d¢ng c?a s? nÖy l?i)
-    echo ----------------------------------------------------------------------
-    python -m http.server 8888
-    goto end
-)
-
-where py >nul 2>nul
-if %errorlevel% equ 0 (
-    echo [OK] Tçm th?y Python Launcher, dang kh?i ch?y web server...
-    echo M? tràn VPS:    http://localhost:8888
-    echo M? t? xa:       http://^<IP_VPS^>:8888
-    echo.
-    echo (D? t?t web, b?n ch? c?n b?m d?u X d¢ng c?a s? nÖy l?i)
-    echo ----------------------------------------------------------------------
-    py -m http.server 8888
-    goto end
-)
-
-where caddy >nul 2>nul
-if %errorlevel% equ 0 (
-    echo [OK] Tçm th?y Caddy CLI, dang ch?y web t?i c?ng 8888...
-    echo M? tràn VPS:    http://localhost:8888
-    echo M? t? xa:       http://^<IP_VPS^>:8888
-    echo.
-    caddy file-server --listen :8888
-    goto end
-)
-
-echo [OK] Dang kh?i ch?y web server t°ch h?p s?n b?ng PowerShell...
-echo M? tràn VPS:    http://localhost:8888
-echo M? t? xa:       http://^<IP_VPS^>:8888
-echo.
-echo (D? t?t web, b?n ch? c?n b?m d?u X d¢ng c?a s? nÖy l?i)
-echo ----------------------------------------------------------------------
-powershell -ExecutionPolicy Bypass -File "%~dp0server.ps1" -Port 8888
-
-:end
+powershell -NoProfile -ExecutionPolicy Bypass -Command "iex ((Get-Content -LiteralPath '%~f0' -Raw))"
 pause
+exit /b
+#>
+
+$Port = 8888
+$root = $PSScriptRoot
+if (-not $root) { $root = Get-Location }
+
+$listener = New-Object System.Net.HttpListener
+$bindAll = $false
+
+try {
+    $listener.Prefixes.Add("http://*:$Port/")
+    $listener.Start()
+    $bindAll = $true
+} catch {
+    try {
+        $listener = New-Object System.Net.HttpListener
+        $listener.Prefixes.Add("http://localhost:$Port/")
+        $listener.Start()
+        $bindAll = $false
+    } catch {
+        Write-Host "Loi khoi dong web server: $_" -ForegroundColor Red
+        Exit
+    }
+}
+
+Write-Host "==========================================================" -ForegroundColor Green
+Write-Host "  WEB THIET KE TEM MAKET 3D DANG CHAY TAI CONG: $Port" -ForegroundColor Green
+Write-Host "  * Chay doc lap 100%, KHONG anh huong den website khac!" -ForegroundColor Cyan
+Write-Host "----------------------------------------------------------" -ForegroundColor Gray
+Write-Host "  [1] Mo ngay tren VPS:   http://localhost:$Port" -ForegroundColor White
+if ($bindAll) {
+    Write-Host "  [2] Mo tu may ngoai:    http://103.177.111.102:$Port" -ForegroundColor Yellow
+} else {
+    Write-Host "  [2] De mo tu xa: Chuot phai file nay -> chon 'Run as administrator'" -ForegroundColor Yellow
+}
+Write-Host "  [De tat web, ban chi can dong cua so nay lai]" -ForegroundColor Gray
+Write-Host "==========================================================" -ForegroundColor Green
+
+try {
+    Start-Process "http://localhost:$Port"
+} catch {}
+
+$mimeTypes = @{
+    ".html" = "text/html; charset=utf-8"
+    ".htm"  = "text/html; charset=utf-8"
+    ".css"  = "text/css; charset=utf-8"
+    ".js"   = "application/javascript; charset=utf-8"
+    ".json" = "application/json; charset=utf-8"
+    ".png"  = "image/png"
+    ".jpg"  = "image/jpeg"
+    ".jpeg" = "image/jpeg"
+    ".svg"  = "image/svg+xml"
+    ".ico"  = "image/x-icon"
+    ".woff" = "font/woff"
+    ".woff2"= "font/woff2"
+    ".ttf"  = "font/ttf"
+}
+
+while ($listener.IsListening) {
+    try {
+        $context = $listener.GetContext()
+        $request = $context.Request
+        $response = $context.Response
+
+        $urlPath = $request.Url.LocalPath.TrimStart('/')
+        if ([string]::IsNullOrEmpty($urlPath) -or $urlPath -eq "/") {
+            $urlPath = "index.html"
+        }
+
+        $fullPath = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($root, $urlPath))
+        if (-not $fullPath.StartsWith([System.IO.Path]::GetFullPath($root))) {
+            $response.StatusCode = 403
+            $response.Close()
+            continue
+        }
+
+        if (Test-Path $fullPath -PathType Leaf) {
+            $ext = [System.IO.Path]::GetExtension($fullPath).ToLower()
+            $mime = if ($mimeTypes.ContainsKey($ext)) { $mimeTypes[$ext] } else { "application/octet-stream" }
+            $response.ContentType = $mime
+            $response.AddHeader("Access-Control-Allow-Origin", "*")
+
+            $bytes = [System.IO.File]::ReadAllBytes($fullPath)
+            $response.ContentLength64 = $bytes.Length
+            $response.OutputStream.Write($bytes, 0, $bytes.Length)
+            $response.StatusCode = 200
+        } else {
+            $response.StatusCode = 404
+            $notFoundBytes = [System.Text.Encoding]::UTF8.GetBytes("404 Not Found")
+            $response.OutputStream.Write($notFoundBytes, 0, $notFoundBytes.Length)
+        }
+        $response.Close()
+    } catch {
+    }
+}
