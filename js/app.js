@@ -4153,7 +4153,13 @@ async function renderAdminUsersList() {
         <div class="p-3.5 bg-slate-950/70 border border-slate-800 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs transition hover:border-slate-700">
           <div class="flex items-start gap-3">
             <div class="w-9 h-9 rounded-xl ${isUserAdmin ? 'bg-amber-600/30 text-amber-400 border border-amber-500/30' : (isApproved ? 'bg-emerald-600/30 text-emerald-400 border border-emerald-500/30' : 'bg-rose-600/30 text-rose-400 border border-rose-500/30')} flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
-              <i class="fa-solid ${isUserAdmin ? 'fa-crown' : (isApproved ? 'fa-user-check' : 'fa-user-clock')}"></i>
+              ${isUserAdmin 
+                ? '<svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>'
+                : (isApproved
+                    ? '<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 11l2 2 4-4"/></svg>'
+                    : '<svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+                  )
+              }
             </div>
             <div>
               <div class="flex items-center gap-2 flex-wrap">
@@ -4173,16 +4179,16 @@ async function renderAdminUsersList() {
           <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
             ${!isApproved ? `
               <button type="button" class="btn-approve-user px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold transition flex items-center gap-1 shadow-sm active:scale-95 cursor-pointer" data-id="${u.id}">
-                <i class="fa-solid fa-check"></i> Duyệt Kích Hoạt
+                <i class="fa-solid fa-check mr-1"></i> Duyệt Kích Hoạt
               </button>
-              <button type="button" class="btn-reject-user px-2.5 py-1.5 bg-slate-800 hover:bg-rose-900/60 text-slate-400 hover:text-rose-300 rounded-lg border border-slate-700 transition cursor-pointer" title="Từ chối" data-id="${u.id}">
-                <i class="fa-solid fa-xmark"></i>
+              <button type="button" class="btn-reject-user w-8 h-8 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white rounded-lg border border-slate-700 hover:border-rose-500 transition cursor-pointer flex items-center justify-center shadow-sm" title="Từ chối / Khóa" data-id="${u.id}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
             ` : (isUserAdmin ? `
               <span class="text-amber-400 text-[11px] font-semibold italic"><i class="fa-solid fa-shield-halved mr-1"></i> Quản trị viên tối cao</span>
             ` : `
               <button type="button" class="btn-reject-user px-3 py-1.5 bg-slate-800 hover:bg-rose-950 text-slate-300 hover:text-rose-300 rounded-lg border border-slate-700 transition flex items-center gap-1 font-semibold cursor-pointer" data-id="${u.id}">
-                <i class="fa-solid fa-ban text-rose-400"></i> Khóa Tài Khoản
+                <i class="fa-solid fa-ban text-rose-400 mr-1"></i> Khóa Tài Khoản
               </button>
             `)}
           </div>

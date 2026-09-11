@@ -3,10 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D Roll Label & Maket Studio | Thiết Kế & Mô Phỏng Cuộn Tem 3D Trực Quan</title>
+  <title>3D Label Hacode | Phần Mềm Thiết Kế & Mô Phỏng Cuộn Tem 3D</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <!-- Google Fonts for Packaging & Label Design -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -44,12 +46,12 @@
   <!-- 1. LOADING SCREEN: XÁC THỰC PHIÊN ĐĂNG NHẬP              -->
   <!-- ========================================================= -->
   <div id="auth-loading-overlay" class="fixed inset-0 z-[120] bg-slate-950 flex flex-col items-center justify-center gap-3 select-none">
-    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white text-2xl shadow-xl shadow-blue-500/30 animate-pulse border border-white/10">
-      <i class="fa-solid fa-scroll"></i>
-    </div>
-    <div class="flex items-center gap-2 text-xs text-slate-400 font-medium">
-      <i class="fa-solid fa-spinner fa-spin text-blue-400"></i>
-      <span>Đang kết nối hệ thống 3D Studio...</span>
+    <div class="px-6 py-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center gap-3 shadow-2xl">
+      <img src="assets/hacode-logo.png" alt="Hacode" class="h-10 w-auto object-contain animate-pulse">
+      <div class="flex items-center gap-2 text-xs text-slate-400 font-medium">
+        <i class="fa-solid fa-spinner fa-spin text-blue-400"></i>
+        <span>Đang kết nối hệ thống 3D Label Hacode...</span>
+      </div>
     </div>
   </div>
 
@@ -67,14 +69,14 @@
     <div class="relative w-full max-w-md bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-3xl shadow-2xl shadow-black/90 overflow-hidden flex flex-col my-auto animate-in fade-in zoom-in-95 duration-300">
       <!-- Portal Brand Header -->
       <div class="bg-gradient-to-br from-slate-900 via-blue-950/70 to-slate-900 p-6 sm:p-7 border-b border-slate-800 text-center relative">
-        <div class="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white text-2xl shadow-xl shadow-blue-500/30 mb-3 border border-white/10">
-          <i class="fa-solid fa-scroll"></i>
+        <div class="mx-auto mb-3 flex items-center justify-center">
+          <img src="assets/hacode-logo.png" alt="Hacode" class="h-12 w-auto object-contain drop-shadow-md brightness-110">
         </div>
         <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-[10px] font-bold uppercase tracking-wider mb-1.5">
           <i class="fa-solid fa-shield-halved text-[9px]"></i> Cổng Truy Cập Hệ Thống
         </div>
-        <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">3D ROLL STUDIO</h2>
-        <p class="text-xs text-slate-400 mt-1">Đăng nhập tài khoản để vào không gian thiết kế tem cuộn 3D</p>
+        <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">3D LABEL HACODE</h2>
+        <p class="text-xs text-slate-400 mt-1">Hệ thống thiết kế & mô phỏng cuộn tem 3D chuyên nghiệp</p>
       </div>
 
       <!-- Segmented Tabs: Đăng Nhập vs Đăng Ký -->
@@ -180,53 +182,50 @@
   <!-- ========================================================= -->
   <div id="app-workspace" class="flex flex-col h-screen overflow-hidden hidden">
   <!-- TOP NAVBAR -->
-  <!-- TOP NAVBAR WITH SEGMENTED TABS & ACTIONS -->
-  <header class="h-14 bg-slate-900/95 backdrop-blur border-b border-slate-800 flex items-center justify-between px-2.5 sm:px-4 z-30 shrink-0 select-none">
-    <!-- LEFT: BRANDING -->
-    <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
-      <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/25">
-        <i class="fa-solid fa-scroll text-sm sm:text-base"></i>
-      </div>
-      <div>
-        <h1 class="font-bold text-xs sm:text-sm lg:text-base tracking-tight text-white flex items-center gap-1 leading-none">
-          3D ROLL STUDIO
-          <span class="text-[8px] sm:text-[9px] uppercase font-bold px-1 sm:px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">PRO</span>
-        </h1>
-        <p class="hidden sm:block text-[10px] sm:text-[11px] text-slate-400 leading-tight mt-0.5">Mô phỏng cuộn tem & Maket kỹ thuật</p>
+  <header class="h-14 bg-slate-900/98 backdrop-blur border-b border-slate-800 flex items-center justify-between px-2 sm:px-3.5 z-30 shrink-0 select-none gap-1.5">
+    <!-- LEFT: BRANDING HACODE -->
+    <div class="flex items-center space-x-2 shrink-0">
+      <div class="h-9 px-2 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center gap-2 shadow-inner">
+        <img src="assets/hacode-logo.png" alt="Hacode" class="h-6 w-auto object-contain brightness-110 drop-shadow">
+        <div class="hidden sm:block border-l border-slate-800 pl-2">
+          <h1 class="font-black text-xs lg:text-[13px] tracking-tight text-white flex items-center gap-1 leading-none">
+            3D LABEL
+            <span class="text-[8px] uppercase font-bold px-1 py-0.2 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">PRO</span>
+          </h1>
+          <p class="text-[9px] text-slate-400 leading-none mt-0.5">Mô phỏng tem cuộn</p>
+        </div>
       </div>
     </div>
 
     <!-- CENTER: SEGMENTED NAVIGATION TABS (DESKTOP) -->
-    <nav class="hidden md:flex items-center bg-slate-950/90 p-1 rounded-xl border border-slate-800 shadow-inner shrink-0" id="main-nav-tabs">
-      <button class="main-tab-btn active px-3.5 py-1.5 text-xs lg:text-sm font-semibold" data-view="view-3d">
+    <nav class="hidden lg:flex items-center bg-slate-950/90 p-0.5 rounded-xl border border-slate-800 shadow-inner shrink-0" id="main-nav-tabs">
+      <button class="main-tab-btn active px-2 py-1 text-[11px] font-semibold" data-view="view-3d">
         <i class="fa-solid fa-cube text-blue-400"></i>
-        <span>1. Mô Phỏng 3D</span>
+        <span>Mô Phỏng 3D</span>
       </button>
-      <button class="main-tab-btn px-3.5 py-1.5 text-xs lg:text-sm font-semibold" data-view="view-designer" id="main-tab-designer-btn">
+      <button class="main-tab-btn px-2 py-1 text-[11px] font-semibold" data-view="view-designer" id="main-tab-designer-btn">
         <i class="fa-solid fa-pen-ruler text-amber-400"></i>
-        <span>2. Thiết Kế Tem 2D</span>
+        <span>Thiết Kế 2D</span>
       </button>
-      <button class="main-tab-btn px-3.5 py-1.5 text-xs lg:text-sm font-semibold" data-view="view-blueprint">
+      <button class="main-tab-btn px-2 py-1 text-[11px] font-semibold" data-view="view-blueprint">
         <i class="fa-solid fa-compass-drafting text-cyan-400"></i>
-        <span>3. Bản Vẽ Kỹ Thuật</span>
+        <span>Bản Vẽ 2D</span>
       </button>
-      <button class="main-tab-btn px-3.5 py-1.5 text-xs lg:text-sm font-semibold" data-view="view-proof">
+      <button class="main-tab-btn px-2 py-1 text-[11px] font-semibold" data-view="view-proof">
         <i class="fa-solid fa-file-invoice text-emerald-400"></i>
-        <span>4. Phiếu Duyệt</span>
+        <span>Phiếu Duyệt</span>
       </button>
     </nav>
 
-    <!-- RIGHT: PRESET SELECTOR & EXPORT ACTIONS -->
-    <div class="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
-      <div class="flex items-center space-x-1 sm:space-x-1.5 bg-slate-800/80 px-2 sm:px-2.5 py-1 rounded-lg border border-slate-700/80 shadow-sm">
-        <span class="text-xs text-slate-300 font-semibold flex items-center gap-1 whitespace-nowrap">
-          <i class="fa-solid fa-bookmark text-blue-400 text-[11px]"></i>
-          <span class="hidden xl:inline text-[11px]">Mẫu sẵn:</span>
-        </span>
-        <select id="preset-selector" class="bg-slate-900 text-[11px] sm:text-xs text-slate-100 border border-slate-700 rounded focus:ring-1 focus:ring-blue-500 py-0.5 sm:py-1 px-1.5 sm:px-2 cursor-pointer font-medium max-w-[110px] sm:max-w-[170px] lg:max-w-[230px] truncate" style="background-color: #0f172a; color: #f8fafc;">
+    <!-- RIGHT: PRESET SELECTOR, EXPORT ACTIONS & ACCOUNT -->
+    <div class="flex items-center space-x-1 sm:space-x-1.5 shrink-0">
+      <!-- Mẫu sẵn -->
+      <div class="flex items-center space-x-1 bg-slate-800/80 px-1.5 py-0.5 rounded-lg border border-slate-700/80 shadow-sm">
+        <i class="fa-solid fa-bookmark text-blue-400 text-[11px] hidden xl:inline"></i>
+        <select id="preset-selector" class="bg-slate-900 text-[11px] text-slate-100 border border-slate-700 rounded focus:ring-1 focus:ring-blue-500 py-0.5 px-1 cursor-pointer font-medium max-w-[100px] sm:max-w-[125px] xl:max-w-[145px] truncate" style="background-color: #0f172a; color: #f8fafc;">
           <optgroup id="optgroup-custom-presets" label="⭐ Mẫu Đã Lưu Của Tôi" class="hidden" style="background-color: #1e293b; color: #fbbf24; font-weight: bold;"></optgroup>
           <optgroup label="🏪 Tem Siêu Thị & Mã Vạch Bán Lẻ" style="background-color: #1e293b; color: #60a5fa; font-weight: bold;">
-            <option value="retail_50x30_1up" selected style="background-color: #0f172a; color: #ffffff;">50 x 30 mm (1 tem/hàng - Mặc định)</option>
+            <option value="retail_50x30_1up" selected style="background-color: #0f172a; color: #ffffff;">50 x 30 mm (1 tem/hàng)</option>
             <option value="retail_50x30_2up" style="background-color: #0f172a; color: #ffffff;">50 x 30 mm (2 tem/hàng)</option>
             <option value="supermarket_35x22_3up" style="background-color: #0f172a; color: #ffffff;">35 x 22 mm (3 tem/hàng)</option>
             <option value="barcode_35x22_2up" style="background-color: #0f172a; color: #ffffff;">35 x 22 mm (2 tem/hàng)</option>
@@ -234,69 +233,66 @@
             <option value="pharma_40x30_2up" style="background-color: #0f172a; color: #ffffff;">40 x 30 mm (2 tem/hàng)</option>
           </optgroup>
           <optgroup label="🚚 Tem Vận Đơn TMĐT & Thùng Hàng" style="background-color: #1e293b; color: #34d399; font-weight: bold;">
-            <option value="shipping_100x150_1up" style="background-color: #0f172a; color: #ffffff;">100 x 150 mm (1 tem/hàng - A6)</option>
-            <option value="shipping_100x100_1up" style="background-color: #0f172a; color: #ffffff;">100 x 100 mm (1 tem/hàng)</option>
-            <option value="carton_100x75_1up" style="background-color: #0f172a; color: #ffffff;">100 x 75 mm (1 tem/hàng)</option>
-            <option value="product_80x50_1up" style="background-color: #0f172a; color: #ffffff;">80 x 50 mm (1 tem/hàng)</option>
+            <option value="shipping_100x150_1up" style="background-color: #0f172a; color: #ffffff;">100 x 150 mm (A6)</option>
+            <option value="shipping_100x100_1up" style="background-color: #0f172a; color: #ffffff;">100 x 100 mm</option>
+            <option value="carton_100x75_1up" style="background-color: #0f172a; color: #ffffff;">100 x 75 mm</option>
+            <option value="product_80x50_1up" style="background-color: #0f172a; color: #ffffff;">80 x 50 mm</option>
           </optgroup>
           <optgroup label="🧋 Tem Trà Sữa & Đồ Uống Takeaway" style="background-color: #1e293b; color: #fbbf24; font-weight: bold;">
-            <option value="bubble_tea_50x30_1up" style="background-color: #0f172a; color: #ffffff;">50 x 30 mm (1 tem/hàng)</option>
-            <option value="cup_50x40_1up" style="background-color: #0f172a; color: #ffffff;">50 x 40 mm (1 tem/hàng)</option>
+            <option value="bubble_tea_50x30_1up" style="background-color: #0f172a; color: #ffffff;">50 x 30 mm</option>
+            <option value="cup_50x40_1up" style="background-color: #0f172a; color: #ffffff;">50 x 40 mm</option>
           </optgroup>
           <optgroup label="📐 Bản Vẽ Kỹ Thuật & Tem Tròn Niêm Phong" style="background-color: #1e293b; color: #c084fc; font-weight: bold;">
-            <option value="technical_25x38_4up" style="background-color: #0f172a; color: #ffffff;">25 x 38 mm (4 tem/hàng, Lõi 30mm)</option>
-            <option value="round_seal_40_2up" style="background-color: #0f172a; color: #ffffff;">Ø 40 mm (2 tem/hàng)</option>
-            <option value="round_seal_50_1up" style="background-color: #0f172a; color: #ffffff;">Ø 50 mm (1 tem/hàng)</option>
+            <option value="technical_25x38_4up" style="background-color: #0f172a; color: #ffffff;">25 x 38 mm (Lõi 30)</option>
+            <option value="round_seal_40_2up" style="background-color: #0f172a; color: #ffffff;">Ø 40 mm</option>
+            <option value="round_seal_50_1up" style="background-color: #0f172a; color: #ffffff;">Ø 50 mm</option>
           </optgroup>
         </select>
-        <button id="btn-save-custom-preset" class="hidden sm:flex bg-blue-600 hover:bg-blue-500 text-white text-xs px-2 sm:px-2.5 py-1 rounded items-center gap-1 font-medium transition shadow-sm" title="Lưu thông số hiện tại thành mẫu mới">
-          <i class="fa-solid fa-floppy-disk text-blue-200"></i>
-          <span class="hidden md:inline">Lưu Mẫu</span>
+        <button id="btn-save-custom-preset" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded items-center gap-1 font-medium transition shadow-sm" title="Lưu thông số hiện tại thành mẫu mới">
+          <i class="fa-solid fa-floppy-disk text-blue-200 text-[10px]"></i>
+          <span class="hidden 2xl:inline">Lưu</span>
         </button>
       </div>
 
-      <button id="btn-snap-3d" class="flex bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-xs px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg text-slate-200 items-center gap-1 sm:gap-1.5 font-medium transition shadow-sm" title="Xuất ảnh tùy chọn kích thước (600x600, 800x800, Tùy chỉnh...)">
+      <!-- Nút Xuất Ảnh -->
+      <button id="btn-snap-3d" class="flex bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-[11px] px-2 py-1 rounded-lg text-slate-200 items-center gap-1 font-medium transition shadow-sm" title="Xuất ảnh tùy chọn kích thước (600x600, 800x800...)">
         <i class="fa-solid fa-camera text-emerald-400"></i>
-        <span class="hidden md:inline">Xuất Ảnh</span>
+        <span>Xuất Ảnh</span>
       </button>
 
-      <button id="btn-open-proof" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs px-2.5 sm:px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 font-semibold transition shadow-md shadow-blue-600/30 shrink-0">
-        <i class="fa-solid fa-file-signature"></i>
-        <span class="hidden sm:inline">Xuất Phiếu Duyệt</span>
-        <span class="sm:hidden text-[11px]">Xuất Phiếu</span>
-      </button>
-
-      <!-- PHÂN ĐOÀN TÀI KHOẢN & QUẢN TRỊ (SUPABASE AUTH) -->
-      <div id="auth-header-container" class="flex items-center gap-1.5 sm:gap-2 shrink-0 border-l border-slate-700/80 pl-2 sm:pl-3">
+      <!-- ===================================================== -->
+      <!-- KHỐI TÀI KHOẢN & PHÂN QUYỀN (RÕ RÀNG, KHÔNG BỊ TRÀN)   -->
+      <!-- ===================================================== -->
+      <div id="auth-header-container" class="flex items-center gap-1 shrink-0 bg-slate-950/90 p-0.5 rounded-xl border border-slate-800 shadow-inner">
         <!-- Khối khi đã đăng nhập -->
-        <div id="user-logged-in-bar" class="flex items-center gap-1.5 sm:gap-2">
+        <div id="user-logged-in-bar" class="flex items-center gap-1">
           <!-- Chuông thông báo dành riêng cho Admin có thành viên chờ duyệt -->
-          <button id="btn-admin-notifications" type="button" class="hidden relative p-1.5 sm:px-2 sm:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition cursor-pointer" title="Quản lý thành viên chờ duyệt">
-            <i class="fa-solid fa-bell text-amber-400 text-xs sm:text-sm"></i>
+          <button id="btn-admin-notifications" type="button" class="hidden relative p-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg border border-slate-800 transition cursor-pointer" title="Quản lý thành viên chờ duyệt">
+            <i class="fa-solid fa-bell text-amber-400 text-xs"></i>
             <span id="badge-pending-count" class="hidden absolute -top-1.5 -right-1.5 bg-red-600 text-white font-bold text-[9px] w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-sm">0</span>
           </button>
 
           <!-- Nút Quản Lý Thành Viên (Admin) -->
-          <button id="btn-open-admin-panel" type="button" class="hidden bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 border border-purple-500/40 text-xs px-2 sm:px-2.5 py-1.5 rounded-lg flex items-center gap-1 font-bold transition cursor-pointer" title="Bảng quản trị thành viên">
-            <i class="fa-solid fa-users-gear text-purple-400"></i>
-            <span class="hidden lg:inline">Quản Trị</span>
+          <button id="btn-open-admin-panel" type="button" class="hidden bg-purple-600/25 hover:bg-purple-600/40 text-purple-300 border border-purple-500/40 text-[11px] px-2 py-1 rounded-lg flex items-center gap-1 font-bold transition cursor-pointer" title="Bảng quản trị thành viên">
+            <i class="fa-solid fa-users-gear text-purple-400 text-[11px]"></i>
+            <span>Quản Trị</span>
           </button>
 
           <!-- Thẻ User Profile -->
-          <div class="flex items-center gap-1.5 bg-slate-800/90 px-2 sm:px-2.5 py-1 rounded-lg border border-slate-700/80 shadow-sm" id="user-profile-pill">
-            <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white text-[10px] font-bold shadow-xs">
+          <div class="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800 shadow-sm" id="user-profile-pill">
+            <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white text-[9px] font-bold shadow-xs shrink-0">
               <i class="fa-solid fa-user"></i>
             </div>
-            <div class="flex flex-col text-left leading-none max-w-[90px] sm:max-w-[130px]">
+            <div class="flex flex-col text-left leading-none max-w-[80px] sm:max-w-[100px]">
               <span id="nav-user-name" class="text-[11px] font-bold text-white truncate">Tài khoản</span>
-              <span id="nav-user-role" class="text-[8px] sm:text-[9px] text-emerald-400 font-semibold uppercase mt-0.5">Thành viên</span>
+              <span id="nav-user-role" class="text-[8px] text-amber-400 font-bold uppercase mt-0.5 truncate">Admin</span>
             </div>
           </div>
 
           <!-- Nút Đăng Xuất -->
-          <button id="btn-user-signout" type="button" class="flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-rose-950/70 text-slate-300 hover:text-rose-300 rounded-lg border border-slate-700 hover:border-rose-600/60 transition cursor-pointer text-xs font-semibold" title="Đăng xuất khỏi hệ thống">
-            <i class="fa-solid fa-right-from-bracket text-xs text-rose-400"></i>
-            <span class="hidden sm:inline">Đăng Xuất</span>
+          <button id="btn-user-signout" type="button" class="flex items-center gap-1 px-2.5 py-1 bg-rose-950/70 hover:bg-rose-900 text-rose-200 hover:text-white rounded-lg border border-rose-800 hover:border-rose-600 transition cursor-pointer text-[11px] font-semibold" title="Đăng xuất khỏi hệ thống">
+            <i class="fa-solid fa-right-from-bracket text-[10px] text-rose-400"></i>
+            <span>Thoát</span>
           </button>
         </div>
       </div>
@@ -2849,8 +2845,10 @@
             <p class="text-[11px] text-slate-400">Duyệt tài khoản mới để cho phép truy cập web thiết kế tem 3D</p>
           </div>
         </div>
-        <button type="button" id="btn-close-admin-modal" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
-          <i class="fa-solid fa-xmark text-sm"></i>
+        <button type="button" id="btn-close-admin-modal" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white flex items-center justify-center transition border border-slate-700 hover:border-rose-500 cursor-pointer shadow-md" title="Đóng bảng quản trị">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
         </button>
       </div>
 
