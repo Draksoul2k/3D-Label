@@ -248,9 +248,13 @@
             <option value="round_seal_50_1up" style="background-color: #0f172a; color: #ffffff;">Ø 50 mm</option>
           </optgroup>
         </select>
-        <button id="btn-save-custom-preset" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded items-center gap-1 font-medium transition shadow-sm" title="Lưu thông số hiện tại thành mẫu mới">
+        <button id="btn-save-custom-preset" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded items-center gap-1 font-medium transition shadow-sm cursor-pointer" title="Lưu thông số hiện tại thành mẫu mới">
           <i class="fa-solid fa-floppy-disk text-blue-200 text-[10px]"></i>
           <span class="hidden 2xl:inline">Lưu</span>
+        </button>
+        <button id="btn-topbar-open-library" class="bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 text-xs px-1.5 py-0.5 rounded items-center gap-1 font-medium transition shadow-sm cursor-pointer" title="Mở thư viện Folder Mẫu Tem">
+          <i class="fa-solid fa-folder-open text-amber-400 text-[10px]"></i>
+          <span class="hidden 2xl:inline">Folder</span>
         </button>
       </div>
 
@@ -321,14 +325,18 @@
       <div class="p-3.5 space-y-4">
 
         <!-- THANH CÔNG CỤ NHANH MỤC 1: LƯU MẪU TEM & RESET TEM TRẮNG -->
-        <div class="flex items-center justify-between bg-slate-800/80 px-3 py-2 rounded-xl border border-slate-700/80 shadow-sm gap-2">
-          <button id="btn-sidebar-reset-blank" class="flex-1 bg-rose-950/60 hover:bg-rose-900 text-rose-200 border border-rose-700/60 hover:border-rose-500 text-xs px-2.5 py-1.5 rounded-lg flex items-center justify-center gap-1.5 font-bold transition shadow-sm" title="Xóa toàn bộ thiết kế & khung, đưa về tem trắng tinh">
+        <div class="flex items-center justify-between bg-slate-800/80 px-2 py-2 rounded-xl border border-slate-700/80 shadow-sm gap-1.5">
+          <button id="btn-sidebar-reset-blank" class="flex-1 bg-rose-950/60 hover:bg-rose-900 text-rose-200 border border-rose-700/60 hover:border-rose-500 text-xs px-2 py-1.5 rounded-lg flex items-center justify-center gap-1 font-bold transition shadow-sm cursor-pointer" title="Xóa toàn bộ thiết kế & khung, đưa về tem trắng tinh">
             <i class="fa-solid fa-rotate-left text-rose-400"></i>
             <span>Xóa Trắng</span>
           </button>
-          <button id="btn-sidebar-save-preset" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 font-semibold transition shadow-md shadow-blue-600/30 shrink-0" title="Lưu thông số hiện tại thành mẫu sẵn để dùng lại">
+          <button id="btn-sidebar-save-preset" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1 font-semibold transition shadow-md shadow-blue-600/30 shrink-0 cursor-pointer" title="Lưu thông số hiện tại thành mẫu sẵn để dùng lại">
             <i class="fa-solid fa-floppy-disk"></i>
             <span>Lưu Mẫu</span>
+          </button>
+          <button id="btn-sidebar-open-library" class="bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 font-semibold transition shadow-sm shrink-0 cursor-pointer" title="Xem thư viện tất cả mẫu tem đã lưu của bạn và công ty">
+            <i class="fa-solid fa-folder-open text-amber-400"></i>
+            <span>Folder Mẫu</span>
           </button>
         </div>
 
@@ -422,6 +430,22 @@
               <button type="button" class="ups-btn py-1.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold hover:bg-slate-700" data-ups="2">2 Tem</button>
               <button type="button" class="ups-btn py-1.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold hover:bg-slate-700" data-ups="3">3 Tem</button>
               <button type="button" class="ups-btn py-1.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold hover:bg-slate-700" data-ups="4">4 Tem</button>
+            </div>
+          </div>
+
+          <!-- Số tem rủ xuống (Mô phỏng 3D) -->
+          <div class="pt-2 border-t border-slate-700/50">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-[11px] text-cyan-300 font-semibold flex items-center gap-1.5">
+                <i class="fa-solid fa-arrows-up-down text-[10px]"></i> Số tem rủ xuống (Mô phỏng 3D):
+              </label>
+              <span id="badge-flap-rows" class="text-[9px] text-cyan-300 font-mono font-bold bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800/60">3 Tem</span>
+            </div>
+            <div class="grid grid-cols-4 gap-1.5" id="flap-rows-selector">
+              <button type="button" class="flap-rows-btn py-1.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold hover:bg-slate-700 transition cursor-pointer" data-rows="1" title="Hiển thị 1 hàng tem rủ (Thích hợp cho tem dài)">1 Tem</button>
+              <button type="button" class="flap-rows-btn py-1.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold hover:bg-slate-700 transition cursor-pointer" data-rows="2" title="Hiển thị 2 hàng tem rủ">2 Tem</button>
+              <button type="button" class="flap-rows-btn active py-1.5 rounded bg-cyan-600 text-white border border-cyan-500 text-xs font-bold transition shadow-sm cursor-pointer" data-rows="3" title="Hiển thị 3 hàng tem rủ (Mặc định)">3 Tem</button>
+              <button type="button" class="flap-rows-btn py-1.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold hover:bg-slate-700 transition cursor-pointer" data-rows="4" title="Hiển thị 4 hàng tem rủ (Thích hợp cho tem nhỏ)">4 Tem</button>
             </div>
           </div>
 
@@ -2798,6 +2822,66 @@
         <button id="btn-confirm-save-preset" class="px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-blue-600/30 flex items-center gap-1.5">
           <i class="fa-solid fa-check"></i>
           <span>Xác Nhận Lưu</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL THƯ VIỆN MẪU TEM (PRESET LIBRARY / FOLDER MẪU) -->
+  <div id="modal-preset-library" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 hidden animate-fadeIn">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 px-5 py-3.5 border-b border-slate-800 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-base border border-amber-500/30">
+            <i class="fa-solid fa-folder-open"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm sm:text-base text-white flex items-center gap-2">
+              <span>Thư Viện Mẫu Tem</span>
+              <span class="text-[10px] bg-blue-600/30 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full font-mono">Cloud Sync</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">Danh sách các mẫu tem đã lưu - xem, mở và quản lý dễ dàng</p>
+          </div>
+        </div>
+        <button id="btn-close-preset-library-modal" class="text-slate-400 hover:text-white transition text-sm p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Filter bar: Search + Tabs -->
+      <div class="p-3.5 border-b border-slate-800 bg-slate-950/60 space-y-2.5 shrink-0">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-2.5">
+          <!-- Segment Tabs -->
+          <div class="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 w-full sm:w-auto text-xs font-semibold">
+            <button id="tab-library-my" class="px-3 py-1.5 rounded-lg bg-blue-600 text-white transition flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-user"></i> <span>Mẫu Của Tôi</span>
+              <span id="badge-my-count" class="text-[10px] bg-blue-950 px-1.5 py-0.2 rounded font-mono">0</span>
+            </button>
+            <button id="tab-library-all" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5 cursor-pointer hidden">
+              <i class="fa-solid fa-users"></i> <span>Mẫu Toàn Công Ty (Admin)</span>
+              <span id="badge-all-count" class="text-[10px] bg-slate-800 px-1.5 py-0.2 rounded font-mono">0</span>
+            </button>
+          </div>
+
+          <!-- Search Input -->
+          <div class="relative w-full sm:w-64">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+            <input type="text" id="input-search-library" placeholder="Tìm theo tên, kích thước, người tạo..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Preset List Container -->
+      <div id="library-presets-container" class="p-4 overflow-y-auto space-y-2.5 flex-1 min-h-[250px]">
+        <!-- Danh sách mẫu sẽ được render động tại đây -->
+      </div>
+
+      <!-- Footer -->
+      <div class="bg-slate-950 px-5 py-3 border-t border-slate-800 flex items-center justify-between shrink-0 text-xs">
+        <span class="text-slate-500 text-[11px]">Bấm vào nút <strong class="text-blue-400 font-semibold">"Áp Dụng"</strong> để nạp mẫu vào bàn vẽ 3D</span>
+        <button id="btn-library-create-new" class="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition flex items-center gap-1.5 shadow-md shadow-blue-600/30 cursor-pointer">
+          <i class="fa-solid fa-floppy-disk"></i> <span>Lưu Mẫu Đang Vẽ</span>
         </button>
       </div>
     </div>

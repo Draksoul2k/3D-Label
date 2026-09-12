@@ -326,8 +326,9 @@ window.Roll3D = (function () {
       // 3. DỰNG DẢI TEM RỦ THẲNG ĐỨNG XUỐNG DƯỚI (VERTICAL DROP FLAP)
       // =========================================================
       const pitch = S.labelHeight + S.gapY;
-      const numFlapRows = 3; // 3 hàng tem rủ phía dưới chuẩn bản vẽ kỹ thuật
-      const flapLength = Math.max(130, numFlapRows * pitch + 15);
+      const numFlapRows = (S.flapRows && Number(S.flapRows) > 0) ? Math.max(1, Math.min(6, parseInt(S.flapRows, 10))) : 3;
+      const flapMargin = Math.max(10, Math.min(22, S.labelHeight * 0.14));
+      const flapLength = numFlapRows * pitch + flapMargin;
       const flapZ = outerR; // Mặt trước của cuộn
       const flapTopY = rollCenterY;
       const flapBottomY = flapTopY - flapLength;

@@ -269,11 +269,17 @@ const SupabaseAuth = {
       throw new Error('Bạn cần đăng nhập để lưu mẫu lên đám mây.');
     }
 
+    if (!this.currentProfile) {
+      await this.loadUserProfile(this.currentUser);
+    }
+
+    const authorName = this.currentProfile?.full_name || this.currentUser.user_metadata?.full_name || this.currentUser.email;
+
     const payload = {
       user_id: this.currentUser.id,
       name: name.trim(),
       data: data,
-      author_name: this.currentProfile?.full_name || this.currentUser.email,
+      author_name: authorName,
       author_email: this.currentUser.email,
       updated_at: new Date().toISOString()
     };
@@ -284,7 +290,10 @@ const SupabaseAuth = {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase saveCloudPreset error:', error);
+      throw error;
+    }
     return inserted;
   },
 

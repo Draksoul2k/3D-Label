@@ -17,6 +17,8 @@ window.AppState = {
   gapY: 3, // Khoảng cách bước nhảy giữa 2 hàng (mm)
   marginX: 2, // Lề biên 2 bên (mm)
   hasPerforation: true, // Đường răng cưa
+  flapRows: 3, // Số hàng tem rủ xuống trên bản vẽ 3D (1, 2, 3, 4)
+  manualFlapRows: false, // true nếu người dùng chủ động chọn số tem rủ
 
   // Quy cách cuộn & lõi
   coreDiameter: 25.4, // Lõi 1 inch (25.4mm) chuẩn máy in để bàn
@@ -1621,6 +1623,17 @@ function initEventListeners() {
         S.labelHeight = null;
       } else {
         S.labelHeight = parseFloat(v);
+        // Tự động tối ưu số tem rủ nếu người dùng chưa chủ động bấm chọn
+        if (!S.manualFlapRows) {
+          if (S.labelHeight >= 120) {
+            S.flapRows = 1;
+          } else if (S.labelHeight >= 75) {
+            S.flapRows = 2;
+          } else {
+            S.flapRows = 3;
+          }
+          syncFlapRowsUI();
+        }
       }
       onParamsChanged();
     });
@@ -1702,6 +1715,24 @@ function initEventListeners() {
       btn.classList.remove('bg-slate-800', 'text-slate-300', 'border-slate-700');
 
       S.ups = parseInt(btn.dataset.ups) || 1;
+      onParamsChanged();
+    });
+  });
+
+  // Số tem rủ xuống 3D (Flap Rows: 1, 2, 3, 4)
+  document.querySelectorAll('.flap-rows-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.flap-rows-btn').forEach(b => {
+        b.classList.remove('active', 'bg-cyan-600', 'text-white', 'border-cyan-500');
+        b.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700');
+      });
+      btn.classList.add('active', 'bg-cyan-600', 'text-white', 'border-cyan-500');
+      btn.classList.remove('bg-slate-800', 'text-slate-300', 'border-slate-700');
+
+      S.flapRows = parseInt(btn.dataset.rows, 10) || 3;
+      S.manualFlapRows = true;
+      const badge = document.getElementById('badge-flap-rows');
+      if (badge) badge.textContent = `${S.flapRows} Tem`;
       onParamsChanged();
     });
   });
@@ -2207,6 +2238,47 @@ function initEventListeners() {
       if (e.target === modalSavePreset) closeSavePresetModal();
     });
   }
+
+  // Nút mở Thư Viện Mẫu Tem (Folder Mẫu)
+  document.getElementById('btn-topbar-open-library')?.addEventListener('click', openPresetLibraryModal);
+  document.getElementById('btn-sidebar-open-library')?.addEventListener('click', openPresetLibraryModal);
+  document.getElementById('btn-close-preset-library-modal')?.addEventListener('click', closePresetLibraryModal);
+  document.getElementById('btn-library-create-new')?.addEventListener('click', () => {
+    closePresetLibraryModal();
+    openSavePresetModal();
+  });
+
+  const modalPresetLib = document.getElementById('modal-preset-library');
+  if (modalPresetLib) {
+    modalPresetLib.addEventListener('click', (e) => {
+      if (e.target === modalPresetLib) closePresetLibraryModal();
+    });
+  }
+
+  // Tabs trong Thư Viện Mẫu Tem
+  document.getElementById('tab-library-my')?.addEventListener('click', () => {
+    currentLibraryTab = 'my';
+    document.getElementById('tab-library-my')?.classList.add('bg-blue-600', 'text-white');
+    document.getElementById('tab-library-my')?.classList.remove('text-slate-400');
+    document.getElementById('tab-library-all')?.classList.remove('bg-blue-600', 'text-white');
+    document.getElementById('tab-library-all')?.classList.add('text-slate-400');
+    renderPresetLibraryUI();
+  });
+
+  document.getElementById('tab-library-all')?.addEventListener('click', () => {
+    currentLibraryTab = 'all';
+    document.getElementById('tab-library-all')?.classList.add('bg-blue-600', 'text-white');
+    document.getElementById('tab-library-all')?.classList.remove('text-slate-400');
+    document.getElementById('tab-library-my')?.classList.remove('bg-blue-600', 'text-white');
+    document.getElementById('tab-library-my')?.classList.add('text-slate-400');
+    renderPresetLibraryUI();
+  });
+
+  // Tìm kiếm mẫu tem trong Thư Viện
+  document.getElementById('input-search-library')?.addEventListener('input', (e) => {
+    currentLibrarySearch = e.target.value;
+    renderPresetLibraryUI();
+  });
 
   // 11. MAIN WORKSPACE TAB SWITCHING (TAB 1: 3D, TAB 2: DESIGNER, TAB 3: BLUEPRINT, TAB 4: PROOF)
   document.querySelectorAll('.main-tab-btn').forEach(btn => {
@@ -2896,12 +2968,41 @@ function initEventListeners() {
   });
 }
 
+function syncFlapRowsUI() {
+  const S = window.AppState;
+  const currentFlapRows = S.flapRows || 3;
+  document.querySelectorAll('.flap-rows-btn').forEach(b => {
+    const isThis = parseInt(b.dataset.rows, 10) === currentFlapRows;
+    b.classList.toggle('active', isThis);
+    b.classList.toggle('bg-cyan-600', isThis);
+    b.classList.toggle('text-white', isThis);
+    b.classList.toggle('border-cyan-500', isThis);
+    b.classList.toggle('bg-slate-800', !isThis);
+    b.classList.toggle('text-slate-300', !isThis);
+    b.classList.toggle('border-slate-700', !isThis);
+  });
+  const badge = document.getElementById('badge-flap-rows');
+  if (badge) badge.textContent = `${currentFlapRows} Tem`;
+}
+
 /**
  * ÁP DỤNG PRESET
  */
 function applyPreset(p) {
   const S = window.AppState;
   Object.assign(S, p);
+
+  // Khôi phục hoặc tự động gán số tem rủ xuống 3D
+  if (p.flapRows) {
+    S.flapRows = p.flapRows;
+    S.manualFlapRows = true;
+  } else {
+    if (S.labelHeight >= 120) S.flapRows = 1;
+    else if (S.labelHeight >= 75) S.flapRows = 2;
+    else S.flapRows = 3;
+    S.manualFlapRows = false;
+  }
+  syncFlapRowsUI();
 
   // Cập nhật DOM inputs
   document.getElementById('input-label-w').value = S.labelWidth;
@@ -3218,6 +3319,7 @@ async function confirmSavePreset() {
     cornerRadius: S.cornerRadius,
     shape: S.shape,
     ups: S.ups,
+    flapRows: S.flapRows || 3,
     gapX: S.gapX,
     gapY: S.gapY,
     marginX: S.marginX,
@@ -3237,26 +3339,260 @@ async function confirmSavePreset() {
   const list = getCustomPresets();
   list.unshift(newPreset);
   saveCustomPresetsToStorage(list);
-
   LABEL_PRESETS[newId] = newPreset;
+
+  let savedCloudSuccess = false;
+  let cloudErrMsg = '';
 
   // Nếu đã đăng nhập, lưu đồng thời lên Supabase Cloud
   if (window.SupabaseAuth && window.SupabaseAuth.isLoggedIn()) {
     try {
       const savedCloud = await window.SupabaseAuth.saveCloudPreset(name, newPreset);
       if (savedCloud && savedCloud.id) {
-        newPreset.id = savedCloud.id;
-        LABEL_PRESETS[savedCloud.id] = newPreset;
+        savedCloudSuccess = true;
+        const cloudId = savedCloud.id;
+        delete LABEL_PRESETS[newId];
+        newPreset.id = cloudId;
+        newPreset.isCloud = true;
+        LABEL_PRESETS[cloudId] = newPreset;
+
+        // Cập nhật lại ID trong list LocalStorage để đồng bộ
+        const updatedList = getCustomPresets().map(p => p.id === newId ? newPreset : p);
+        saveCustomPresetsToStorage(updatedList);
+        await loadAndRenderCustomPresets(cloudId);
       }
     } catch (err) {
       console.warn('Lỗi lưu Cloud:', err);
+      cloudErrMsg = err.message || 'Lỗi mạng';
+    }
+  } else {
+    loadAndRenderCustomPresets(newId);
+  }
+
+  closeSavePresetModal();
+
+  if (savedCloudSuccess) {
+    showPresetToast(`Đã lưu mẫu "${name}" lên Cloud & Folder Mẫu thành công!`);
+  } else if (cloudErrMsg) {
+    showPresetToast(`Đã lưu mẫu vào máy này (Chưa lên Cloud: ${cloudErrMsg})`);
+  } else {
+    showPresetToast(`Đã lưu mẫu "${name}" thành công!`);
+  }
+
+  // Làm mới Thư viện mẫu nếu đang mở
+  const libModal = document.getElementById('modal-preset-library');
+  if (libModal && !libModal.classList.contains('hidden')) {
+    refreshPresetLibrary();
+  }
+}
+
+/**
+ * =========================================================================
+ * QUẢN LÝ THƯ VIỆN MẪU TEM (PRESET LIBRARY / FOLDER MẪU)
+ * =========================================================================
+ */
+let currentLibraryTab = 'my'; // 'my' hoặc 'all'
+let currentLibrarySearch = '';
+let cachedCloudPresets = [];
+
+async function openPresetLibraryModal() {
+  const modal = document.getElementById('modal-preset-library');
+  if (!modal) return;
+
+  const isAdmin = window.SupabaseAuth && window.SupabaseAuth.isAdmin();
+  const tabAll = document.getElementById('tab-library-all');
+  if (tabAll) {
+    tabAll.classList.toggle('hidden', !isAdmin);
+  }
+
+  modal.classList.remove('hidden');
+  await refreshPresetLibrary();
+}
+window.openPresetLibraryModal = openPresetLibraryModal;
+
+function closePresetLibraryModal() {
+  const modal = document.getElementById('modal-preset-library');
+  if (modal) modal.classList.add('hidden');
+}
+window.closePresetLibraryModal = closePresetLibraryModal;
+
+async function refreshPresetLibrary() {
+  const container = document.getElementById('library-presets-container');
+  if (container) {
+    container.innerHTML = `
+      <div class="py-12 flex flex-col items-center justify-center text-slate-500 gap-2">
+        <i class="fa-solid fa-spinner fa-spin text-xl text-blue-400"></i>
+        <span class="text-xs">Đang tải danh sách mẫu tem...</span>
+      </div>
+    `;
+  }
+
+  cachedCloudPresets = [];
+  if (window.SupabaseAuth && window.SupabaseAuth.isLoggedIn()) {
+    try {
+      cachedCloudPresets = await window.SupabaseAuth.getCloudPresets();
+    } catch (e) {
+      console.warn('Lỗi lấy cloud presets cho library:', e);
     }
   }
 
-  loadAndRenderCustomPresets(newId);
+  renderPresetLibraryUI();
+}
 
-  closeSavePresetModal();
-  showPresetToast(`Đã lưu mẫu "${name}" thành công!`);
+function renderPresetLibraryUI() {
+  const container = document.getElementById('library-presets-container');
+  if (!container) return;
+
+  const localPresets = getCustomPresets();
+  const isAdmin = window.SupabaseAuth && window.SupabaseAuth.isAdmin();
+  const currentUserId = window.SupabaseAuth?.currentUser?.id;
+
+  // Lập danh sách kết hợp
+  let list = [];
+
+  // Mẫu từ Cloud
+  if (cachedCloudPresets && cachedCloudPresets.length > 0) {
+    cachedCloudPresets.forEach(cp => {
+      const item = { ...(cp.data || {}) };
+      item.id = cp.id;
+      item.name = cp.name;
+      item.author_name = cp.author_name;
+      item.author_email = cp.author_email;
+      item.user_id = cp.user_id;
+      item.created_at = cp.created_at;
+      item.isCloud = true;
+      list.push(item);
+    });
+  }
+
+  // Mẫu cục bộ (LocalStorage) nếu chưa có trên Cloud
+  localPresets.forEach(lp => {
+    if (!list.some(p => p.id === lp.id)) {
+      list.push({ ...lp, isLocalOnly: true });
+    }
+  });
+
+  // Cập nhật số lượng đếm trên Tab
+  const myPresets = list.filter(p => !p.user_id || p.user_id === currentUserId);
+  const badgeMy = document.getElementById('badge-my-count');
+  if (badgeMy) badgeMy.textContent = myPresets.length;
+
+  const badgeAll = document.getElementById('badge-all-count');
+  if (badgeAll) badgeAll.textContent = list.length;
+
+  // Lọc theo Tab đang chọn
+  let displayList = (currentLibraryTab === 'all' && isAdmin) ? list : myPresets;
+
+  // Lọc theo từ khóa tìm kiếm
+  const q = (currentLibrarySearch || '').trim().toLowerCase();
+  if (q) {
+    displayList = displayList.filter(p => {
+      const name = (p.name || '').toLowerCase();
+      const author = (p.author_name || p.author_email || '').toLowerCase();
+      const dims = `${p.labelWidth}x${p.labelHeight}`.toLowerCase();
+      return name.includes(q) || author.includes(q) || dims.includes(q);
+    });
+  }
+
+  if (displayList.length === 0) {
+    container.innerHTML = `
+      <div class="py-12 flex flex-col items-center justify-center text-slate-500 gap-2 text-center">
+        <div class="w-12 h-12 rounded-2xl bg-slate-800/80 flex items-center justify-center text-slate-400 text-lg border border-slate-700/60">
+          <i class="fa-solid fa-folder-open"></i>
+        </div>
+        <span class="text-xs font-semibold text-slate-400">Chưa có mẫu tem nào trong thư mục này</span>
+        <p class="text-[11px] text-slate-500 max-w-xs">Bạn có thể điều chỉnh thông số con tem và bấm nút "Lưu Mẫu Đang Vẽ" để thêm vào đây bất cứ lúc nào.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = displayList.map(p => {
+    const isOwner = !p.user_id || p.user_id === currentUserId;
+    const canDelete = isOwner || isAdmin;
+    const shapeLabel = p.shape === 'circle' ? 'Tròn' : (p.shape === 'oval' ? 'Oval' : 'Chữ nhật');
+    const createdStr = p.created_at ? new Date(p.created_at).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Vừa lưu';
+    const authorStr = (p.author_name || p.author_email) ? `${p.author_name || p.author_email}` : 'Cục bộ trên máy';
+
+    return `
+      <div class="p-3 bg-slate-950/80 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-xl transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 group">
+        <div class="space-y-1 flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-bold text-white text-xs sm:text-sm truncate max-w-xs sm:max-w-md">${p.name}</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30 font-semibold">${p.labelWidth} x ${p.labelHeight} mm</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">${p.ups || 1} tem/hàng</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30">${shapeLabel}</span>
+            ${p.flapRows ? `<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">Rủ ${p.flapRows} tem</span>` : ''}
+            ${p.isCloud ? '<span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">Cloud</span>' : '<span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-700/50 text-slate-400">Máy này</span>'}
+          </div>
+          <div class="text-[11px] text-slate-400 flex items-center gap-3 flex-wrap">
+            <span class="flex items-center gap-1.5 text-slate-300">
+              <i class="fa-solid fa-user-circle text-amber-400 text-xs"></i>
+              <span class="font-medium">${authorStr}</span>
+            </span>
+            <span class="flex items-center gap-1 text-slate-500">
+              <i class="fa-solid fa-clock text-[10px]"></i> ${createdStr}
+            </span>
+            ${p.coreDiameter ? `<span class="text-slate-500 text-[10px]">Lõi Ø${p.coreDiameter}mm</span>` : ''}
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+          <button type="button" class="btn-apply-library-preset px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-blue-600/20 cursor-pointer active:scale-95" data-id="${p.id}">
+            <i class="fa-solid fa-check"></i> <span>Áp Dụng</span>
+          </button>
+          ${canDelete ? `
+            <button type="button" class="btn-delete-library-preset p-1.5 rounded-lg bg-slate-800/80 hover:bg-rose-900/60 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-700/60 text-xs transition cursor-pointer" data-id="${p.id}" data-cloud="${p.isCloud ? '1' : '0'}" title="Xóa mẫu tem này">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Gắn sự kiện cho các nút Áp Dụng
+  container.querySelectorAll('.btn-apply-library-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      const targetPreset = LABEL_PRESETS[id] || displayList.find(p => p.id === id);
+      if (targetPreset) {
+        applyPreset(targetPreset);
+        const selector = document.getElementById('preset-selector');
+        if (selector) selector.value = id;
+        closePresetLibraryModal();
+        showPresetToast(`Đã áp dụng mẫu "${targetPreset.name}" thành công!`);
+      }
+    });
+  });
+
+  // Gắn sự kiện cho các nút Xóa
+  container.querySelectorAll('.btn-delete-library-preset').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const isCloud = btn.dataset.cloud === '1';
+      if (!confirm('Bạn có chắc chắn muốn xóa mẫu tem này khỏi danh sách không?')) return;
+
+      // Xóa khỏi Cloud nếu là mẫu Cloud
+      if (isCloud && window.SupabaseAuth && window.SupabaseAuth.isLoggedIn()) {
+        try {
+          await window.SupabaseAuth.deleteCloudPreset(id);
+        } catch (err) {
+          alert('Không thể xóa mẫu khỏi Cloud: ' + (err.message || 'Lỗi'));
+          return;
+        }
+      }
+
+      // Xóa khỏi LocalStorage
+      let listLocal = getCustomPresets();
+      listLocal = listLocal.filter(p => p.id !== id);
+      saveCustomPresetsToStorage(listLocal);
+      delete LABEL_PRESETS[id];
+
+      showPresetToast('Đã xóa mẫu tem thành công.');
+      await refreshPresetLibrary();
+      await loadAndRenderCustomPresets();
+    });
+  });
 }
 
 /**
@@ -3900,6 +4236,9 @@ function updateAuthUI(user, profile) {
 
     if (btnAdminPanel) btnAdminPanel.classList.toggle('hidden', !isAdmin);
     if (btnAdminBell) btnAdminBell.classList.toggle('hidden', !isAdmin);
+
+    const tabLibraryAll = document.getElementById('tab-library-all');
+    if (tabLibraryAll) tabLibraryAll.classList.toggle('hidden', !isAdmin);
 
     if (isAdmin) {
       refreshPendingAdminCount();
