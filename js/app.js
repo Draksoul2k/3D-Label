@@ -1640,6 +1640,84 @@ function initEventListeners() {
   }
 
   // =========================================================
+  // HÌNH DẠNG CON TEM (CHỮ NHẬT VS TEM TRÒN)
+  // =========================================================
+  function setShape(shape) {
+    S.shape = shape;
+    const isCircle = (shape === 'circle');
+
+    const wrapRect = document.getElementById('wrapper-rect-dims');
+    const wrapCircle = document.getElementById('wrapper-circle-dims');
+    const wrapCorner = document.getElementById('wrapper-corner-radius');
+
+    if (wrapRect) wrapRect.classList.toggle('hidden', isCircle);
+    if (wrapCircle) wrapCircle.classList.toggle('hidden', !isCircle);
+    if (wrapCorner) wrapCorner.classList.toggle('hidden', isCircle);
+
+    document.querySelectorAll('.shape-btn').forEach(b => {
+      const isThis = (b.dataset.shape === shape);
+      b.classList.toggle('active', isThis);
+      b.classList.toggle('bg-blue-600', isThis);
+      b.classList.toggle('text-white', isThis);
+      b.classList.toggle('shadow-sm', isThis);
+      b.classList.toggle('text-slate-300', !isThis);
+    });
+
+    if (isCircle) {
+      const inpD = document.getElementById('input-label-diameter');
+      const d = parseFloat(inpD?.value) || S.labelDiameter || S.labelWidth || 40;
+      S.labelDiameter = d;
+      S.labelWidth = d;
+      S.labelHeight = d;
+      S.cornerRadius = d / 2;
+      if (inpD) inpD.value = d;
+    } else {
+      const inpW = document.getElementById('input-label-w');
+      const inpH = document.getElementById('input-label-h');
+      S.labelWidth = parseFloat(inpW?.value) || 50;
+      S.labelHeight = parseFloat(inpH?.value) || 30;
+      const inpR = document.getElementById('input-radius-num');
+      S.cornerRadius = parseFloat(inpR?.value) || 2;
+    }
+
+    onParamsChanged();
+  }
+
+  document.querySelectorAll('.shape-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setShape(btn.dataset.shape);
+    });
+  });
+
+  // Nhập đường kính tem tròn (Đường kính = Ngang = Cao)
+  const inputDiameter = document.getElementById('input-label-diameter');
+  if (inputDiameter) {
+    inputDiameter.addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value.trim());
+      if (!isNaN(v) && v > 0) {
+        S.labelDiameter = v;
+        S.labelWidth = v;
+        S.labelHeight = v;
+        S.cornerRadius = v / 2;
+        onParamsChanged();
+      }
+    });
+  }
+
+  // Nút chọn nhanh đường kính tem tròn (Ø30, Ø40, Ø50)
+  document.querySelectorAll('.btn-quick-diameter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const d = parseFloat(btn.dataset.d);
+      if (inputDiameter) inputDiameter.value = d;
+      S.labelDiameter = d;
+      S.labelWidth = d;
+      S.labelHeight = d;
+      S.cornerRadius = d / 2;
+      onParamsChanged();
+    });
+  });
+
+  // =========================================================
   // SECTION 3: QUY CÁCH (BO GÓC & SỐ TEM/HÀNG)
   // =========================================================
   const inputRadius = document.getElementById('input-radius');
@@ -3005,6 +3083,19 @@ function applyPreset(p) {
   syncFlapRowsUI();
 
   // Cập nhật DOM inputs
+  const isCircle = (S.shape === 'circle');
+  const wrapRect = document.getElementById('wrapper-rect-dims');
+  const wrapCircle = document.getElementById('wrapper-circle-dims');
+  const wrapCorner = document.getElementById('wrapper-corner-radius');
+
+  if (wrapRect) wrapRect.classList.toggle('hidden', isCircle);
+  if (wrapCircle) wrapCircle.classList.toggle('hidden', !isCircle);
+  if (wrapCorner) wrapCorner.classList.toggle('hidden', isCircle);
+
+  if (isCircle) {
+    const inpD = document.getElementById('input-label-diameter');
+    if (inpD) inpD.value = S.labelWidth;
+  }
   document.getElementById('input-label-w').value = S.labelWidth;
   document.getElementById('input-label-h').value = S.labelHeight;
   document.getElementById('input-radius').value = S.cornerRadius;
@@ -3018,9 +3109,12 @@ function applyPreset(p) {
   });
 
   document.querySelectorAll('.shape-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.shape === S.shape);
-    b.classList.toggle('bg-blue-600', b.dataset.shape === S.shape);
-    b.classList.toggle('text-white', b.dataset.shape === S.shape);
+    const isThis = (b.dataset.shape === S.shape);
+    b.classList.toggle('active', isThis);
+    b.classList.toggle('bg-blue-600', isThis);
+    b.classList.toggle('text-white', isThis);
+    b.classList.toggle('shadow-sm', isThis);
+    b.classList.toggle('text-slate-300', !isThis);
   });
 
   document.getElementById('input-gap-x').value = S.gapX;

@@ -368,7 +368,7 @@
           </div>
         </div>
 
-        <!-- SECTION 2: KÍCH THƯỚC CON TEM (W x H) -->
+        <!-- SECTION 2: KÍCH THƯỚC CON TEM (W x H HOẶC ĐƯỜNG KÍNH) -->
         <div class="bg-slate-800/60 rounded-xl p-3 border border-slate-700/60 space-y-2.5">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
@@ -377,7 +377,20 @@
             <span id="badge-label-dims" class="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">50 x 30 mm</span>
           </div>
 
-          <div class="grid grid-cols-2 gap-2.5">
+          <!-- LỰA CHỌN HÌNH DẠNG CON TEM: Chữ nhật vs Tem tròn -->
+          <div class="grid grid-cols-2 gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-700/80" id="shape-selector">
+            <button type="button" class="shape-btn active py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer bg-blue-600 text-white shadow-sm" data-shape="rect">
+              <i class="fa-regular fa-square"></i>
+              <span>Chữ Nhật / Bo Góc</span>
+            </button>
+            <button type="button" class="shape-btn py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer text-slate-300 hover:text-white" data-shape="circle">
+              <i class="fa-regular fa-circle text-amber-400"></i>
+              <span>Tem Tròn (Ø)</span>
+            </button>
+          </div>
+
+          <!-- CHẾ ĐỘ 1: TEM CHỮ NHẬT / VUÔNG -> Nhập Ngang (W) & Cao (H) -->
+          <div id="wrapper-rect-dims" class="grid grid-cols-2 gap-2.5">
             <div>
               <label class="text-[11px] text-slate-300 font-medium block mb-1">Chiều ngang (W mm)</label>
               <input type="number" id="input-label-w" value="50" min="10" max="300" step="1" class="font-mono font-semibold" placeholder="Ngang">
@@ -385,6 +398,24 @@
             <div>
               <label class="text-[11px] text-slate-300 font-medium block mb-1">Chiều cao (H mm)</label>
               <input type="number" id="input-label-h" value="30" min="10" max="300" step="1" class="font-mono font-semibold" placeholder="Cao">
+            </div>
+          </div>
+
+          <!-- CHẾ ĐỘ 2: TEM TRÒN -> Chỉ nhập Đường kính (Ø mm) -->
+          <div id="wrapper-circle-dims" class="hidden space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] text-amber-300 font-bold flex items-center gap-1">
+                <i class="fa-regular fa-circle text-amber-400"></i> Đường kính tem tròn (Ø mm):
+              </label>
+              <span class="text-[10px] text-slate-400 font-mono">Đường kính = W = H</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="number" id="input-label-diameter" value="40" min="10" max="300" step="1" class="w-full bg-slate-950 border border-amber-500/50 rounded-lg px-3 py-1.5 text-amber-300 font-mono font-bold text-sm focus:outline-none focus:border-amber-400" placeholder="Nhập đường kính (vd: 40)">
+              <div class="flex items-center gap-1 shrink-0">
+                <button type="button" class="btn-quick-diameter py-1.5 px-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs border border-slate-700 cursor-pointer" data-d="30">Ø30</button>
+                <button type="button" class="btn-quick-diameter py-1.5 px-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs border border-slate-700 cursor-pointer" data-d="40">Ø40</button>
+                <button type="button" class="btn-quick-diameter py-1.5 px-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs border border-slate-700 cursor-pointer" data-d="50">Ø50</button>
+              </div>
             </div>
           </div>
         </div>
@@ -398,8 +429,8 @@
             <span id="badge-spec-summary" class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800">Bo góc R2 - 1 tem/hàng</span>
           </div>
 
-          <!-- Bo góc: Góc vuông, R1, R2, R3, Khác -->
-          <div>
+          <!-- Bo góc: Góc vuông, R1, R2, R3, Khác (Ẩn khi là tem tròn) -->
+          <div id="wrapper-corner-radius">
             <label class="text-[11px] text-slate-400 block mb-1">Bo góc viền (Radius R):</label>
             <div class="grid grid-cols-5 gap-1 text-[11px]" id="corner-preset-selector">
               <button type="button" class="corner-preset-btn py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 text-center font-medium" data-r="0">Vuông</button>
