@@ -816,6 +816,270 @@ window.LabelDesigner = (function () {
       name: '100% Chất lượng cao (Quality)',
       cat: 'commercial', code: '100% QC',
       svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="44" r="28" fill="none" stroke="${color}" stroke-width="6"/><path d="M38 68 l-6 20 l18 -8 l18 8 l-6 -20" fill="${color}"/><text x="50" y="50" font-family="Arial Black" font-weight="900" font-size="14" text-anchor="middle" fill="${color}">100%</text></svg>`
+    },
+
+    // ==========================================
+    // 7. TOÀN BỘ HÓA CHẤT NGUY HẠI GHS (UN 9 PICTOGRAMS & GHS V1.0)
+    // ==========================================
+    ghs_flame_circle: {
+      name: 'Chất oxy hóa (Oxidizing / GHS03)',
+      cat: 'ghs', code: 'GHS 03',
+      svg: mkSvg('<path d="M50 8 l40 42 l-40 42 l-40 -42 z" fill="none" stroke="currentColor" stroke-width="6"/><circle cx="50" cy="58" r="16" fill="none" stroke="currentColor" stroke-width="5"/><path d="M50 24 c-4 8 -10 14 -10 22 a10 10 0 0 0 20 0 c0 -8 -6 -14 -10 -22 z"/>')
+    },
+    ghs_environment: {
+      name: 'Nguy hại môi trường (Environment / GHS09)',
+      cat: 'ghs', code: 'GHS 09',
+      svg: mkSvg('<path d="M50 8 l40 42 l-40 42 l-40 -42 z" fill="none" stroke="currentColor" stroke-width="6"/><path d="M28 66 h44 M38 66 v-24 l6 -6 M38 52 l-6 -6 M38 60 l-6 -6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M52 56 c8 -4 14 0 18 2 c-4 4 -10 4 -18 -2 z M68 58 l4 -2 v4 z"/><circle cx="56" cy="56" r="1.5" fill="#000"/>')
+    },
+    ghs_exclamation: {
+      name: 'Cảnh báo kích ứng (Irritant / GHS07)',
+      cat: 'ghs', code: 'GHS 07',
+      svg: mkSvg('<path d="M50 8 l40 42 l-40 42 l-40 -42 z" fill="none" stroke="currentColor" stroke-width="6"/><rect x="46" y="28" width="8" height="26" rx="4"/><circle cx="50" cy="64" r="5"/>')
+    },
+    ghs_acute_toxicity: {
+      name: 'Độc tính cấp tính (Skull & Bones / GHS06)',
+      cat: 'ghs', code: 'GHS 06',
+      svg: mkSvg('<path d="M50 8 l40 42 l-40 42 l-40 -42 z" fill="none" stroke="currentColor" stroke-width="6"/><circle cx="50" cy="40" r="13"/><rect x="43" y="49" width="14" height="9" rx="2"/><circle cx="45" cy="40" r="2.5" fill="#000"/><circle cx="55" cy="40" r="2.5" fill="#000"/><path d="M34 58 l32 10 M66 58 l-32 10" stroke="currentColor" stroke-width="3"/>')
+    },
+    ghs_health_cmr: {
+      name: 'Nguy hại sức khỏe nghiêm trọng (GHS08)',
+      cat: 'ghs', code: 'GHS 08',
+      svg: mkSvg('<path d="M50 8 l40 42 l-40 42 l-40 -42 z" fill="none" stroke="currentColor" stroke-width="6"/><circle cx="50" cy="34" r="6"/><path d="M42 44 h16 l4 20 h-24 z"/><path d="M50 48 l2 4 h4 l-3 3 l1 4 l-4 -2 l-4 2 l1 -4 l-3 -3 h4 z" fill="#fff"/>')
+    },
+
+    // ==========================================
+    // 8. TEM GIẶT ỦI & MAY MẶC (TEXTILE CARE - ISO 3758 / JIS L 0217)
+    // ==========================================
+    wash_normal: {
+      name: 'Giặt nước thông thường (Wash Normal)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: mkSvg('<path d="M20 34 h60 l-8 36 a10 10 0 0 1 -10 8 h-24 a10 10 0 0 1 -10 -8 z" fill="none" stroke="currentColor" stroke-width="6"/><path d="M22 36 c6 -6 14 -6 20 0 c6 6 14 6 20 0 c6 -6 12 -6 16 0" fill="none" stroke="currentColor" stroke-width="4"/>')
+    },
+    wash_hand: {
+      name: 'Giặt bằng tay (Hand Wash Only)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: mkSvg('<path d="M20 40 h60 l-8 32 a10 10 0 0 1 -10 8 h-24 a10 10 0 0 1 -10 -8 z" fill="none" stroke="currentColor" stroke-width="5"/><path d="M42 22 v18 M46 18 v22 M50 16 v24 M54 18 v22 M38 28 l6 14 h14 l6 -10" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>')
+    },
+    wash_30c: {
+      name: 'Giặt nước tối đa 30°C (30°C Wash)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M20 34 h60 l-8 36 a10 10 0 0 1 -10 8 h-24 a10 10 0 0 1 -10 -8 z" fill="none" stroke="${color}" stroke-width="6"/><text x="50" y="60" font-family="Arial" font-weight="900" font-size="16" text-anchor="middle" fill="${color}">30°</text></svg>`
+    },
+    wash_40c: {
+      name: 'Giặt nước tối đa 40°C (40°C Wash)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M20 34 h60 l-8 36 a10 10 0 0 1 -10 8 h-24 a10 10 0 0 1 -10 -8 z" fill="none" stroke="${color}" stroke-width="6"/><text x="50" y="60" font-family="Arial" font-weight="900" font-size="16" text-anchor="middle" fill="${color}">40°</text></svg>`
+    },
+    wash_60c: {
+      name: 'Giặt nước tối đa 60°C (60°C Wash)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M20 34 h60 l-8 36 a10 10 0 0 1 -10 8 h-24 a10 10 0 0 1 -10 -8 z" fill="none" stroke="${color}" stroke-width="6"/><text x="50" y="60" font-family="Arial" font-weight="900" font-size="16" text-anchor="middle" fill="${color}">60°</text></svg>`
+    },
+    wash_no: {
+      name: 'Cấm giặt nước (Do Not Wash)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M20 34 h60 l-8 36 a10 10 0 0 1 -10 8 h-24 a10 10 0 0 1 -10 -8 z" fill="none" stroke="${color}" stroke-width="6"/><path d="M22 24 l56 56" stroke="${color}" stroke-width="7" stroke-linecap="round"/></svg>`
+    },
+    bleach_ok: {
+      name: 'Được phép tẩy trắng (Any Bleach)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: mkSvg('<path d="M50 18 l34 58 h-68 z" fill="none" stroke="currentColor" stroke-width="6"/>')
+    },
+    bleach_no_chlorine: {
+      name: 'Tẩy không chứa clo (Non-Chlorine Bleach)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: mkSvg('<path d="M50 18 l34 58 h-68 z" fill="none" stroke="currentColor" stroke-width="6"/><path d="M42 46 l16 28 M52 46 l16 28" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>')
+    },
+    bleach_no: {
+      name: 'Cấm tẩy trắng (Do Not Bleach)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 18 l34 58 h-68 z" fill="none" stroke="${color}" stroke-width="6"/><path d="M24 24 l52 52" stroke="${color}" stroke-width="7" stroke-linecap="round"/></svg>`
+    },
+    iron_cool: {
+      name: 'Ủi nhiệt độ thấp 110°C (Iron Cool - 1 Dot)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: mkSvg('<path d="M20 64 h60 c6 0 10 -4 10 -10 c0 -14 -12 -22 -24 -22 h-46 v32 z" fill="none" stroke="currentColor" stroke-width="6"/><circle cx="50" cy="50" r="3"/>')
+    },
+    iron_medium: {
+      name: 'Ủi nhiệt độ vừa 150°C (Iron Medium - 2 Dots)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: mkSvg('<path d="M20 64 h60 c6 0 10 -4 10 -10 c0 -14 -12 -22 -24 -22 h-46 v32 z" fill="none" stroke="currentColor" stroke-width="6"/><circle cx="44" cy="50" r="3"/><circle cx="56" cy="50" r="3"/>')
+    },
+    iron_hot: {
+      name: 'Ủi nhiệt độ cao 200°C (Iron Hot - 3 Dots)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: mkSvg('<path d="M20 64 h60 c6 0 10 -4 10 -10 c0 -14 -12 -22 -24 -22 h-46 v32 z" fill="none" stroke="currentColor" stroke-width="6"/><circle cx="38" cy="50" r="3"/><circle cx="50" cy="50" r="3"/><circle cx="62" cy="50" r="3"/>')
+    },
+    iron_no: {
+      name: 'Cấm ủi / là (Do Not Iron)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M20 64 h60 c6 0 10 -4 10 -10 c0 -14 -12 -22 -24 -22 h-46 v32 z" fill="none" stroke="${color}" stroke-width="6"/><path d="M22 24 l56 56" stroke="${color}" stroke-width="7" stroke-linecap="round"/></svg>`
+    },
+    dry_clean_p: {
+      name: 'Giặt khô dung môi P (Dry Clean P)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><text x="50" y="60" font-family="Arial Black" font-weight="900" font-size="28" text-anchor="middle" fill="${color}">P</text></svg>`
+    },
+    dry_clean_no: {
+      name: 'Cấm giặt khô (Do Not Dry Clean)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><path d="M22 22 l56 56" stroke="${color}" stroke-width="7" stroke-linecap="round"/></svg>`
+    },
+    tumble_dry_ok: {
+      name: 'Được phép sấy lồng quay (Tumble Dry)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: mkSvg('<rect x="18" y="18" width="64" height="64" rx="6" fill="none" stroke="currentColor" stroke-width="6"/><circle cx="50" cy="50" r="26" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="50" cy="50" r="4"/>')
+    },
+    tumble_dry_no: {
+      name: 'Cấm sấy lồng quay (Do Not Tumble Dry)',
+      cat: 'textile', code: 'ISO 3758',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="18" y="18" width="64" height="64" rx="6" fill="none" stroke="${color}" stroke-width="6"/><circle cx="50" cy="50" r="26" fill="none" stroke="${color}" stroke-width="5"/><path d="M22 22 l56 56" stroke="${color}" stroke-width="7" stroke-linecap="round"/></svg>`
+    },
+    cotton_100: {
+      name: '100% Cotton tự nhiên (Cotton Flower)',
+      cat: 'textile', code: 'Textile Mark',
+      svg: mkSvg('<circle cx="50" cy="38" r="12"/><circle cx="36" cy="50" r="12"/><circle cx="64" cy="50" r="12"/><circle cx="42" cy="62" r="10"/><circle cx="58" cy="62" r="10"/><path d="M50 68 v18" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>')
+    },
+    woolmark: {
+      name: 'Biểu tượng Len Woolmark (Pure New Wool)',
+      cat: 'textile', code: 'Woolmark',
+      svg: mkSvg('<circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" stroke-width="5"/><path d="M38 60 c-12 -8 -8 -26 6 -26 c12 0 18 16 6 26 M50 64 c-14 -6 -10 -28 6 -28 c14 0 20 18 6 28 M62 60 c-12 -8 -8 -26 6 -26 c12 0 18 16 6 26" fill="none" stroke="currentColor" stroke-width="4"/>')
+    },
+
+    // ==========================================
+    // 9. CẢNH BÁO AN TOÀN & BẢO HỘ LAO ĐỘNG PPE (WARNING V1.0 - ISO 7010)
+    // ==========================================
+    ppe_safety_helmet: {
+      name: 'Bắt buộc đội mũ bảo hộ (Safety Helmet)',
+      cat: 'safety', code: 'ISO 7010-M014',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><path d="M32 54 c0 -14 8 -24 18 -24 s18 10 18 24 h-36 z M26 54 h48 v6 h-48 z" fill="${color}"/></svg>`
+    },
+    ppe_ear_protection: {
+      name: 'Bắt buộc đeo chụp tai chống ồn (Ear Protection)',
+      cat: 'safety', code: 'ISO 7010-M003',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><path d="M32 52 a18 18 0 0 1 36 0" fill="none" stroke="${color}" stroke-width="5"/><rect x="28" y="46" width="8" height="18" rx="4" fill="${color}"/><rect x="64" y="46" width="8" height="18" rx="4" fill="${color}"/></svg>`
+    },
+    ppe_mask: {
+      name: 'Bắt buộc đeo khẩu trang / mặt nạ (Wear Mask)',
+      cat: 'safety', code: 'ISO 7010-M016',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><path d="M34 44 h32 l-4 18 a12 12 0 0 1 -24 0 z" fill="${color}"/><path d="M26 44 h8 M66 44 h8" stroke="${color}" stroke-width="3"/></svg>`
+    },
+    ppe_boots: {
+      name: 'Bắt buộc đi giày bảo hộ (Safety Footwear)',
+      cat: 'safety', code: 'ISO 7010-M008',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><path d="M42 30 v24 l-12 12 h34 a6 6 0 0 0 6 -6 v-6 l-12 -6 v-18 z" fill="${color}"/></svg>`
+    },
+    ppe_wash_hands: {
+      name: 'Bắt buộc rửa tay sát khuẩn (Wash Hands)',
+      cat: 'safety', code: 'ISO 7010-M011',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><path d="M40 38 v14 l8 4 v-18 h-8 z M52 34 v22 l6 -6 v-16 h-6 z M34 56 c8 10 24 10 32 0" fill="none" stroke="${color}" stroke-width="4"/><circle cx="50" cy="24" r="3" fill="${color}"/></svg>`
+    },
+    prohibit_smoking: {
+      name: 'Cấm hút thuốc lá (No Smoking)',
+      cat: 'safety', code: 'ISO 7010-P002',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><rect x="30" y="46" width="40" height="8" fill="${color}"/><rect x="26" y="46" width="3" height="8" fill="${color}"/><path d="M24 24 l52 52" stroke="${color}" stroke-width="7" stroke-linecap="round"/></svg>`
+    },
+    prohibit_flame: {
+      name: 'Cấm lửa / Cấm nguồn nhiệt (No Open Flame)',
+      cat: 'safety', code: 'ISO 7010-P003',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><path d="M50 30 c-4 10 -12 16 -12 24 a12 12 0 0 0 24 0 c0 -8 -8 -14 -12 -24 z" fill="${color}"/><path d="M24 24 l52 52" stroke="${color}" stroke-width="7" stroke-linecap="round"/></svg>`
+    },
+    prohibit_water: {
+      name: 'Cấm dập bằng nước (Do Not Extinguish with Water)',
+      cat: 'safety', code: 'ISO 7010-P011',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><path d="M50 28 c0 0 -16 16 -16 28 a16 16 0 0 0 32 0 c0 -12 -16 -28 -16 -28 z" fill="${color}"/><path d="M24 24 l52 52" stroke="${color}" stroke-width="7" stroke-linecap="round"/></svg>`
+    },
+
+    // ==========================================
+    // 10. DỊ ỨNG THỰC PHẨM (FOOD ALLERGY V1.0)
+    // ==========================================
+    allergy_milk: {
+      name: 'Dị ứng Sữa & Bơ sữa (Milk / Dairy Allergy)',
+      cat: 'allergy', code: 'FDA FALCPA',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><rect x="42" y="24" width="16" height="8" rx="2" fill="${color}"/><path d="M38 36 h24 l4 36 h-32 z" fill="${color}"/><text x="50" y="58" font-family="Arial Black" font-weight="900" font-size="10" text-anchor="middle" fill="#fff">MILK</text></svg>`
+    },
+    allergy_egg: {
+      name: 'Dị ứng Trứng (Egg Allergy)',
+      cat: 'allergy', code: 'FDA FALCPA',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><ellipse cx="50" cy="52" rx="16" ry="22" fill="${color}"/><text x="50" y="56" font-family="Arial Black" font-weight="900" font-size="9" text-anchor="middle" fill="#fff">EGG</text></svg>`
+    },
+    allergy_peanut: {
+      name: 'Dị ứng Đậu phộng / Lạc (Peanut Allergy)',
+      cat: 'allergy', code: 'FDA FALCPA',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><path d="M50 28 c-8 0 -12 8 -10 16 c-6 4 -6 14 0 18 c2 10 10 14 18 10 c8 4 16 0 18 -10 c6 -4 6 -14 0 -18 c2 -8 -2 -16 -10 -16 z" fill="${color}"/></svg>`
+    },
+    allergy_gluten: {
+      name: 'Dị ứng Gluten / Lúa mì (Gluten / Wheat)',
+      cat: 'allergy', code: 'FDA FALCPA',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><path d="M50 24 v52 M50 30 l-10 6 M50 30 l10 6 M50 42 l-12 6 M50 42 l12 6 M50 54 l-12 6 M50 54 l12 6" stroke="${color}" stroke-width="4" stroke-linecap="round"/></svg>`
+    },
+    allergy_fish: {
+      name: 'Dị ứng Cá biển (Fish Allergy)',
+      cat: 'allergy', code: 'FDA FALCPA',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><path d="M26 50 c16 -16 36 -16 48 0 c-12 16 -32 16 -48 0 z M74 50 l10 -8 v16 z" fill="${color}"/><circle cx="38" cy="48" r="2" fill="#fff"/></svg>`
+    },
+    allergy_crustacean: {
+      name: 'Dị ứng Tôm cua giáp xác (Crustacean)',
+      cat: 'allergy', code: 'FDA FALCPA',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><path d="M50 32 c-12 0 -18 8 -18 18 c0 14 18 26 18 26 s18 -12 18 -26 c0 -10 -6 -18 -18 -18 z M34 40 l-8 -8 M66 40 l8 -8" stroke="${color}" stroke-width="4" fill="${color}" stroke-linecap="round"/></svg>`
+    },
+    allergy_soy: {
+      name: 'Dị ứng Đậu nành (Soybean Allergy)',
+      cat: 'allergy', code: 'FDA FALCPA',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><path d="M30 38 c10 -10 30 -6 40 4 c10 10 6 30 -4 40 c-10 10 -30 6 -40 -4 c-10 -10 -6 -30 4 -40 z" fill="${color}"/><circle cx="42" cy="44" r="3" fill="#fff"/><circle cx="58" cy="56" r="3" fill="#fff"/></svg>`
+    },
+
+    // ==========================================
+    // 11. NGÀNH SƠN & CÔNG NGHIỆP (PAINT V1.0)
+    // ==========================================
+    paint_roller: {
+      name: 'Con lăn sơn (Paint Roller 2x)',
+      cat: 'paint', code: 'Paint v1.0',
+      svg: mkSvg('<rect x="26" y="24" width="48" height="16" rx="4"/><path d="M50 40 v12 h14 v24" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/><rect x="60" y="68" width="8" height="16" rx="2"/>')
+    },
+    paint_brush: {
+      name: 'Chổi quét sơn (Paint Brush)',
+      cat: 'paint', code: 'Paint v1.0',
+      svg: mkSvg('<path d="M34 26 h32 v18 h-32 z M36 44 l4 34 h20 l4 -34 z M30 20 h40 v6 h-40 z"/>')
+    },
+    paint_spray: {
+      name: 'Súng phun sơn áp lực (Spray Gun)',
+      cat: 'paint', code: 'Paint v1.0',
+      svg: mkSvg('<rect x="36" y="22" width="28" height="20" rx="3"/><path d="M44 42 v28 h8 v-28 M36 32 h-14 M22 28 v8 M64 32 h12 v16 h-8" fill="none" stroke="currentColor" stroke-width="4"/>')
+    },
+    paint_drying_time: {
+      name: 'Thời gian khô sơn 1H-2H (Drying Time)',
+      cat: 'paint', code: 'Paint v1.0',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><path d="M50 22 v28 l18 10" stroke="${color}" stroke-width="5" stroke-linecap="round"/><text x="50" y="80" font-family="Arial Black" font-weight="900" font-size="12" text-anchor="middle" fill="${color}">1-2H</text></svg>`
+    },
+
+    // ==========================================
+    // 12. CHỨNG NHẬN & TIÊU CHUẨN ĐIỆN BỔ SUNG (CERTIFICATION & ELECTRICAL)
+    // ==========================================
+    cert_tuv: {
+      name: 'Chứng nhận an toàn TÜV Rheinland',
+      cat: 'cert', code: 'TÜV Rheinland',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 12 l38 68 h-76 z" fill="none" stroke="${color}" stroke-width="6"/><text x="50" y="62" font-family="Arial Black" font-weight="900" font-size="16" text-anchor="middle" fill="${color}">TÜV</text></svg>`
+    },
+    cert_gs: {
+      name: 'Chứng nhận chất lượng GS (Geprüfte Sicherheit)',
+      cat: 'cert', code: 'GS Mark',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><text x="50" y="58" font-family="Arial Black" font-weight="900" font-size="24" text-anchor="middle" fill="${color}">GS</text></svg>`
+    },
+    cert_csa: {
+      name: 'Chứng nhận CSA Canada (CSA Group)',
+      cat: 'cert', code: 'CSA Standard',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="${color}" stroke-width="6"/><text x="50" y="58" font-family="Arial Black" font-weight="900" font-size="20" text-anchor="middle" fill="${color}">CSA</text></svg>`
+    },
+    cert_eac: {
+      name: 'Chứng nhận liên minh hải quan EAC',
+      cat: 'cert', code: 'EAC Mark',
+      svg: (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="16" y="24" width="68" height="52" rx="4" fill="none" stroke="${color}" stroke-width="6"/><text x="50" y="58" font-family="Arial Black" font-weight="900" font-size="22" text-anchor="middle" fill="${color}">EAC</text></svg>`
+    },
+    electrical_ground: {
+      name: 'Nối đất an toàn điện (Protective Earth Ground)',
+      cat: 'cert', code: 'IEC 60417-5019',
+      svg: mkSvg('<circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" stroke-width="6"/><path d="M50 20 v28 M28 48 h44 M36 58 h28 M44 68 h12" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>')
     }
   };
 
