@@ -50,7 +50,9 @@ window.AppState = {
     gapX: true,   // Cách nhau trên hàng (mm)
     margin: true, // Lề biên 2 bên (mm)
     core: true,   // Kích thước lõi cuộn
-    perforation: true // Ghi chú Răng cưa xé
+    perforation: true, // Ghi chú Răng cưa xé
+    rollLength: true,  // Chiều dài cuộn (Số mét)
+    labelCount: true   // Tổng số con tem trên cuộn
   },
   heightDimPos: 'inside', // 'inside' (trên con tem, dễ nhìn trực quan), 'outside' (ngoài mép có dóng cữ CAD)
   dimOffsets: {}, // Lưu vị trí dịch chuyển thủ công của các chú thích thước đo 3D

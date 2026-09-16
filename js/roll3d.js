@@ -988,6 +988,20 @@ window.Roll3D = (function () {
       const perfY = row0BottomY - S.gapY / 2;
       drawPerforationCallout(webW, perfY, flapZ + 2.5, labelRight);
     }
+
+    // =========================================================
+    // 8. GHI CHÚ CHIỀU DÀI CUỘN TEM (SỐ MÉT - VÍ DỤ: Cuộn dài 50m)
+    // =========================================================
+    if (toggles.rollLength !== false) {
+      drawRollLengthCallout(outerR, webW, rollCenterY);
+    }
+
+    // =========================================================
+    // 9. GHI CHÚ TỔNG SỐ TEM TRÊN CUỘN (VÍ DỤ: ~1.162 tem)
+    // =========================================================
+    if (toggles.labelCount !== false) {
+      drawLabelCountCallout(outerR, webW, rollCenterY);
+    }
   }
 
   /**
@@ -1167,6 +1181,97 @@ window.Roll3D = (function () {
 
     attachDragLeaderCallout(group, sprite, pTip, defaultSpritePos, true);
 
+    group.add(sprite);
+    draggableSprites.push(sprite);
+  }
+
+  /**
+   * VẼ GHI CHÚ CHIỀU DÀI CUỘN TEM (SỐ MÉT - VÍ DỤ: Cuộn dài 50m)
+   */
+  function drawRollLengthCallout(outerR, webW, rollCenterY) {
+    const group = new THREE.Group();
+    group.renderOrder = 999;
+    dimensionsGroup.add(group);
+
+    const S = window.AppState || {};
+    const userScale = S.dimTextScale || 1.35;
+    const rollLen = (S.rollLength && Number(S.rollLength) > 0) ? Number(S.rollLength) : 50;
+
+    const anchorX = Math.min(webW * 0.22, 16);
+    const anchorY = rollCenterY + outerR * 0.96;
+    const anchorZ = outerR * 0.28;
+    const pAnchor = new THREE.Vector3(anchorX, anchorY, anchorZ);
+
+    const defaultSpritePos = new THREE.Vector3(
+      anchorX + 18 * userScale,
+      anchorY + 15 * userScale,
+      anchorZ + 2
+    );
+
+    const text = `Cuộn dài ${rollLen}m`;
+    const sprite = createCrispTextSprite(text, '#0284c7', true, '#ffffff');
+    sprite.position.copy(defaultSpritePos);
+
+    if (S.dimOffsets && S.dimOffsets.rollLength) {
+      const off = S.dimOffsets.rollLength;
+      sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
+    }
+
+    sprite.userData = {
+      isDimAnnotation: true,
+      dimKey: 'rollLength',
+      defaultPos: defaultSpritePos.clone(),
+      anchorPos: pAnchor.clone()
+    };
+
+    attachDragLeaderCallout(group, sprite, pAnchor, defaultSpritePos, true);
+    group.add(sprite);
+    draggableSprites.push(sprite);
+  }
+
+  /**
+   * VẼ GHI CHÚ TỔNG SỐ TEM TRÊN CUỘN (SỐ TEM - VÍ DỤ: ~1.162 tem)
+   */
+  function drawLabelCountCallout(outerR, webW, rollCenterY) {
+    const group = new THREE.Group();
+    group.renderOrder = 999;
+    dimensionsGroup.add(group);
+
+    const S = window.AppState || {};
+    const userScale = S.dimTextScale || 1.35;
+    const rollLen = (S.rollLength && Number(S.rollLength) > 0) ? Number(S.rollLength) : 50;
+    const pitch = (S.labelHeight || 30) + (S.gapY || 3);
+    const estCount = (S.labelCount && Number(S.labelCount) > 0) ? Number(S.labelCount) : (Math.floor((rollLen * 1000) / pitch) * (S.ups || 1));
+    const countFormatted = estCount.toLocaleString('vi-VN');
+
+    const anchorX = -Math.min(webW * 0.22, 16);
+    const anchorY = rollCenterY + outerR * 0.96;
+    const anchorZ = outerR * 0.28;
+    const pAnchor = new THREE.Vector3(anchorX, anchorY, anchorZ);
+
+    const defaultSpritePos = new THREE.Vector3(
+      anchorX - 18 * userScale,
+      anchorY + 15 * userScale,
+      anchorZ + 2
+    );
+
+    const text = `~${countFormatted} tem`;
+    const sprite = createCrispTextSprite(text, '#059669', true, '#ffffff');
+    sprite.position.copy(defaultSpritePos);
+
+    if (S.dimOffsets && S.dimOffsets.labelCount) {
+      const off = S.dimOffsets.labelCount;
+      sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
+    }
+
+    sprite.userData = {
+      isDimAnnotation: true,
+      dimKey: 'labelCount',
+      defaultPos: defaultSpritePos.clone(),
+      anchorPos: pAnchor.clone()
+    };
+
+    attachDragLeaderCallout(group, sprite, pAnchor, defaultSpritePos, true);
     group.add(sprite);
     draggableSprites.push(sprite);
   }
