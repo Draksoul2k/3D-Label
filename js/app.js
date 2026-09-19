@@ -2866,7 +2866,7 @@ function initEventListeners() {
   }
 
   // Camera presets
-  const viewButtons = ['front', 'iso', 'side', 'top', 'flap'];
+  const viewButtons = ['front', 'iso', 'horizontal', 'side', 'top', 'flap'];
   viewButtons.forEach(vt => {
     const btn = document.getElementById(`btn-view-${vt}`);
     if (btn) {
@@ -3854,9 +3854,9 @@ function updateWatermarkDesc() {
   } else if (currentWatermarkType === 'hacode') {
     descEl.textContent = 'hacode.vn';
   } else if (currentWatermarkType === 'hacode_phone') {
-    descEl.textContent = 'hacode.vn • 0942.85.82.86';
+    descEl.textContent = 'hacode.vn • 0942.85.82.85';
   } else if (currentWatermarkType === 'phone') {
-    descEl.textContent = '0942.85.82.86';
+    descEl.textContent = '0942.85.82.85';
   } else if (currentWatermarkType === 'custom') {
     const l1 = document.getElementById('input-wm-line1')?.value?.trim() || '';
     const l2 = document.getElementById('input-wm-line2')?.value?.trim() || '';
@@ -3955,7 +3955,7 @@ async function updateExportModalLivePreview() {
     } else if (watermark.type === 'hacode_phone') {
       badgeWm.textContent = 'hacode.vn • 0942...';
     } else if (watermark.type === 'phone') {
-      badgeWm.textContent = '0942.85.82.86';
+      badgeWm.textContent = '0942.85.82.85';
     } else {
       badgeWm.textContent = watermark.customText1 || 'Tự nhập';
     }
@@ -4037,9 +4037,9 @@ window.drawWatermarkOnCanvas = function(ctx, width, height, wmConfig, avoidRect 
     line1 = 'hacode.vn';
   } else if (wmConfig.type === 'hacode_phone') {
     line1 = 'hacode.vn';
-    line2 = '0942.85.82.86';
+    line2 = '0942.85.82.85';
   } else if (wmConfig.type === 'phone') {
-    line1 = '0942.85.82.86';
+    line1 = '0942.85.82.85';
   } else if (wmConfig.type === 'custom') {
     line1 = wmConfig.customText1 || '';
     line2 = wmConfig.customText2 || '';
@@ -4050,7 +4050,8 @@ window.drawWatermarkOnCanvas = function(ctx, width, height, wmConfig, avoidRect 
   const pos = wmConfig.pos || 'bottom-right';
   const style = wmConfig.style || 'badge';
 
-  const opacityVal = (wmConfig.opacity !== undefined ? Number(wmConfig.opacity) : 80) / 100;
+  const rawOpacity = (wmConfig.opacity !== undefined ? Number(wmConfig.opacity) : 80);
+  const opacityVal = rawOpacity / 100;
   const scaleFactor = (wmConfig.scale !== undefined ? Number(wmConfig.scale) : 100) / 100;
 
   const baseScale = Math.max(0.6, Math.min(2.5, width / 800)) * scaleFactor;
@@ -4060,10 +4061,12 @@ window.drawWatermarkOnCanvas = function(ctx, width, height, wmConfig, avoidRect 
   const padY = Math.round(20 * baseScale);
 
   ctx.save();
-  ctx.globalAlpha = Math.max(0.05, Math.min(1.0, opacityVal));
 
   if (pos === 'center') {
     // CHÍNH GIỮA ẢNH (BẢN QUYỀN MỜ NGHIÊNG 30 ĐỘ CHỐNG SAO CHÉP)
+    // Yêu cầu khách: 100% -> chữ màu đen đậm; 50% -> mờ như 100% của trước đây (~0.5 alpha)
+    const centerAlpha = Math.max(0.05, Math.min(1.0, opacityVal));
+    ctx.globalAlpha = 1.0;
     ctx.translate(width / 2, height / 2);
     ctx.rotate(-Math.PI / 6);
     ctx.textAlign = 'center';
@@ -4071,9 +4074,9 @@ window.drawWatermarkOnCanvas = function(ctx, width, height, wmConfig, avoidRect 
 
     const bigFont = Math.round(36 * baseScale);
     ctx.font = `bold ${bigFont}px "Plus Jakarta Sans", sans-serif`;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
-    ctx.shadowBlur = 4;
+    ctx.fillStyle = `rgba(0, 0, 0, ${centerAlpha})`;
+    ctx.shadowColor = `rgba(255, 255, 255, ${centerAlpha * 0.4})`;
+    ctx.shadowBlur = Math.round(3 * baseScale);
 
     if (line1 && line2) {
       ctx.fillText(line1, 0, -bigFont * 0.55);
@@ -4084,6 +4087,7 @@ window.drawWatermarkOnCanvas = function(ctx, width, height, wmConfig, avoidRect 
     }
   } else {
     // CÁC VỊ TRÍ GÓC (DƯỚI PHẢI, DƯỚI TRÁI, TRÊN PHẢI)
+    ctx.globalAlpha = Math.max(0.05, Math.min(1.0, opacityVal));
     ctx.font = `bold ${fontLine1}px "Plus Jakarta Sans", sans-serif`;
     const w1 = line1 ? ctx.measureText(line1).width : 0;
     ctx.font = `bold ${fontLine2}px "Plus Jakarta Sans", sans-serif`;

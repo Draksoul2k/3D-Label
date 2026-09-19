@@ -438,6 +438,13 @@ window.Roll3D = (function () {
       buildTechnicalDimensions(rollCenterY, outerR, webW, flapZ, flapTopY, numFlapRows);
     }
 
+    if (S && S.rollOrientation === 'horizontal') {
+      rollRootGroup.rotation.set(0, 0, Math.PI / 2);
+    } else {
+      rollRootGroup.rotation.set(0, 0, 0);
+    }
+    rollRootGroup.updateMatrixWorld(true);
+
     if (window.Scene3D && typeof window.Scene3D.updateTargetToModelCenter === 'function') {
       window.Scene3D.updateTargetToModelCenter(true);
     }

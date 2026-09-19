@@ -339,9 +339,47 @@ window.Scene3D = (function () {
   function setCameraView(viewType) {
     if (!controls || !camera) return;
 
+    const rollRoot = window.Roll3D?.getRollRootGroup();
+    const isMobile = window.innerWidth < 768;
+
+    if (viewType === 'horizontal') {
+      if (rollRoot) {
+        rollRoot.rotation.set(0, 0, Math.PI / 2);
+        rollRoot.updateMatrixWorld(true);
+      }
+      if (window.AppState) window.AppState.rollOrientation = 'horizontal';
+
+      const box = new THREE.Box3().setFromObject(rollRoot);
+      const hCenter = new THREE.Vector3();
+      box.getCenter(hCenter);
+      const hSize = new THREE.Vector3();
+      box.getSize(hSize);
+
+      const hMaxDim = Math.max(hSize.x, hSize.y, hSize.z);
+      const hDist = Math.max(hMaxDim * 2.2, 380) * (isMobile ? 1.25 : 1.0);
+
+      // Tâm nhìn đặt chính giữa cuộn và dải tem ngang, hơi dịch sang phải tạo khoảng trống bảng thông số
+      const tX = hCenter.x + (isMobile ? 0 : 15);
+      const tY = hCenter.y;
+      const tZ = hCenter.z;
+      controls.target.set(tX, tY, tZ);
+
+      // Góc nhìn từ trước - trên xuống hơi chếch phải giống hệt ảnh mẫu khách gửi (media_1789793162015.png)
+      camera.position.set(tX - hDist * 0.15, tY + hDist * 0.38, tZ + hDist * 0.88);
+      controls.update();
+      requestRender(60);
+      return;
+    }
+
+    // Các góc nhìn khác: reset cuộn về góc đứng chuẩn (vertical)
+    if (rollRoot && rollRoot.rotation.z !== 0) {
+      rollRoot.rotation.set(0, 0, 0);
+      rollRoot.updateMatrixWorld(true);
+    }
+    if (window.AppState) window.AppState.rollOrientation = 'vertical';
+
     const dims = getModelDimensions();
     const maxDim = Math.max(dims.x, dims.y, dims.z);
-    const isMobile = window.innerWidth < 768;
     // Tự động tính cự ly camera dựa trên kích cỡ thực tế của mô hình để cuộn tem nằm vừa vặn, thanh thoát chính giữa màn hình
     const baseDist = Math.max(maxDim * 2.5, 480);
     const dist = isMobile ? baseDist * 1.25 : baseDist;
