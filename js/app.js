@@ -2866,6 +2866,7 @@ function initEventListeners() {
   }
 
   // Camera presets
+  let savedVerticalDimToggles = null;
   const viewButtons = ['front', 'iso', 'horizontal', 'side', 'top', 'flap'];
   viewButtons.forEach(vt => {
     const btn = document.getElementById(`btn-view-${vt}`);
@@ -2873,6 +2874,36 @@ function initEventListeners() {
       btn.addEventListener('click', () => {
         viewButtons.forEach(other => document.getElementById(`btn-view-${other}`)?.classList.remove('active'));
         btn.classList.add('active');
+
+        if (vt === 'horizontal') {
+          // Khi bấm vào góc nằm ngang: chỉ hiển thị chiều dài và chiều rộng theo yêu cầu
+          // Các thông số khác tắt đi, người dùng có thể tự bấm bật lại trong dropdown nếu muốn
+          if (!savedVerticalDimToggles) {
+            savedVerticalDimToggles = Object.assign({}, S.dimToggles);
+          }
+          S.dimToggles = Object.assign({}, S.dimToggles, {
+            width: true,
+            height: true,
+            gapY: false,
+            gapX: false,
+            margin: false,
+            core: false,
+            perforation: false,
+            rollLength: false,
+            labelCount: false
+          });
+          syncDimTogglesUI();
+          if (window.Roll3D) window.Roll3D.updateDimensions();
+        } else {
+          // Khi chuyển lại về các góc đứng khác: khôi phục cấu hình trước đó
+          if (savedVerticalDimToggles) {
+            S.dimToggles = Object.assign({}, savedVerticalDimToggles);
+            savedVerticalDimToggles = null;
+            syncDimTogglesUI();
+            if (window.Roll3D) window.Roll3D.updateDimensions();
+          }
+        }
+
         window.Scene3D?.setCameraView(vt);
       });
     }
