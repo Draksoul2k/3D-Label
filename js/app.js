@@ -2580,6 +2580,8 @@ function initEventListeners() {
         window.Roll3D.resetDimensionPositions();
       } else {
         S.dimOffsets = {};
+        S.dimOffsetsVert = {};
+        S.dimOffsetsHoriz = {};
         if (window.Roll3D) window.Roll3D.updateDimensions();
       }
       showPresetToast('Đã khôi phục vị trí các chú thích thước đo 3D ban đầu!');
@@ -2893,6 +2895,7 @@ function initEventListeners() {
             labelCount: false
           });
           syncDimTogglesUI();
+          window.Scene3D?.setCameraView(vt);
           if (window.Roll3D) window.Roll3D.updateDimensions();
         } else {
           // Khi chuyển lại về các góc đứng khác: khôi phục cấu hình trước đó
@@ -2900,11 +2903,10 @@ function initEventListeners() {
             S.dimToggles = Object.assign({}, savedVerticalDimToggles);
             savedVerticalDimToggles = null;
             syncDimTogglesUI();
-            if (window.Roll3D) window.Roll3D.updateDimensions();
           }
+          window.Scene3D?.setCameraView(vt);
+          if (window.Roll3D) window.Roll3D.updateDimensions();
         }
-
-        window.Scene3D?.setCameraView(vt);
       });
     }
   });

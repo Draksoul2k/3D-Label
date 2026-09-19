@@ -68,16 +68,36 @@ window.Roll3D = (function () {
       }
       calloutGroup.visible = true;
 
-      const isRight = (pos.x >= anchorPos.x);
-      const shelfLen = 4.0 * userScale;
-      const shelfOffset = 11.5 * userScale;
-      const shelfX = isRight ? (pos.x - shelfOffset) : (pos.x + shelfOffset);
-      const kneeX = isRight ? (shelfX - shelfLen) : (shelfX + shelfLen);
-      const kneeY = pos.y;
-      const kneeZ = pos.z;
+      const isHoriz = (rollRootGroup && Math.abs(rollRootGroup.rotation.z) > 0.1) ||
+                      (window.AppState && window.AppState.rollOrientation === 'horizontal');
+      let pKnee, pShelf;
 
-      const pKnee = new THREE.Vector3(kneeX, kneeY, kneeZ);
-      const pShelf = new THREE.Vector3(shelfX, kneeY, kneeZ);
+      if (isHoriz) {
+        // Khi cuộn xoay nằm ngang (rollRootGroup.rotation.z = Math.PI / 2):
+        // Trục hoành màn hình (trái/phải) = trục -Y local; Trục tung màn hình (dưới/trên) = trục +X local.
+        const isRight = (pos.y <= anchorPos.y);
+        const shelfLen = 4.0 * userScale;
+        const shelfOffset = 11.5 * userScale;
+        const shelfY = isRight ? (pos.y + shelfOffset) : (pos.y - shelfOffset);
+        const kneeY = isRight ? (shelfY + shelfLen) : (shelfY - shelfLen);
+        const kneeX = pos.x;
+        const kneeZ = pos.z;
+
+        pKnee = new THREE.Vector3(kneeX, kneeY, kneeZ);
+        pShelf = new THREE.Vector3(kneeX, shelfY, kneeZ);
+      } else {
+        const isRight = (pos.x >= anchorPos.x);
+        const shelfLen = 4.0 * userScale;
+        const shelfOffset = 11.5 * userScale;
+        const shelfX = isRight ? (pos.x - shelfOffset) : (pos.x + shelfOffset);
+        const kneeX = isRight ? (shelfX - shelfLen) : (shelfX + shelfLen);
+        const kneeY = pos.y;
+        const kneeZ = pos.z;
+
+        pKnee = new THREE.Vector3(kneeX, kneeY, kneeZ);
+        pShelf = new THREE.Vector3(shelfX, kneeY, kneeZ);
+      }
+
       shelfGeo.setFromPoints([pKnee, pShelf]);
 
       const dir = new THREE.Vector3().subVectors(anchorPos, pKnee);
@@ -1134,8 +1154,8 @@ window.Roll3D = (function () {
     const sprite = createCrispTextSprite(text, colorHex, false, '#ffffff');
     sprite.position.copy(defaultSpritePos);
 
-    if (S && S.dimOffsets && S.dimOffsets.height) {
-      const off = S.dimOffsets.height;
+    const off = getDimOffset('height');
+    if (off) {
       sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
     }
 
@@ -1173,9 +1193,8 @@ window.Roll3D = (function () {
     const sprite = createCrispTextSprite('Răng cưa xé', '#0f172a', true, '#ffffff');
     sprite.position.copy(defaultSpritePos);
 
-    const S = window.AppState;
-    if (S && S.dimOffsets && S.dimOffsets.perforation) {
-      const off = S.dimOffsets.perforation;
+    const off = getDimOffset('perforation');
+    if (off) {
       sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
     }
 
@@ -1219,8 +1238,8 @@ window.Roll3D = (function () {
     const sprite = createCrispTextSprite(text, '#0284c7', true, '#ffffff');
     sprite.position.copy(defaultSpritePos);
 
-    if (S.dimOffsets && S.dimOffsets.rollLength) {
-      const off = S.dimOffsets.rollLength;
+    const off = getDimOffset('rollLength');
+    if (off) {
       sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
     }
 
@@ -1266,8 +1285,8 @@ window.Roll3D = (function () {
     const sprite = createCrispTextSprite(text, '#059669', true, '#ffffff');
     sprite.position.copy(defaultSpritePos);
 
-    if (S.dimOffsets && S.dimOffsets.labelCount) {
-      const off = S.dimOffsets.labelCount;
+    const off = getDimOffset('labelCount');
+    if (off) {
       sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
     }
 
@@ -1353,9 +1372,8 @@ window.Roll3D = (function () {
     const sprite = createCrispTextSprite(text, colorHex, true, '#ffffff');
     sprite.position.copy(defaultPos);
 
-    const S = window.AppState;
-    if (S && S.dimOffsets && S.dimOffsets.gapY) {
-      const off = S.dimOffsets.gapY;
+    const off = getDimOffset('gapY');
+    if (off) {
       sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
     }
 
@@ -1441,9 +1459,8 @@ window.Roll3D = (function () {
     const sprite = createCrispTextSprite(text, colorHex, false, '#ffffff');
     sprite.position.copy(defaultPos);
 
-    const S = window.AppState;
-    if (S && S.dimOffsets && S.dimOffsets.margin) {
-      const off = S.dimOffsets.margin;
+    const off = getDimOffset('margin');
+    if (off) {
       sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
     }
 
@@ -1551,9 +1568,8 @@ window.Roll3D = (function () {
     const defaultPos = new THREE.Vector3(faceX - 9 * userScale, centerY + 16 * userScale, 0);
     sprite.position.copy(defaultPos);
 
-    const S = window.AppState;
-    if (S && S.dimOffsets && S.dimOffsets.core) {
-      const off = S.dimOffsets.core;
+    const off = getDimOffset('core');
+    if (off) {
       sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
     }
 
@@ -1626,9 +1642,8 @@ window.Roll3D = (function () {
     sprite.position.copy(defaultPos);
 
     if (dimKey) {
-      const S = window.AppState;
-      if (S && S.dimOffsets && S.dimOffsets[dimKey]) {
-        const off = S.dimOffsets[dimKey];
+      const off = getDimOffset(dimKey);
+      if (off) {
         sprite.position.add(new THREE.Vector3(off.x || 0, off.y || 0, off.z || 0));
       }
 
@@ -1803,12 +1818,25 @@ window.Roll3D = (function () {
   }
 
   /**
+   * LẤY OFFSET DỊCH CHUYỂN THỦ CÔNG CỦA CHÚ THÍCH THEO GÓC NHÌN (NGANG / ĐỨNG)
+   */
+  function getDimOffset(key) {
+    const S = window.AppState;
+    if (!S || !key) return null;
+    const isHoriz = (rollRootGroup && Math.abs(rollRootGroup.rotation.z) > 0.1) || (S.rollOrientation === 'horizontal');
+    const map = isHoriz ? S.dimOffsetsHoriz : (S.dimOffsetsVert || S.dimOffsets);
+    return map ? map[key] : null;
+  }
+
+  /**
    * ĐẶT LẠI VỊ TRÍ BAN ĐẦU CHO TẤT CẢ CHÚ THÍCH KÍCH THƯỚC 3D
    */
   function resetDimensionPositions() {
     const S = window.AppState;
     if (S) {
       S.dimOffsets = {};
+      S.dimOffsetsVert = {};
+      S.dimOffsetsHoriz = {};
     }
     updateDimensions();
   }

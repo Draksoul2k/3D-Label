@@ -146,12 +146,16 @@ window.Scene3D = (function () {
 
         canvas.style.cursor = 'grabbing';
 
-        // Mặt phẳng kéo song song mặt phẳng nhìn của camera đi qua vị trí sprite
+        // Lấy vị trí WORLD thực tế của sprite (tính cả rotation/position của parent rollRootGroup)
+        const spriteWorldPos = new THREE.Vector3();
+        draggingSprite.getWorldPosition(spriteWorldPos);
+
+        // Mặt phẳng kéo song song mặt phẳng nhìn của camera đi qua vị trí sprite trong world space
         const camDir = camera.getWorldDirection(new THREE.Vector3()).negate();
-        dragPlane.setFromNormalAndCoplanarPoint(camDir, draggingSprite.position);
+        dragPlane.setFromNormalAndCoplanarPoint(camDir, spriteWorldPos);
 
         if (raycaster.ray.intersectPlane(dragPlane, planeIntersect)) {
-          dragOffset.subVectors(draggingSprite.position, planeIntersect);
+          dragOffset.subVectors(spriteWorldPos, planeIntersect);
         } else {
           dragOffset.set(0, 0, 0);
         }
@@ -167,23 +171,36 @@ window.Scene3D = (function () {
         e.preventDefault();
 
         if (raycaster.ray.intersectPlane(dragPlane, planeIntersect)) {
-          const newPos = planeIntersect.clone().add(dragOffset);
-          draggingSprite.position.copy(newPos);
+          // Vị trí mục tiêu trong hệ tọa độ WORLD theo con trỏ chuột
+          const targetWorldPos = planeIntersect.clone().add(dragOffset);
+
+          // Chuyển đổi từ tọa độ WORLD sang tọa độ LOCAL của parent của sprite
+          // (giúp xử lý chuẩn xác 100% khi cuộn tem bị xoay ngang Math.PI / 2 hoặc bất kỳ góc nào)
+          const targetLocalPos = targetWorldPos.clone();
+          if (draggingSprite.parent) {
+            draggingSprite.parent.updateWorldMatrix(true, false);
+            draggingSprite.parent.worldToLocal(targetLocalPos);
+          }
+
+          draggingSprite.position.copy(targetLocalPos);
 
           if (draggingSprite.userData) {
             if (typeof draggingSprite.userData.onDrag === 'function') {
-              draggingSprite.userData.onDrag(newPos);
+              draggingSprite.userData.onDrag(targetLocalPos);
             }
             if (typeof draggingSprite.userData.updateLeader === 'function') {
-              draggingSprite.userData.updateLeader(newPos);
+              draggingSprite.userData.updateLeader(targetLocalPos);
             }
 
             const key = draggingSprite.userData.dimKey;
             const defPos = draggingSprite.userData.defaultPos;
             if (key && defPos && window.AppState) {
-              if (!window.AppState.dimOffsets) window.AppState.dimOffsets = {};
-              const offset = new THREE.Vector3().subVectors(newPos, defPos);
-              window.AppState.dimOffsets[key] = { x: offset.x, y: offset.y, z: offset.z };
+              const isHoriz = (window.AppState.rollOrientation === 'horizontal');
+              const offsetsMap = isHoriz
+                ? (window.AppState.dimOffsetsHoriz = window.AppState.dimOffsetsHoriz || {})
+                : (window.AppState.dimOffsets = window.AppState.dimOffsets || {});
+              const offset = new THREE.Vector3().subVectors(targetLocalPos, defPos);
+              offsetsMap[key] = { x: offset.x, y: offset.y, z: offset.z };
             }
           }
           requestRender(15);
